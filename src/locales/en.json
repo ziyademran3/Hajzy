@@ -1,0 +1,71 @@
+{
+  "common": {
+    "hajzy": "Hajzy",
+    "dark": "Dark",
+    "light": "Light"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "dashboard": {
+    "quickActions": "Quick Actions",
+    "recentActivity": "Recent Activity",
+    "statsSpending": "Spending",
+    "statsFavorites": "Favorites",
+    "statsBookings": "Bookings",
+    "thisYear": "This year",
+    "savedHomes": "Saved homes",
+    "activeStays": "Active stays",
+    "searchCity": "Discover",
+    "support": "Support",
+    "noRecentActivity": "No recent activity"
+  },
+  "quickActions": {
+    "savedHomes": "Saved homes",
+    "discover": "Discover",
+    "support": "Support"
+  },
+  "homeTitle": "Welcome to Hajzy",
+  "home": {
+    "subtitle": "Explore our luxury stays",
+    "popularCities": "Popular cities"
+  },
+  "buttons": {
+    "offers": "Offers"
+  },
+  "cities": {
+    "alexandria": "Alexandria",
+    "cairo": "Cairo",
+    "cairoSubtitle": "Multiple options",
+    "hurghada": "Hurghada",
+    "hurghadaSubtitle": "Villas & apartments",
+    "sharm": "Sharm El-Sheikh"
+  },
+  "badges": {
+    "mostRequested": "Most requested"
+  },
+  "welcome": "Welcome {{name}}",
+  "welcomeBack": "Welcome back",
+  "upcomingStay": "Upcoming stay",
+  "noBookingsYet": "No bookings yet",
+  "addProperty": "Add property",
+  "searchPlaceholder": "Search for your perfect stay...",
+  "result": "Result",
+  "results": "Results",
+  "resultsPlural": "Results",
+  "favorite": "Favorite",
+  "bookNow": "Book now",
+  "nightly": "/night",
+  "description": "Description",
+  "amenities": "Amenities",
+  "checkoutTitle": "Confirm booking",
+  "paymentMethod": "Payment method",
+  "total": "Total",
+  "confirmPayment": "Confirm payment",
+  "chat": "Chat",
+  "send": "Send",
+  "typeMessage": "Type a message",
+  "language": "Language",
+  "propertyAdded": "Property added"
+}

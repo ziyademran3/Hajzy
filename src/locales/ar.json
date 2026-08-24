@@ -1,0 +1,71 @@
+{
+  "common": {
+    "hajzy": "حجزي",
+    "dark": "وضع ليلي",
+    "light": "وضع نهاري"
+  },
+  "theme": {
+    "light": "وضع نهاري",
+    "dark": "وضع ليلي"
+  },
+  "dashboard": {
+    "quickActions": "إجراءات سريعة",
+    "recentActivity": "النشاط الأخير",
+    "statsSpending": "المصروف",
+    "statsFavorites": "المفضلة",
+    "statsBookings": "الحجوزات",
+    "thisYear": "هذا العام",
+    "savedHomes": "المفضلة",
+    "activeStays": "إقامات نشطة",
+    "searchCity": "بحث عن مدينة",
+    "support": "الدعم",
+    "noRecentActivity": "لا يوجد نشاط حديث"
+  },
+  "quickActions": {
+    "savedHomes": "المنازل المحفوظة",
+    "discover": "بحث عن مدينة",
+    "support": "الدعم"
+  },
+  "homeTitle": "مرحبًا في حجزي",
+  "home": {
+    "subtitle": "استكشف إقاماتنا الفاخرة",
+    "popularCities": "المدن الشائعة"
+  },
+  "buttons": {
+    "offers": "عروض"
+  },
+  "cities": {
+    "alexandria": "الإسكندرية",
+    "cairo": "القاهرة",
+    "cairoSubtitle": "خيارات متعددة",
+    "hurghada": "الغردقة",
+    "hurghadaSubtitle": "شاليهات وشقق",
+    "sharm": "شرم الشيخ"
+  },
+  "badges": {
+    "mostRequested": "الأكثر طلباً"
+  },
+  "welcome": "مرحبا {{name}}",
+  "welcomeBack": "أهلاً بيك",
+  "upcomingStay": "إقامتك القادمة",
+  "noBookingsYet": "لا توجد حجوزات بعد",
+  "addProperty": "أضف عقار",
+  "searchPlaceholder": "ابحث عن شقتك المثالية...",
+  "result": "نتيجة",
+  "results": "نتائج",
+  "resultsPlural": "نتائج",
+  "favorite": "المفضلة",
+  "bookNow": "احجز الآن",
+  "nightly": "/ليلة",
+  "description": "الوصف",
+  "amenities": "المرافق",
+  "checkoutTitle": "تأكيد الحجز",
+  "paymentMethod": "طريقة الدفع",
+  "total": "الإجمالي",
+  "confirmPayment": "تأكيد الدفع",
+  "chat": "المحادثة",
+  "send": "إرسال",
+  "typeMessage": "اكتب رسالة",
+  "language": "اللغة",
+  "propertyAdded": "تمت إضافة العقار"
+}

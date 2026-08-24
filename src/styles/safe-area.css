@@ -1,0 +1,22 @@
+:root{
+  /* fallback for environments without safe-area-inset support */
+}
+
+/* Utility to add a safe-area-aware bottom padding. Add this to the outer wrapper of the page or the nav itself. */
+.safe-area-bottom {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+}
+
+/* Small helper to ensure the nav doesn't get occluded by interactive overlays */
+.bottom-nav-fixed {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50; /* high so it sits above normal content but below modals */
+}
+
+/* Ensure buttons inside nav are touch-friendly */
+.bottom-nav-button {
+  -webkit-tap-highlight-color: transparent;
+}

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>تأكيد الحجز</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              background: '#f7faf5',
+              surface: '#f7faf5',
+              'surface-container-lowest': '#ffffff',
+              'surface-container-low': '#f1f4ef',
+              'surface-container': '#ecefea',
+              'surface-container-high': '#e6e9e4',
+              'surface-variant': '#e0e3de',
+              'on-surface': '#191c1a',
+              'on-surface-variant': '#3f4947',
+              primary: '#00433f',
+              'primary-container': '#0f5c57',
+              'on-primary-container': '#8fd2cb',
+              'on-primary': '#ffffff',
+              secondary: '#7e5700',
+              'secondary-container': '#ffc96f',
+              outline: '#6f7977',
+              'outline-variant': '#bec9c6',
+              error: '#ba1a1a'
+            },
+            spacing: {
+              'margin-page': '24px',
+              'stack-sm': '8px',
+              'stack-md': '16px',
+              'stack-lg': '32px'
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body { font-family: 'Inter', sans-serif; }
+      .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    </style>
+  </head>
+  <body class="bg-surface text-on-surface antialiased">
+    <header class="fixed top-0 w-full z-50 bg-surface/70 backdrop-blur-md shadow-sm">
+      <div class="flex flex-row justify-between items-center px-margin-page h-16 w-full">
+        <a href="details.html" class="text-on-surface-variant hover:opacity-80 transition-opacity active:scale-95 flex items-center justify-center w-8 h-8">
+          <span class="material-symbols-outlined">arrow_forward</span>
+        </a>
+        <h1 class="font-semibold text-xl text-primary">تأكيد الحجز</h1>
+        <div class="w-8"></div>
+      </div>
+    </header>
+
+    <main class="pt-[72px] pb-[100px] px-margin-page max-w-md mx-auto space-y-6">
+      <section class="bg-surface-container-lowest rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.04)] overflow-hidden border border-outline-variant/30">
+        <div class="relative h-48 w-full bg-surface-variant">
+          <img class="object-cover w-full h-full" src="https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80" alt="شقة فاخرة" />
+        </div>
+        <div class="p-4 space-y-4">
+          <div class="flex justify-between items-start">
+            <div>
+              <h2 class="text-xl font-bold text-primary">فيلا أوشن فيو</h2>
+              <p class="text-sm text-on-surface-variant">المالديف، جزيرة مالي</p>
+            </div>
+            <div class="flex items-center gap-1 bg-surface-container-high px-2 py-1 rounded-full">
+              <span class="material-symbols-outlined text-[#D4A24C] text-sm">star</span>
+              <span class="text-sm font-medium">4.9</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div class="bg-surface-container-low rounded-lg p-3">
+              <div class="text-on-surface-variant">تاريخ الوصول</div>
+              <div class="mt-1 font-medium text-on-surface">١٥ أكتوبر</div>
+            </div>
+            <div class="bg-surface-container-low rounded-lg p-3">
+              <div class="text-on-surface-variant">تاريخ المغادرة</div>
+              <div class="mt-1 font-medium text-on-surface">٢٠ أكتوبر</div>
+            </div>
+            <div class="bg-surface-container-low rounded-lg p-3">
+              <div class="text-on-surface-variant">الضيوف</div>
+              <div class="mt-1 font-medium text-on-surface">٢ ضيوف</div>
+            </div>
+            <div class="bg-surface-container-low rounded-lg p-3">
+              <div class="text-on-surface-variant">إجمالي</div>
+              <div class="mt-1 font-medium text-on-surface">١٢,٠٠٠ درهم</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-outline-variant/30">
+        <h3 class="text-lg font-bold text-on-surface mb-4">طريقة الدفع</h3>
+        <div class="space-y-3">
+          <label class="flex items-center justify-between rounded-xl border border-outline-variant/50 p-3">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-primary">credit_card</span>
+              <span class="font-medium">بطاقة ائتمان</span>
+            </div>
+            <input type="radio" checked class="accent-primary" />
+          </label>
+          <label class="flex items-center justify-between rounded-xl border border-outline-variant/50 p-3">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-primary">account_balance_wallet</span>
+              <span class="font-medium">محفظة رقمية</span>
+            </div>
+            <input type="radio" class="accent-primary" />
+          </label>
+        </div>
+      </section>
+
+      <div class="fixed bottom-0 left-0 right-0 bg-surface/90 backdrop-blur-lg border-t border-outline-variant/30 px-margin-page py-3">
+        <div class="max-w-md mx-auto flex items-center justify-between gap-3">
+          <div>
+            <div class="text-xs text-on-surface-variant">الإجمالي</div>
+            <div class="text-xl font-bold text-primary">١٢,٠٠٠ درهم</div>
+          </div>
+          <a href="booking-success.html" class="bg-primary text-on-primary rounded-xl px-6 py-3 font-medium">تأكيد الدفع</a>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>حجوزاتي</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              background: '#f7faf5',
+              surface: '#f7faf5',
+              'surface-container-lowest': '#ffffff',
+              'surface-container-low': '#f1f4ef',
+              'surface-container': '#ecefea',
+              'surface-container-high': '#e6e9e4',
+              'surface-variant': '#e0e3de',
+              'on-surface': '#191c1a',
+              'on-surface-variant': '#3f4947',
+              primary: '#00433f',
+              'primary-container': '#0f5c57',
+              'on-primary-container': '#8fd2cb',
+              'on-primary': '#ffffff',
+              secondary: '#7e5700',
+              'secondary-container': '#ffc96f',
+              outline: '#6f7977',
+              'outline-variant': '#bec9c6',
+              error: '#ba1a1a'
+            },
+            spacing: {
+              'margin-page': '24px',
+              'stack-sm': '8px',
+              'stack-md': '16px',
+              'stack-lg': '32px'
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body { font-family: 'Inter', sans-serif; }
+      .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    </style>
+  </head>
+  <body class="bg-background text-on-background min-h-screen flex flex-col">
+    <header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md shadow-sm pt-safe">
+      <div class="flex flex-row-reverse items-center justify-between px-margin-page w-full h-16">
+        <button class="flex items-center justify-center text-primary hover:bg-surface-container-high transition-colors active:scale-95 duration-150 h-12 w-12 rounded-full">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+        <h1 class="font-semibold text-xl text-primary">المساكن الخاصة</h1>
+        <button class="flex items-center justify-center text-primary hover:bg-surface-container-high transition-colors active:scale-95 duration-150 h-12 w-12 rounded-full">
+          <span class="material-symbols-outlined">notifications</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="flex-grow px-margin-page pt-[calc(env(safe-area-inset-top,20px)+64px+24px)] pb-[calc(env(safe-area-inset-bottom,20px)+72px+32px)]">
+      <h2 class="text-3xl font-bold text-on-background mb-4">حجوزاتي</h2>
+
+      <div class="flex p-1 bg-surface-container-high rounded-lg mb-5">
+        <button class="flex-1 py-2 bg-surface-container-lowest rounded-md shadow-sm text-sm font-medium text-on-surface">القادمة</button>
+        <button class="flex-1 py-2 text-sm font-medium text-on-surface-variant">السابقة</button>
+        <button class="flex-1 py-2 text-sm font-medium text-on-surface-variant">الملغاة</button>
+      </div>
+
+      <div class="flex flex-col gap-4">
+        <article class="bg-surface-container-lowest rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col">
+          <div class="h-48 w-full relative">
+            <img class="object-cover w-full h-full" src="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80" alt="عقار" />
+            <div class="absolute top-4 left-4 bg-surface-container-lowest/90 px-3 py-1 rounded-full border border-outline-variant/30 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-teal-500"></span>
+              <span class="text-xs font-medium text-on-surface">مؤكدة</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="text-xl font-bold text-primary">فيلا الأفق</h3>
+                <p class="text-sm text-on-surface-variant">دبي مارينا، الإمارات</p>
+              </div>
+              <div class="flex items-center gap-1 bg-surface-container-high px-2 py-1 rounded-full">
+                <span class="material-symbols-outlined text-[#D4A24C] text-sm">star</span>
+                <span class="text-sm font-medium">4.9</span>
+              </div>
+            </div>
+
+            <div class="mt-4 flex justify-between items-center border-t border-outline-variant/50 pt-4">
+              <div>
+                <div class="text-xs text-on-surface-variant">من ١٥ إلى ٢٠ أكتوبر</div>
+                <div class="text-lg font-bold text-primary">١٢,٠٠٠ درهم</div>
+              </div>
+              <a href="details.html" class="text-sm text-primary font-medium">عرض التفاصيل</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="bg-surface-container-lowest rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col">
+          <div class="h-48 w-full relative">
+            <img class="object-cover w-full h-full" src="https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80" alt="عقار" />
+            <div class="absolute top-4 left-4 bg-surface-container-lowest/90 px-3 py-1 rounded-full border border-outline-variant/30 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+              <span class="text-xs font-medium text-on-surface">قيد المراجعة</span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="text-xl font-bold text-primary">جناح الواحة</h3>
+                <p class="text-sm text-on-surface-variant">الرياض، المملكة العربية السعودية</p>
+              </div>
+              <div class="flex items-center gap-1 bg-surface-container-high px-2 py-1 rounded-full">
+                <span class="material-symbols-outlined text-[#D4A24C] text-sm">star</span>
+                <span class="text-sm font-medium">4.7</span>
+              </div>
+            </div>
+
+            <div class="mt-4 flex justify-between items-center border-t border-outline-variant/50 pt-4">
+              <div>
+                <div class="text-xs text-on-surface-variant">من ١٢ إلى ١٦ نوفمبر</div>
+                <div class="text-lg font-bold text-primary">٩,٥٠٠ ريال</div>
+              </div>
+              <a href="details.html" class="text-sm text-primary font-medium">عرض التفاصيل</a>
+            </div>
+          </div>
+        </article>
+      </div>
+    </main>
+
+    <nav class="fixed bottom-0 left-0 w-full z-50 flex flex-row-reverse justify-around items-center px-4 py-3 pb-safe bg-surface/90 backdrop-blur-lg shadow-[0_-4px_12px_rgba(31,35,32,0.06)] rounded-t-xl md:hidden">
+      <a href="index.html" class="flex flex-col items-center justify-center text-on-surface-variant">
+        <span class="material-symbols-outlined mb-1">home</span>
+        <span class="text-[11px]">الرئيسية</span>
+      </a>
+      <a href="bookings.html" class="flex flex-col items-center justify-center text-primary font-bold">
+        <span class="material-symbols-outlined mb-1">calendar_month</span>
+        <span class="text-[11px]">حجوزاتي</span>
+      </a>
+      <a href="profile.html" class="flex flex-col items-center justify-center text-on-surface-variant">
+        <span class="material-symbols-outlined mb-1">person</span>
+        <span class="text-[11px]">الملف</span>
+      </a>
+    </nav>
+  </body>
+</html>

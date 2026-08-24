@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 58" role="img" aria-label="Hajzy brand logo">
+  <defs>
+    <linearGradient id="brandBg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#0d5d58"/>
+      <stop offset="100%" stop-color="#083d3a"/>
+    </linearGradient>
+    <linearGradient id="brandGold" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#f8e7a8"/>
+      <stop offset="100%" stop-color="#d9a93c"/>
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(0 1)">
+    <rect x="0" y="6" width="44" height="44" rx="14" fill="url(#brandBg)"/>
+    <path d="M13 41V17h7v9h10v-9h7v24h-7V27H20v14h-7Z" fill="#F9FBF8"/>
+    <path d="M22 9.5 28.2 15l-6.2 5.4-6.2-5.4L22 9.5Z" fill="url(#brandGold)"/>
+    <path d="M22 15.5v14.8h-6.5V15.5h6.5Z" fill="#0d5d58" opacity="0.92"/>
+  </g>
+
+  <g transform="translate(58 0)">
+    <text x="0" y="35" font-size="28" font-weight="700" font-family="Tahoma, Arial, sans-serif" fill="#103434" letter-spacing="0.5">حجزي</text>
+    <text x="96" y="35" font-size="12" font-weight="700" font-family="Tahoma, Arial, sans-serif" fill="#0d5d58" letter-spacing="2.5">HAJZY</text>
+  </g>
+</svg>
