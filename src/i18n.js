@@ -24,7 +24,9 @@ const getStoredLanguage = () => {
 i18n.use(initReactI18next).init({
   resources,
   lng: getStoredLanguage(),
-  fallbackLng: 'ar',
+  fallbackLng: false,
+  supportedLngs: ['ar', 'en'],
+  nonExplicitSupportedLngs: true,
   debug: false,
   interpolation: { escapeValue: false },
   returnNull: false,
@@ -41,24 +43,10 @@ function applyLang(lng) {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('hajzy-language', lng)
     }
-  } catch (e) {
+  } catch {
     // ignore
   }
 }
-
-// ensure Arabic fallback when a key is missing entirely
-i18n.on('missingKey', (lng, ns, key) => {
-  try {
-    // try to fetch Arabic value for the missing key
-    const arVal = i18n.getResource('ar', ns || 'translation', key)
-    if (arVal) {
-      // add the arabic fallback into the missing language resources so t() returns it
-      i18n.addResourceBundle(lng, ns || 'translation', { [key]: arVal }, true, true)
-    }
-  } catch (e) {
-    // noop
-  }
-})
 
 // set initial document lang/dir
 applyLang(i18n.language || getStoredLanguage())

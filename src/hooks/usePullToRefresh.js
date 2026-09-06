@@ -51,7 +51,7 @@ export default function usePullToRefresh(containerRef, onRefresh, { threshold = 
           if (el) el.style.transform = `translateY(50px)`
           await onRefresh()
         }
-      } catch (err) {
+      } catch {
         // ignore refresh errors
       } finally {
         setRefreshing(false)

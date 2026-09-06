@@ -1,10 +1,9 @@
 import { useEffect, useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import './App.css'
-import i18n from './i18n'
 import { useAuth } from './hooks/useAuth'
 import Skeleton from './components/Skeleton'
 import usePullToRefresh from './hooks/usePullToRefresh'
-import ExampleCard from './components/ExampleCard'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
@@ -16,45 +15,34 @@ import ProfilePage from './pages/ProfilePage'
 import ChatPage from './pages/ChatPage'
 import ReviewsPage from './pages/ReviewsPage'
 import MapView from './components/MapView'
+import Logo from './components/Logo'
+import SplitPaymentModal from './components/SplitPaymentModal'
+import NeighborhoodExplorer from './components/NeighborhoodExplorer'
+import HostCalendar from './components/HostCalendar'
+import { useTheme } from './components/ThemeProvider'
+import { formatCurrency, formatDate } from './lib/formatters'
 import {
   addBooking,
   addChatMessage,
   addProperty,
+  CITY_PHOTOS,
   createPaymentSession,
   deleteBooking,
   deleteProperty,
+  FALLBACK_STAY_PHOTO,
   fetchBookings,
   fetchChatMessages,
   fetchProperties,
-  fetchPropertiesByOwner,
   hasSupabaseConnection,
   propertySeed,
   updateBooking,
   updateProperty,
 } from './lib/dataService'
 
-const filterOptions = [
-  { id: 'all', label: 'الكل' },
-  { id: 'الإسكندرية', label: 'الإسكندرية' },
-  { id: 'القاهرة', label: 'القاهرة' },
-  { id: 'الجيزة', label: 'الجيزة' },
-  { id: 'الغردقة', label: 'الغردقة' },
-  { id: 'شرم الشيخ', label: 'شرم الشيخ' },
-]
-
-const destinationOptions = ['الإسكندرية', 'القاهرة', 'الجيزة', 'الغردقة', 'شرم الشيخ']
-
-const pageTitles = {
-  dashboard: 'لوحة التحكم',
-  home: 'Hajzy',
-  details: 'تفاصيل الشقة',
-  checkout: 'تأكيد الحجز',
-  success: 'تم التأكيد',
-  bookings: 'حجوزاتي',
-  notifications: 'الإشعارات',
-  profile: 'الملف الشخصي',
-  owner: 'لوحة المالك',
-  'owner-settings': 'إعدادات المالك',
+const handleStayImageError = (event) => {
+  if (event.currentTarget.dataset.fallbackApplied === 'true') return
+  event.currentTarget.dataset.fallbackApplied = 'true'
+  event.currentTarget.src = FALLBACK_STAY_PHOTO
 }
 
 const pageTitlesByLanguage = {
@@ -84,94 +72,52 @@ const pageTitlesByLanguage = {
   },
 }
 
-const formatCurrency = (amount, currency = 'EGP') => {
-  const locale = document.documentElement.lang === 'en' ? 'en-US' : 'ar-EG'
+const getDefaultBookingDates = () => {
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
 
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency,
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
+  const dayAfterTomorrow = new Date()
+  dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2)
 
-const formatDate = (dateString) => {
-  const locale = document.documentElement.lang === 'en' ? 'en-US' : 'ar-EG'
-
-  return new Intl.DateTimeFormat(locale, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(dateString))
-}
-
-const translations = {
-  ar: {
-    homeTitle: 'استكشف إقامات حجزي الفاخرة في مصر',
-    welcome: 'مرحباً بك',
-    searchPlaceholder: 'ابحث عن شقتك المثالية...',
-    results: 'نتيجة',
-    resultsPlural: 'نتائج',
-    favorite: 'إضافة للمفضلة',
-    bookNow: 'احجز الآن',
-    nightly: '/ ليلة',
-    description: 'وصف العقار',
-    amenities: 'المزايا',
-    checkoutTitle: 'تأكيد الحجز',
-    paymentMethod: 'طريقة الدفع',
-    total: 'الإجمالي',
-    confirmPayment: 'تأكيد الدفع',
-    chat: 'الدردشة',
-    send: 'إرسال',
-    typeMessage: 'اكتب رسالتك...',
-    language: 'English',
-    propertyAdded: 'تمت إضافة الشقة بنجاح',
-  },
-  en: {
-    homeTitle: "Discover Hajzy's luxury stays in Egypt",
-    welcome: 'Welcome back',
-    searchPlaceholder: 'Search for your perfect stay...',
-    results: 'result',
-    resultsPlural: 'results',
-    favorite: 'Add to favorites',
-    bookNow: 'Book now',
-    nightly: '/ night',
-    description: 'Property description',
-    amenities: 'Amenities',
-    checkoutTitle: 'Confirm booking',
-    paymentMethod: 'Payment method',
-    total: 'Total',
-    confirmPayment: 'Confirm payment',
-    chat: 'Chat',
-    send: 'Send',
-    typeMessage: 'Type your message...',
-    language: 'العربية',
-    propertyAdded: 'Property added successfully',
-  },
+  return {
+    checkIn: tomorrow.toISOString().slice(0, 10),
+    checkOut: dayAfterTomorrow.toISOString().slice(0, 10),
+  }
 }
 
 function App() {
-  const t = i18n.t.bind(i18n)
-  const { user, loading, isAuthenticated, login, signup, logout } = useAuth()
+  const { t, i18n } = useTranslation()
+  const { user, loading, login, signup, socialLogin, logout } = useAuth()
+  const { theme, toggleTheme } = useTheme()
+  const [selectedInvoiceBooking, setSelectedInvoiceBooking] = useState(null)
   const [activePage, setActivePage] = useState('home')
-  const [isGuestMode, setIsGuestMode] = useState(false)
+  const [authRequired, setAuthRequired] = useState(false)
+  const [isGuestMode, setIsGuestMode] = useState(() => {
+    if (typeof window === 'undefined') return true
+
+    const savedGuestMode = localStorage.getItem('hajzy_guest_mode')
+    if (savedGuestMode === null) {
+      localStorage.setItem('hajzy_guest_mode', 'true')
+      return true
+    }
+
+    return savedGuestMode === 'true'
+  })
   const [properties, setProperties] = useState([])
   const [bookings, setBookings] = useState([])
   const [selectedProperty, setSelectedProperty] = useState(null)
-  const [currentAuthPage, setCurrentAuthPage] = useState('landing')
+  const [currentAuthPage, setCurrentAuthPage] = useState('login')
   const [searchTerm, setSearchTerm] = useState('')
   const [activeFilter, setActiveFilter] = useState('all')
   const [favorites, setFavorites] = useState(() => {
-    const savedFavorites = localStorage.getItem('stitch_favorites')
+    const savedFavorites = localStorage.getItem('hajzy_favorites') || localStorage.getItem('stitch_favorites')
     return savedFavorites ? JSON.parse(savedFavorites) : []
   })
   const [lastBooking, setLastBooking] = useState(null)
-  // Default dates: check-in = tomorrow, check-out = day after tomorrow
-  const _tomorrow = (() => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().slice(0,10); })()
-  const _dayAfter = (() => { const d = new Date(); d.setDate(d.getDate() + 2); return d.toISOString().slice(0,10); })()
+  const defaultBookingDates = getDefaultBookingDates()
 
   const [bookingDates, setBookingDates] = useState({
-    checkIn: _tomorrow,
-    checkOut: _dayAfter,
+    ...defaultBookingDates,
     guests: 2,
   })
   const [ownerNotice, setOwnerNotice] = useState('')
@@ -201,8 +147,12 @@ function App() {
   const [chatMessages, setChatMessages] = useState([])
   const [calendarMonth, setCalendarMonth] = useState(() => new Date())
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
+  const [isSplitModalOpen, setIsSplitModalOpen] = useState(false)
+  const [walletNumber, setWalletNumber] = useState('01023456789')
+  const [instapayHandle, setInstapayHandle] = useState('user@instapay')
+  const [fawryRefCode] = useState('74920184')
   const [toast, setToast] = useState(null)
-  const [showNotifications, setShowNotifications] = useState(false)
+  const [_showNotifications, setShowNotifications] = useState(false)
   const [notifications, setNotifications] = useState([
     {
       id: 'welcome-note',
@@ -231,9 +181,8 @@ function App() {
   ])
   const [selectedGalleryIndex, setSelectedGalleryIndex] = useState(0)
   const [homeQuickSearch, setHomeQuickSearch] = useState({
-    destination: 'الإسكندرية',
-    checkIn: _tomorrow,
-    checkOut: _dayAfter,
+    destination: '',
+    ...defaultBookingDates,
     guests: 2,
   })
   const [showMapView, setShowMapView] = useState(false)
@@ -305,16 +254,8 @@ function App() {
     i18n.changeLanguage(nextLanguage)
     document.documentElement.lang = nextLanguage
     document.documentElement.dir = nextLanguage === 'ar' ? 'rtl' : 'ltr'
-    localStorage.setItem('hajzy-language', nextLanguage)
-  }, [i18n, language])
-
-  useEffect(() => {
-    try {
-      localStorage.removeItem('hajzy-theme')
-    } catch (err) {
-      // ignore
-    }
-  }, [])
+    document.body.dir = nextLanguage === 'ar' ? 'rtl' : 'ltr'
+  }, [language, i18n])
 
   useEffect(() => {
     let isMounted = true
@@ -327,7 +268,7 @@ function App() {
           const safeBookingList = Array.isArray(bookingList) && bookingList.length ? bookingList : []
 
           if (!Array.isArray(propertyList) || !propertyList.length) {
-            localStorage.setItem('stitch_properties', JSON.stringify(propertySeed))
+            localStorage.setItem('hajzy_properties', JSON.stringify(propertySeed))
           }
 
           setProperties(safePropertyList)
@@ -357,7 +298,7 @@ function App() {
       const safePropertyList = Array.isArray(propertyList) && propertyList.length ? propertyList : propertySeed
       const safeBookingList = Array.isArray(bookingList) && bookingList.length ? bookingList : []
       if (!Array.isArray(propertyList) || !propertyList.length) {
-        localStorage.setItem('stitch_properties', JSON.stringify(propertySeed))
+        localStorage.setItem('hajzy_properties', JSON.stringify(propertySeed))
       }
       setProperties(safePropertyList)
       setBookings(safeBookingList)
@@ -376,8 +317,14 @@ function App() {
   })
 
   useEffect(() => {
-    localStorage.setItem('stitch_favorites', JSON.stringify(favorites))
+    localStorage.setItem('hajzy_favorites', JSON.stringify(favorites))
   }, [favorites])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('hajzy_guest_mode', String(isGuestMode))
+    }
+  }, [isGuestMode])
 
   useEffect(() => {
     if (properties.length && !selectedProperty) {
@@ -432,16 +379,25 @@ function App() {
     setActivePage(page)
   }
 
+  const openAuthScreen = (page = 'login') => {
+    setAuthRequired(true)
+    setCurrentAuthPage(page)
+    setIsGuestMode(false)
+  }
+
   const handleLogin = async (email, password, guest = false) => {
     if (guest || email?.guest) {
       setIsGuestMode(true)
+      setAuthRequired(false)
       setCurrentAuthPage('login')
       setActivePage('home')
       return { id: 'guest', name: '', email: 'guest@example.com' }
     }
-    
+
+    setIsGuestMode(false)
     const authUser = await login(email, password)
     if (authUser) {
+      setAuthRequired(false)
       setCurrentAuthPage('login')
       setActivePage('home')
       return authUser
@@ -449,22 +405,29 @@ function App() {
     return null
   }
 
-  const handleSocialLogin = async (provider) => {
-    setIsGuestMode(true)
-    setCurrentAuthPage('login')
-    setActivePage('home')
-    const providerNames = {
-      google: 'Google',
-      apple: 'Apple',
-      github: 'GitHub',
+  const handleSocialLogin = async (accountOrProvider) => {
+    setIsGuestMode(false)
+    localStorage.setItem('hajzy_guest_mode', 'false')
+    const authUser = await socialLogin(accountOrProvider)
+    if (authUser) {
+      setAuthRequired(false)
+      setCurrentAuthPage('login')
+      setActivePage('home')
+      showToast(
+        language === 'en'
+          ? `Welcome, ${authUser.name || 'User'}!`
+          : `أهلاً بك يا ${authUser.name || 'ضيفنا'}!`
+      )
+      return authUser
     }
-    showToast(language === 'en' ? `${providerNames[provider] || 'Account'} quick access enabled` : `تم تسجيل الدخول السريع عبر ${providerNames[provider] || 'الحساب'}`)
-    return { id: `social-${provider}`, name: '', email: `${provider}@hajzy.local`, role: 'user' }
+    return null
   }
 
   const handleSignup = async (email, password, name) => {
+    setIsGuestMode(false)
     const authUser = await signup(email, password, name)
     if (authUser) {
+      setAuthRequired(false)
       setCurrentAuthPage('login')
       setActivePage('home')
       return authUser
@@ -480,18 +443,22 @@ function App() {
 
     if (isGuestMode) {
       setIsGuestMode(false)
+      setAuthRequired(false)
       setCurrentAuthPage('login')
       setActivePage('home')
       return
     }
 
     logout()
+    setAuthRequired(true)
     setCurrentAuthPage('login')
     setActivePage('home')
   }
 
   const handleLanguageToggle = () => {
-    setLanguage((currentLanguage) => (currentLanguage === 'ar' ? 'en' : 'ar'))
+    const nextLanguage = language === 'ar' ? 'en' : 'ar'
+    void i18n.changeLanguage(nextLanguage)
+    setLanguage(nextLanguage)
   }
 
   const handleSupportRequest = () => {
@@ -531,18 +498,47 @@ function App() {
         : 'تاريخ المغادرة يجب أن يكون بعد تاريخ الوصول.'
       : ''
 
-  const toggleFavorite = (propertyId) => {
-    setFavorites((currentFavorites) =>
-      currentFavorites.includes(propertyId)
-        ? currentFavorites.filter((id) => id !== propertyId)
-        : [...currentFavorites, propertyId],
-    )
-  }
-
   const showToast = (message) => {
     if (!message) return
     setToast(message)
     setOwnerNotice(message)
+  }
+
+  const isFavorite = (propertyId) => favorites.some((id) => String(id) === String(propertyId))
+
+  const toggleFavorite = (event, propertyId) => {
+    event?.preventDefault?.()
+    event?.stopPropagation?.()
+
+    const favoriteId = String(propertyId)
+    const alreadySaved = isFavorite(favoriteId)
+
+    setFavorites((currentFavorites) =>
+      alreadySaved
+        ? currentFavorites.filter((id) => String(id) !== favoriteId)
+        : [...currentFavorites, favoriteId],
+    )
+
+    showToast(alreadySaved ? t('removedFromFavorites') : t('addedToFavorites'))
+  }
+
+  const runHomeSearch = () => {
+    if (quickSearchDateError) {
+      showToast(quickSearchDateError)
+      return
+    }
+
+    const nextFilter = homeQuickSearch.destination || 'all'
+    setActiveFilter(nextFilter)
+    setSearchTerm('')
+    setShowMapView(false)
+    setHomeFilters((current) => ({ ...current, type: 'all', bedrooms: 'any', amenities: [] }))
+
+    window.setTimeout(() => {
+      document.getElementById('home-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 50)
+
+    showToast(t('searchApplied'))
   }
 
   const addNotification = (title, detail, type = 'info') => {
@@ -585,14 +581,28 @@ function App() {
   const filteredProperties = properties
     .filter((property) => {
       const normalizedSearch = searchTerm.trim().toLowerCase()
-      const matchesSearch =
-        !normalizedSearch ||
-        property.title.toLowerCase().includes(normalizedSearch) ||
-        property.location.toLowerCase().includes(normalizedSearch) ||
-        property.city.toLowerCase().includes(normalizedSearch)
+      const searchableText = [
+        property.title,
+        property.titleEn,
+        property.location,
+        property.locationEn,
+        property.city,
+        property.cityEn,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+      const matchesSearch = !normalizedSearch || searchableText.includes(normalizedSearch)
 
-      const selectedCity = activeFilter !== 'all' ? activeFilter : homeQuickSearch.destination
-      const matchesFilter = !selectedCity || selectedCity === 'all' || property.city === selectedCity
+      const matchesFavorites = activeFilter !== 'favorites' || isFavorite(property.id)
+
+      const matchesFilter = (() => {
+        if (activeFilter === 'favorites') return true
+        if (activeFilter === 'all' || !activeFilter) return true
+        const cityValues = [property.city, property.cityEn].filter(Boolean).map((value) => value.toLowerCase())
+        return cityValues.includes(String(activeFilter).toLowerCase())
+      })()
+
       const matchesGuests = Number(property.guests || 2) >= Number(homeQuickSearch.guests || 1)
       const matchesDates = !homeQuickSearch.checkIn || !homeQuickSearch.checkOut || true
       const matchesPrice = Number(property.priceValue || 0) <= Number(homeFilters.maxPrice || 8000)
@@ -600,7 +610,7 @@ function App() {
       const matchesType =
         homeFilters.type === 'all' ||
         (() => {
-          const typeText = `${property.title} ${property.details.join(' ')}`.toLowerCase()
+          const typeText = `${property.title || ''} ${property.titleEn || ''} ${(property.details || []).join(' ')} ${(property.detailsEn || []).join(' ')}`.toLowerCase()
           if (homeFilters.type === 'apartment') return typeText.includes('شقة') || typeText.includes('suite') || typeText.includes('appartment') || typeText.includes('flat')
           if (homeFilters.type === 'villa') return typeText.includes('فيلا') || typeText.includes('villa') || typeText.includes(' chalet ') || typeText.includes('شاليه')
           if (homeFilters.type === 'hotel') return typeText.includes('فندق') || typeText.includes('hotel') || typeText.includes('جناح')
@@ -619,14 +629,25 @@ function App() {
           if (homeFilters.bedrooms === '3-plus') return bedroomCount >= 3
           return true
         })()
+      const amenityAliases = {
+        'Wi‑Fi': ['wifi', 'wi-fi', 'wi‑fi', 'واي فاي'],
+        Parking: ['parking', 'موقف', 'مواقف'],
+        Pool: ['pool', 'مسبح'],
+        'Sea View': ['sea view', 'sea', 'إطلالة بحر', 'بحرية'],
+        Breakfast: ['breakfast', 'إفطار'],
+        'Air Conditioning': ['air conditioning', 'air', 'تكييف'],
+      }
       const matchesAmenities =
         homeFilters.amenities.length === 0 ||
-        homeFilters.amenities.every((amenity) =>
-          property.amenities.some((item) => item.toLowerCase().includes(amenity.toLowerCase())),
-        )
+        homeFilters.amenities.every((amenity) => {
+          const aliases = amenityAliases[amenity] || [amenity]
+          const haystack = [...(property.amenities || []), ...(property.amenitiesEn || [])].join(' ').toLowerCase()
+          return aliases.some((alias) => haystack.includes(String(alias).toLowerCase()))
+        })
 
       return (
         matchesSearch &&
+        matchesFavorites &&
         matchesFilter &&
         matchesGuests &&
         matchesDates &&
@@ -688,8 +709,35 @@ function App() {
       total: true,
     },
   ]
-  const handleSendMessage = async () => {
-    const trimmedMessage = chatInput.trim()
+  const getContextualReply = (text, prop) => {
+    const lower = String(text || '').toLowerCase()
+    if (lower.includes('واي فاي') || lower.includes('wifi') || lower.includes('internet') || lower.includes('نت')) {
+      return language === 'en'
+        ? 'Yes! We have high-speed Fiber Wi-Fi (100 Mbps) available throughout the property for free.'
+        : 'نعم بالتأكيد! يتوفر إنترنت فائق السرعة فايبر (100 ميجا) يغطي كامل الشقة مجاناً.'
+    }
+    if (lower.includes('وصول') || lower.includes('دخول') || lower.includes('check-in') || lower.includes('مواعيد') || lower.includes('time')) {
+      return language === 'en'
+        ? 'Check-in is from 3:00 PM and check-out is by 12:00 PM. Early check-in can be arranged upon availability.'
+        : 'تسجيل الوصول يبدأ من الساعة 3:00 عصراً والمغادرة حتى 12:00 ظهراً، مع إمكانية الدخول المبكر حسب التوفر.'
+    }
+    if (lower.includes('موقف') || lower.includes('سيار') || lower.includes('parking') || lower.includes('جراج')) {
+      return language === 'en'
+        ? 'Free private and secure parking is available on premises for our guests.'
+        : 'نعم، يتوفر موقف سيارات مجاني ومؤمن وخاص بضيوف الشقة داخل العقار.'
+    }
+    if (lower.includes('موقع') || lower.includes('لوكيشن') || lower.includes('location') || lower.includes('مكان') || lower.includes('عنوان')) {
+      return language === 'en'
+        ? `The property is located at ${prop?.location || 'our verified address'}. We will send you direct GPS coordinates and keyless entry code once booked!`
+        : `موقعنا في ${prop?.location || 'العنوان المعتمد'}، وسنرسل لك إحداثيات GPS المباشرة وكود الدخول الذكي فور تأكيد الحجز!`
+    }
+    return language === 'en'
+      ? `Thank you for your message! We are available 24/7 and happy to assist you with anything regarding ${prop?.title || 'your stay'}.`
+      : `أهلاً بك! نسعد بخدمتك طوال 24 ساعة للإجابة عن أي استفسار حول ${prop?.title || 'الإقامة'}.`
+  }
+
+  const handleSendMessage = async (customMessage = null) => {
+    const trimmedMessage = (typeof customMessage === 'string' ? customMessage : chatInput).trim()
     if (!trimmedMessage || !selectedProperty?.id) return
 
     const newMessage = {
@@ -703,7 +751,9 @@ function App() {
 
     const savedMessage = await addChatMessage(newMessage)
     setChatMessages((currentMessages) => [...currentMessages, savedMessage])
-    setChatInput('')
+    if (!customMessage) setChatInput('')
+
+    const replyText = getContextualReply(trimmedMessage, selectedProperty)
 
     setTimeout(() => {
       setChatMessages((currentMessages) => [
@@ -712,12 +762,12 @@ function App() {
           id: Date.now() + 1,
           propertyId: selectedProperty.id,
           sender: 'owner',
-          text: language === 'en' ? 'Thank you, we will reply shortly.' : 'شكرًا لك، سنرد عليك قريبًا.',
+          text: replyText,
           createdAt: new Date().toISOString(),
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ])
-    }, 400)
+    }, 450)
   }
 
   const ownerProperties = isOwner
@@ -815,6 +865,7 @@ function App() {
   const handleViewAllProperties = () => {
     setSearchTerm('')
     setActiveFilter('all')
+    setHomeQuickSearch((current) => ({ ...current, destination: '' }))
     navigate('home')
   }
 
@@ -1117,6 +1168,14 @@ function App() {
         </div>
       </div>
 
+      {/* Interactive Host Calendar & Seasonal Pricing Management */}
+      <HostCalendar
+        language={language}
+        basePrice={ownerProperties[0]?.priceValue || 2800}
+        currency={ownerProperties[0]?.currency || 'EGP'}
+        propertyTitle={ownerProperties[0]?.title || (language === 'en' ? 'My Properties' : 'عقاراتي')}
+      />
+
       <div className="owner-operational-panel">
         <div className="owner-overview-header">
           <h3>تنبيهات التشغيل</h3>
@@ -1212,7 +1271,7 @@ function App() {
         <div className="owner-listing-strip">
           {properties.slice(0, 3).map((property) => (
             <div key={property.id} className="owner-listing-card">
-              <img src={property.image} alt={property.title} />
+              <img src={property.image} alt={property.title} onError={handleStayImageError} />
               <div className="owner-listing-copy">
                 <strong>{property.title}</strong>
                 <span>{property.city}</span>
@@ -1405,7 +1464,7 @@ function App() {
         ) : (
           ownerProperties.map((property) => (
             <article key={property.id} className="owner-card">
-              <img src={property.image} alt={property.title} />
+              <img src={property.image} alt={property.title} onError={handleStayImageError} />
               <div className="owner-card-body">
                 <div>
                   <h4>{property.title}</h4>
@@ -1452,7 +1511,7 @@ function App() {
           filteredOwnerBookings.map((booking) => (
             <article key={booking.id} className="booking-card owner-booking-card">
               <div className="booking-image">
-                <img src={booking.image} alt={booking.title} />
+                <img src={booking.image} alt={booking.title} onError={handleStayImageError} />
                 <span className={`status ${booking.status === 'confirmed' ? 'confirmed' : 'pending'}`}>
                   {booking.status === 'confirmed' ? 'مؤكدة' : 'قيد المراجعة'}
                 </span>
@@ -1488,25 +1547,67 @@ function App() {
     </div>
   )
 
+  const getPropertyTitle = (p) => (!p ? '' : language === 'en' ? (p.titleEn || p.title) : p.title)
+  const getPropertyLocation = (p) => (!p ? '' : language === 'en' ? (p.locationEn || p.location) : p.location)
+  const getPropertyCity = (p) => (!p ? '' : language === 'en' ? (p.cityEn || p.city) : p.city)
+  const getPropertyDescription = (p) => (!p ? '' : language === 'en' ? (p.descriptionEn || p.description) : p.description)
+  const getPropertyDetails = (p) => (!p ? [] : (language === 'en' && p.detailsEn) ? p.detailsEn : (p.details || []))
+  const getPropertyAmenities = (p) => (!p ? [] : (language === 'en' && p.amenitiesEn) ? p.amenitiesEn : (p.amenities || []))
+
   const destinationCards = [
     {
-      city: 'الإسكندرية',
+      cityKey: 'الإسكندرية',
+      city: language === 'en' ? 'Alexandria' : 'الإسكندرية',
       label: language === 'en' ? 'Sea breeze' : 'نسيم البحر',
-      price: 'من 1,250 ج.م',
-      image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80',
+      price: language === 'en' ? 'From 3,100 EGP' : 'من 3,100 ج.م',
+      image: CITY_PHOTOS['الإسكندرية'],
     },
     {
-      city: 'القاهرة',
-      label: language === 'en' ? 'Culture & design' : 'ثقافة وتصميم',
-      price: 'من 1,850 ج.م',
-      image: 'https://images.unsplash.com/photo-1518638150340-f706e86654de?auto=format&fit=crop&w=900&q=80',
+      cityKey: 'القاهرة',
+      city: language === 'en' ? 'Cairo' : 'القاهرة',
+      label: language === 'en' ? 'Nile & city' : 'النيل والمدينة',
+      price: language === 'en' ? 'From 3,600 EGP' : 'من 3,600 ج.م',
+      image: CITY_PHOTOS['القاهرة'],
     },
     {
-      city: 'الغردقة',
+      cityKey: 'الجيزة',
+      city: language === 'en' ? 'Giza' : 'الجيزة',
+      label: language === 'en' ? 'Pyramids view' : 'إطلالة الأهرامات',
+      price: language === 'en' ? 'From 2,950 EGP' : 'من 2,950 ج.م',
+      image: CITY_PHOTOS['الجيزة'],
+    },
+    {
+      cityKey: 'الغردقة',
+      city: language === 'en' ? 'Hurghada' : 'الغردقة',
       label: language === 'en' ? 'Red Sea luxury' : 'فخامة البحر الأحمر',
-      price: 'من 2,300 ج.م',
-      image: 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=900&q=80',
+      price: language === 'en' ? 'From 3,400 EGP' : 'من 3,400 ج.م',
+      image: CITY_PHOTOS['الغردقة'],
     },
+    {
+      cityKey: 'شرم الشيخ',
+      city: language === 'en' ? 'Sharm El-Sheikh' : 'شرم الشيخ',
+      label: language === 'en' ? 'Bay & reefs' : 'الخلجان والشعاب',
+      price: language === 'en' ? 'From 3,900 EGP' : 'من 3,900 ج.م',
+      image: CITY_PHOTOS['شرم الشيخ'],
+    },
+  ]
+
+  const destinationOptions = [
+    { id: 'الإسكندرية', label: language === 'en' ? 'Alexandria' : 'الإسكندرية' },
+    { id: 'القاهرة', label: language === 'en' ? 'Cairo' : 'القاهرة' },
+    { id: 'الجيزة', label: language === 'en' ? 'Giza' : 'الجيزة' },
+    { id: 'الغردقة', label: language === 'en' ? 'Hurghada' : 'الغردقة' },
+    { id: 'شرم الشيخ', label: language === 'en' ? 'Sharm El-Sheikh' : 'شرم الشيخ' },
+  ]
+
+  const filterOptions = [
+    { id: 'all', label: language === 'en' ? 'All' : 'الكل' },
+    { id: 'favorites', label: language === 'en' ? 'Favorites ❤️' : 'المفضلة ❤️' },
+    { id: 'الإسكندرية', label: language === 'en' ? 'Alexandria' : 'الإسكندرية' },
+    { id: 'القاهرة', label: language === 'en' ? 'Cairo' : 'القاهرة' },
+    { id: 'الجيزة', label: language === 'en' ? 'Giza' : 'الجيزة' },
+    { id: 'الغردقة', label: language === 'en' ? 'Hurghada' : 'الغردقة' },
+    { id: 'شرم الشيخ', label: language === 'en' ? 'Sharm El-Sheikh' : 'شرم الشيخ' },
   ]
 
   const homeHighlights = [
@@ -1535,7 +1636,7 @@ function App() {
             <span className="hero-kicker">{language === 'en' ? 'Trending now' : 'الأكثر طلباً'}</span>
             <h3>{language === 'en' ? 'Luxury stays for your next escape' : 'إقامات فاخرة لرحلتك القادمة'}</h3>
             <div className="hero-actions">
-              <button type="button" className="primary-button hero-cta" onClick={() => navigate('home')}>
+              <button type="button" className="primary-button hero-cta" onClick={runHomeSearch}>
                 {language === 'en' ? 'Explore homes' : 'استكشف العقارات'}
               </button>
               <button
@@ -1575,17 +1676,14 @@ function App() {
                 <div className="input-with-icon">
                   <span className="field-icon material-symbols-outlined">location_on</span>
                   <select
-                    dir="rtl"
                     value={homeQuickSearch.destination}
                     onChange={(event) => {
-                      const nextDestination = event.target.value
-                      setHomeQuickSearch((current) => ({ ...current, destination: nextDestination }))
-                      setActiveFilter(nextDestination || 'all')
+                      setHomeQuickSearch((current) => ({ ...current, destination: event.target.value }))
                     }}
                   >
                     <option value="">{language === 'en' ? 'Any city' : 'أي مدينة'}</option>
                     {destinationOptions.map((city) => (
-                      <option key={city} value={city}>{city}</option>
+                      <option key={city.id} value={city.id}>{city.label}</option>
                     ))}
                   </select>
                 </div>
@@ -1599,7 +1697,6 @@ function App() {
                   <span className="field-icon material-symbols-outlined">calendar_month</span>
                   <input
                     type="date"
-                    dir="rtl"
                     value={homeQuickSearch.checkIn}
                     onChange={(event) => handleQuickSearchDateChange('checkIn', event.target.value)}
                   />
@@ -1611,7 +1708,6 @@ function App() {
                   <span className="field-icon material-symbols-outlined">calendar_month</span>
                   <input
                     type="date"
-                    dir="rtl"
                     value={homeQuickSearch.checkOut}
                     onChange={(event) => handleQuickSearchDateChange('checkOut', event.target.value)}
                   />
@@ -1627,12 +1723,11 @@ function App() {
                 <div className="input-with-icon compact-icon">
                   <span className="field-icon material-symbols-outlined">group</span>
                   <select
-                    dir="rtl"
                     value={homeQuickSearch.guests}
                     onChange={(event) => setHomeQuickSearch((current) => ({ ...current, guests: Number(event.target.value) }))}
                   >
                     {[1, 2, 3, 4, 5, 6].map((guest) => (
-                      <option key={guest} value={guest}>{guest} {language === 'en' ? 'guest(s)' : 'ضيف'}</option>
+                      <option key={guest} value={guest}>{guest} {language === 'en' ? (guest === 1 ? 'guest' : 'guests') : 'ضيف'}</option>
                     ))}
                   </select>
                 </div>
@@ -1640,9 +1735,9 @@ function App() {
               <button
                 type="button"
                 className="primary-button search-submit-button"
-                onClick={() => setActiveFilter(homeQuickSearch.destination || 'all')}
+                onClick={runHomeSearch}
               >
-                {language === 'en' ? 'Search' : 'ابحث'}
+                {t('search')}
               </button>
             </div>
           </div>
@@ -1661,7 +1756,7 @@ function App() {
                       value={homeFilters.maxPrice}
                       onChange={(event) => setHomeFilters((current) => ({ ...current, maxPrice: Number(event.target.value) }))}
                     />
-                    <strong>{formatCurrency(homeFilters.maxPrice, 'EGP')}</strong>
+                    <strong>{formatCurrency(homeFilters.maxPrice, 'EGP', language)}</strong>
                   </label>
                 </div>
                 <div className="filter-section">
@@ -1711,16 +1806,27 @@ function App() {
                 <div className="filter-section wide-section">
                   <span>{language === 'en' ? 'Amenities' : 'المرافق'}</span>
                   <div className="amenity-grid">
-                    {['Wi‑Fi', 'Parking', 'Pool', 'Sea View', 'Breakfast', 'Air Conditioning'].map((amenity) => (
+                    {['Wi‑Fi', 'Parking', 'Pool', 'Sea View', 'Breakfast', 'Air Conditioning'].map((amenity) => {
+                      const amenityLabels = {
+                        'Wi‑Fi': 'واي فاي',
+                        Parking: 'موقف سيارات',
+                        Pool: 'مسبح',
+                        'Sea View': 'إطلالة بحرية',
+                        Breakfast: 'إفطار',
+                        'Air Conditioning': 'تكييف',
+                      }
+
+                      return (
                       <label key={amenity} className="amenity-toggle">
                         <input
                           type="checkbox"
                           checked={homeFilters.amenities.includes(amenity)}
                           onChange={() => toggleAmenityFilter(amenity)}
                         />
-                        <span>{amenity}</span>
+                        <span>{language === 'en' ? amenity : amenityLabels[amenity]}</span>
                       </label>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
                 <div className="filter-section">
@@ -1746,28 +1852,30 @@ function App() {
         <div className="mini-city-grid">
           {destinationCards.map((item) => (
             <button
-              key={item.city}
+              key={item.cityKey}
               type="button"
               className="mini-city-card"
-              style={{ backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.06), rgba(0,0,0,0.28)), url(${item.image})` }}
               onClick={() => {
-                setHomeQuickSearch((current) => ({ ...current, destination: item.city }))
-                setActiveFilter(item.city)
+                setHomeQuickSearch((current) => ({ ...current, destination: item.cityKey }))
+                setActiveFilter(item.cityKey)
               }}
             >
-              <span>{item.city}</span>
-              <small>{item.label}</small>
-              <strong>{item.price}</strong>
+              <img src={item.image} alt={item.city} onError={handleStayImageError} />
+              <div className="city-card-copy">
+                <span>{item.city}</span>
+                <small>{item.label}</small>
+                <strong>{item.price}</strong>
+              </div>
             </button>
           ))}
         </div>
 
         {filteredProperties.length > 0 && (
-          <div className="home-section-head">
+          <div className="home-section-head" id="home-results">
             <div className="home-section-title-wrap">
               <h3>{language === 'en' ? 'Most booked this week' : 'الأكثر حجزًا هذا الأسبوع'}</h3>
               <span className="home-results-pill">
-                {filteredProperties.length} {filteredProperties.length === 1 ? activeText.result : activeText.resultsPlural}
+                {filteredProperties.length} {filteredProperties.length === 1 ? (language === 'en' ? 'result' : 'نتيجة') : (language === 'en' ? 'results' : 'نتائج')}
               </span>
             </div>
             <div className="view-toggle">
@@ -1802,9 +1910,9 @@ function App() {
                       left: `${22 + index * 20}%`,
                     }}
                     onClick={() => setSelectedMapPropertyId(property.id)}
-                    aria-label={property.title}
+                    aria-label={getPropertyTitle(property)}
                   >
-                    <small>{formatCurrency(property.priceValue, property.currency)}</small>
+                    <small>{formatCurrency(property.priceValue, property.currency, language)}</small>
                   </button>
                 )
               })}
@@ -1812,11 +1920,11 @@ function App() {
 
             {selectedMapProperty && (
               <div className="map-property-highlight">
-                <img src={selectedMapProperty.image} alt={selectedMapProperty.title} />
+                <img src={selectedMapProperty.image} alt={getPropertyTitle(selectedMapProperty)} onError={handleStayImageError} />
                 <div className="map-property-copy">
-                  <span>{selectedMapProperty.city}</span>
-                  <strong>{selectedMapProperty.title}</strong>
-                  <small>{formatCurrency(selectedMapProperty.priceValue, selectedMapProperty.currency)} / {language === 'en' ? 'night' : 'ليلة'}</small>
+                  <span>{getPropertyCity(selectedMapProperty)}</span>
+                  <strong>{getPropertyTitle(selectedMapProperty)}</strong>
+                  <small>{formatCurrency(selectedMapProperty.priceValue, selectedMapProperty.currency, language)} / {language === 'en' ? 'night' : 'ليلة'}</small>
                 </div>
                 <button type="button" className="primary-button small-button" onClick={() => navigate('details', selectedMapProperty)}>
                   {language === 'en' ? 'View details' : 'عرض التفاصيل'}
@@ -1839,11 +1947,11 @@ function App() {
                 className="collection-item"
                 onClick={() => navigate('details', property)}
               >
-                <img src={property.image} alt={property.title} />
+                <img src={property.image} alt={getPropertyTitle(property)} onError={handleStayImageError} />
                 <div>
-                  <span>{property.city}</span>
-                  <strong>{property.title}</strong>
-                  <small>{formatCurrency(property.priceValue, property.currency)} / {language === 'en' ? 'night' : 'ليلة'}</small>
+                  <span>{getPropertyCity(property)}</span>
+                  <strong>{getPropertyTitle(property)}</strong>
+                  <small>{formatCurrency(property.priceValue, property.currency, language)} / {language === 'en' ? 'night' : 'ليلة'}</small>
                 </div>
               </button>
             ))}
@@ -1856,7 +1964,10 @@ function App() {
               key={option.id}
               className={activeFilter === option.id ? 'chip active' : 'chip'}
               onClick={() => {
-                setHomeQuickSearch((current) => ({ ...current, destination: option.id === 'all' ? '' : option.id }))
+                setHomeQuickSearch((current) => ({
+                  ...current,
+                  destination: option.id === 'all' || option.id === 'favorites' ? '' : option.id,
+                }))
                 setActiveFilter(option.id)
               }}
             >
@@ -1866,7 +1977,7 @@ function App() {
         </div>
 
         {filteredProperties.length === 0 ? (
-        <div className="empty-state">
+        <div className="empty-state" id="home-results">
           <span className="material-symbols-outlined">travel_explore</span>
           <h3>{language === 'en' ? 'No matching results' : 'لا توجد نتائج مطابقة'}</h3>
           <p>{language === 'en' ? 'Try a different search or choose another filter.' : 'جرّب بحثاً مختلفاً أو اختر فلتر آخر.'}</p>
@@ -1883,14 +1994,15 @@ function App() {
               }}
             >
               <div className="image-wrap">
-                <img src={property.image} alt={property.title} />
+                <img src={property.image} alt={getPropertyTitle(property)} onError={handleStayImageError} />
                 <button
-                  className={favorites.includes(property.id) ? 'favorite-button active' : 'favorite-button'}
+                  type="button"
+                  className={isFavorite(property.id) ? 'favorite-button active' : 'favorite-button'}
                   aria-label={language === 'en' ? 'Add to favorites' : 'إضافة للمفضلة'}
-                  onClick={() => toggleFavorite(property.id)}
+                  onClick={(event) => toggleFavorite(event, property.id)}
                 >
                   <span className="material-symbols-outlined">
-                    {favorites.includes(property.id) ? 'favorite' : 'favorite_border'}
+                    {isFavorite(property.id) ? 'favorite' : 'favorite_border'}
                   </span>
                 </button>
                 <div className="rating-badge">
@@ -1902,38 +2014,38 @@ function App() {
 
               <div className="card-body">
                 <div className="card-topline">
-                  <span className="property-badge">إقامة فاخرة</span>
-                  <span className="property-availability">متاح الآن</span>
+                  <span className="property-badge">{language === 'en' ? 'Luxury stay' : 'إقامة فاخرة'}</span>
+                  <span className="property-availability">{language === 'en' ? 'Available now' : 'متاح الآن'}</span>
                 </div>
 
                 <div className="title-block">
-                  <h3>{property.title}</h3>
+                  <h3>{getPropertyTitle(property)}</h3>
                   <p>
                     <span className="material-symbols-outlined">location_on</span>
-                    {property.location}
+                    {getPropertyLocation(property)}
                   </p>
                 </div>
 
                 <div className="property-meta-row">
-                  <span><span className="material-symbols-outlined">bed</span> 2 غرف</span>
+                  <span><span className="material-symbols-outlined">bed</span> {language === 'en' ? `${property.guests || 2} guests` : `${property.guests || 2} ضيوف`}</span>
                   <span><span className="material-symbols-outlined">wifi</span> Wi‑Fi</span>
-                  <span><span className="material-symbols-outlined">local_parking</span> موقف</span>
+                  <span><span className="material-symbols-outlined">local_parking</span> {language === 'en' ? 'Parking' : 'موقف'}</span>
                 </div>
 
                 <div className="tag-row">
-                  {property.details.map((detail, index) => (
+                  {getPropertyDetails(property).map((detail, index) => (
                     <span key={`${detail}-${index}`}>{detail}</span>
                   ))}
                 </div>
 
                 <div className="price-row">
                   <div className="price-box">
-                    <strong>{formatCurrency(property.priceValue, property.currency)}</strong>
-                    <span>{activeText.nightly}</span>
+                    <strong>{formatCurrency(property.priceValue, property.currency, language)}</strong>
+                    <span>{language === 'en' ? ' / night' : ' / ليلة'}</span>
                   </div>
 
                   <button className="primary-button" onClick={() => navigate('details', property)}>
-                    {activeText.bookNow}
+                    {language === 'en' ? 'Book now' : 'احجز الآن'}
                   </button>
                 </div>
               </div>
@@ -1991,16 +2103,15 @@ function App() {
       { icon: 'schedule', title: language === 'en' ? 'Check-in' : 'الدخول', value: language === 'en' ? 'From 3:00 PM' : 'من 3:00 PM' },
     ]
 
-    const galleryImages = [
-      selectedProperty.image,
-      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80',
-    ].slice(0, 8)
+    const galleryImages = (selectedProperty.images?.length
+      ? selectedProperty.images
+      : [
+          selectedProperty.image,
+          FALLBACK_STAY_PHOTO,
+          'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80',
+          'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1200&q=80',
+        ]
+    ).filter(Boolean).slice(0, 8)
 
     const guestReviews = [
       { name: 'سارة م.', rating: 5, text: 'الاستقبال ممتاز، الشقة فاخرة جدًا والهدوء رائع.', trip: 'إقامة 3 ليالٍ' },
@@ -2009,14 +2120,12 @@ function App() {
     ]
 
     const propertyPricePreview = [
-      { label: language === 'en' ? 'Price per night' : 'السعر لكل ليلة', value: formatCurrency(selectedProperty.priceValue, selectedProperty.currency) },
+      { label: language === 'en' ? 'Price per night' : 'السعر لكل ليلة', value: formatCurrency(selectedProperty.priceValue, selectedProperty.currency, language) },
       { label: language === 'en' ? 'Stay length' : 'مدة الإقامة', value: language === 'en' ? `${stayNights} nights` : `${stayNights} ليلة` },
-      { label: language === 'en' ? 'Estimated total' : 'الإجمالي المتوقع', value: formatCurrency(grandTotal, selectedProperty.currency) },
+      { label: language === 'en' ? 'Estimated total' : 'الإجمالي المتوقع', value: formatCurrency(grandTotal, selectedProperty.currency, language) },
     ]
 
     const mapCenter = selectedProperty.coordinates || { lat: 30.0333, lng: 31.2333 }
-    const mapPadding = 0.02
-    const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${mapCenter.lng - mapPadding}%2C${mapCenter.lat - mapPadding}%2C${mapCenter.lng + mapPadding}%2C${mapCenter.lat + mapPadding}&layer=mapnik&marker=${mapCenter.lat}%2C${mapCenter.lng}`
 
     return (
       <div className="page-shell detail-shell">
@@ -2030,7 +2139,7 @@ function App() {
             <span className="material-symbols-outlined">chevron_left</span>
           </button>
 
-          <img src={galleryImages[selectedGalleryIndex] || galleryImages[0]} alt={selectedProperty.title} />
+          <img src={galleryImages[selectedGalleryIndex] || galleryImages[0]} alt={getPropertyTitle(selectedProperty)} onError={handleStayImageError} />
 
           <button
             type="button"
@@ -2043,11 +2152,11 @@ function App() {
 
           <button
             type="button"
-            className={favorites.includes(selectedProperty.id) ? 'gallery-fav active' : 'gallery-fav'}
+            className={isFavorite(selectedProperty.id) ? 'gallery-fav active' : 'gallery-fav'}
             aria-label={language === 'en' ? 'Add to favorites' : 'إضافة للمفضلة'}
-            onClick={() => toggleFavorite(selectedProperty.id)}
+            onClick={(event) => toggleFavorite(event, selectedProperty.id)}
           >
-            <span className="material-symbols-outlined">{favorites.includes(selectedProperty.id) ? 'favorite' : 'favorite_border'}</span>
+            <span className="material-symbols-outlined">{isFavorite(selectedProperty.id) ? 'favorite' : 'favorite_border'}</span>
           </button>
 
           <div className="gallery-index-badge">{selectedGalleryIndex + 1} / {galleryImages.length}</div>
@@ -2055,12 +2164,12 @@ function App() {
           <div className="gallery-price-overlay">
             <div className="gallery-price-left">
               <small>{language === 'en' ? 'From' : 'من'}</small>
-              <strong>{formatCurrency(selectedProperty.priceValue, selectedProperty.currency)}</strong>
+              <strong>{formatCurrency(selectedProperty.priceValue, selectedProperty.currency, language)}</strong>
               <span className="muted">{language === 'en' ? '/ night' : ' / ليلة'}</span>
             </div>
             <div className="gallery-price-right">
               <small>{language === 'en' ? 'Estimated total' : 'الإجمالي المتوقع'}</small>
-              <strong>{formatCurrency(grandTotal, selectedProperty.currency)}</strong>
+              <strong>{formatCurrency(grandTotal, selectedProperty.currency, language)}</strong>
             </div>
           </div>
 
@@ -2074,7 +2183,7 @@ function App() {
         <div className="gallery-strip">
           {galleryImages.map((image, index) => (
             <button key={image + index} type="button" className={index === selectedGalleryIndex ? 'gallery-thumb active' : 'gallery-thumb'} onClick={() => setSelectedGalleryIndex(index)}>
-              <img src={image} alt={`${selectedProperty.title} ${index + 1}`} />
+              <img src={image} alt={`${getPropertyTitle(selectedProperty)} ${index + 1}`} onError={handleStayImageError} />
             </button>
           ))}
         </div>
@@ -2082,10 +2191,10 @@ function App() {
         <section className="details-card">
           <div className="details-header">
             <div>
-              <h2>{selectedProperty.title}</h2>
+              <h2>{getPropertyTitle(selectedProperty)}</h2>
               <p>
                 <span className="material-symbols-outlined">location_on</span>
-                {selectedProperty.location}
+                {getPropertyLocation(selectedProperty)}
               </p>
             </div>
             <div className="rating-chip">
@@ -2095,18 +2204,18 @@ function App() {
           </div>
 
           <div className="tag-row">
-            {selectedProperty.details.map((detail, index) => (
+            {getPropertyDetails(selectedProperty).map((detail, index) => (
               <span key={`${detail}-${index}`}>{detail}</span>
             ))}
           </div>
 
           <div className="price-action">
             <div>
-              <small>السعر لكل ليلة</small>
-              <strong>{formatCurrency(selectedProperty.priceValue, selectedProperty.currency)}</strong>
+              <small>{language === 'en' ? 'Price per night' : 'السعر لكل ليلة'}</small>
+              <strong>{formatCurrency(selectedProperty.priceValue, selectedProperty.currency, language)}</strong>
             </div>
             <button className="primary-button" onClick={() => navigate('checkout')}>
-              احجز الآن
+              {language === 'en' ? 'Book now' : 'احجز الآن'}
             </button>
           </div>
         </section>
@@ -2135,11 +2244,11 @@ function App() {
         <section className="detail-showcase-grid">
           <div className="detail-map-card">
             <div className="detail-card-head">
-              <h3>الموقع والحي</h3>
-              <span className="status-pill neutral">{selectedProperty.neighborhood || selectedProperty.city}</span>
+              <h3>{language === 'en' ? 'Location & neighborhood' : 'الموقع والحي'}</h3>
+              <span className="status-pill neutral">{getPropertyCity(selectedProperty)}</span>
             </div>
             <div className="map-visual detail-map-visual">
-              <MapView coordinates={mapCenter} zoom={14} markerLabel={selectedProperty.title} />
+              <MapView coordinates={mapCenter} zoom={14} markerLabel={getPropertyTitle(selectedProperty)} />
               <div className="detail-map-actions">
                 <a target="_blank" rel="noreferrer" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapCenter.lat + ',' + mapCenter.lng)}`}>
                   {language === 'en' ? 'Open in Maps' : 'افتح في الخرائط'}
@@ -2149,26 +2258,26 @@ function App() {
             <div className="detail-location-row">
               <span className="material-symbols-outlined">location_on</span>
               <div>
-                <strong>{selectedProperty.city}</strong>
-                <small>{selectedProperty.location}</small>
+                <strong>{getPropertyCity(selectedProperty)}</strong>
+                <small>{getPropertyLocation(selectedProperty)}</small>
               </div>
             </div>
-            <p>يقع العقار في {selectedProperty.location}، بالقرب من المحلات، المقاهي، والمناطق السياحية الأساسية، مع وصول سريع إلى أبرز المعالم في المنطقة.</p>
+            <p>{language === 'en' ? `The property is in ${getPropertyLocation(selectedProperty)}, near shops, cafés, and key tourist attractions, with quick access to the area’s highlights.` : `يقع العقار في ${selectedProperty.location}، بالقرب من المحلات، المقاهي، والمناطق السياحية الأساسية، مع وصول سريع إلى أبرز المعالم في المنطقة.`}</p>
           </div>
 
           <div className="detail-similar-card">
             <div className="detail-card-head">
-              <h3>عقارات مشابهة</h3>
-              <button type="button" className="text-button" onClick={handleViewAllProperties}>عرض الكل</button>
+              <h3>{language === 'en' ? 'Similar stays' : 'عقارات مشابهة'}</h3>
+              <button type="button" className="text-button" onClick={handleViewAllProperties}>{language === 'en' ? 'View all' : 'عرض الكل'}</button>
             </div>
             <div className="similar-stays">
               {properties.slice(0, 3).map((property) => (
                 <button key={property.id} type="button" className="similar-stay-item" onClick={() => navigate('details', property)}>
-                  <img src={property.image} alt={property.title} />
+                  <img src={property.image} alt={getPropertyTitle(property)} onError={handleStayImageError} />
                   <div>
-                    <strong>{property.title}</strong>
-                    <span>{property.location}</span>
-                    <small>{formatCurrency(property.priceValue, property.currency)} / ليلة</small>
+                    <strong>{getPropertyTitle(property)}</strong>
+                    <span>{getPropertyLocation(property)}</span>
+                    <small>{formatCurrency(property.priceValue, property.currency, language)} / {language === 'en' ? 'night' : 'ليلة'}</small>
                   </div>
                 </button>
               ))}
@@ -2176,15 +2285,24 @@ function App() {
           </div>
         </section>
 
+        {/* Neighborhood & Nearby Services Explorer */}
+        <section className="detail-neighborhood-section">
+          <NeighborhoodExplorer
+            location={getPropertyLocation(selectedProperty) || getPropertyCity(selectedProperty)}
+            coordinates={mapCenter}
+            language={language}
+          />
+        </section>
+
         <section className="detail-trust-grid">
           <div className="detail-review-card">
             <div className="detail-card-head">
-              <h3>تقييمات الضيوف</h3>
+              <h3>{language === 'en' ? 'Guest reviews' : 'تقييمات الضيوف'}</h3>
               <span className="rating-chip small"><span className="material-symbols-outlined">star</span>{selectedProperty.rating}</span>
             </div>
             <div className="review-score-box">
               <strong>{selectedProperty.rating}</strong>
-              <span>من 5.0</span>
+              <span>{language === 'en' ? 'out of 5.0' : 'من 5.0'}</span>
             </div>
             <div className="review-bars">
               {[92, 76, 68, 52, 28].map((value, index) => (
@@ -2198,20 +2316,20 @@ function App() {
 
           <div className="detail-host-card">
             <div className="detail-card-head">
-              <h3>المضيف</h3>
-              <span className="status-pill neutral">متصل الآن</span>
+              <h3>{language === 'en' ? 'Host' : 'المضيف'}</h3>
+              <span className="status-pill neutral">{language === 'en' ? 'Online now' : 'متصل الآن'}</span>
             </div>
             <div className="host-summary">
               <div className="host-avatar">A</div>
               <div>
-                <strong>أحمد القحطاني</strong>
-                <small>مضيف موثوق • 4 سنوات</small>
+               <strong>{language === 'en' ? 'Ahmed Al-Qahtani' : 'أحمد القحطاني'}</strong>
+               <small>{language === 'en' ? 'Trusted host • 4 years' : 'مضيف موثوق • 4 سنوات'}</small>
               </div>
             </div>
             <ul className="host-details-list">
-              <li><span className="material-symbols-outlined">check_circle</span>استجابة سريعة خلال 10 دقائق</li>
-              <li><span className="material-symbols-outlined">shield</span>حجوزات موثقة وآمنة</li>
-              <li><span className="material-symbols-outlined">support_agent</span>دعم طوال مدة الإقامة</li>
+              <li><span className="material-symbols-outlined">check_circle</span>{language === 'en' ? 'Fast replies within 10 minutes' : 'استجابة سريعة خلال 10 دقائق'}</li>
+              <li><span className="material-symbols-outlined">shield</span>{language === 'en' ? 'Verified and secure bookings' : 'حجوزات موثقة وآمنة'}</li>
+              <li><span className="material-symbols-outlined">support_agent</span>{language === 'en' ? 'Support throughout the stay' : 'دعم طوال مدة الإقامة'}</li>
             </ul>
             <div className="host-actions">
               <div>
@@ -2247,13 +2365,13 @@ function App() {
 
         <section className="content-section">
           <h3>{activeText.description}</h3>
-          <p>{selectedProperty.description}</p>
+          <p>{getPropertyDescription(selectedProperty)}</p>
         </section>
 
         <section className="content-section amenity-grid">
           <h3>{activeText.amenities}</h3>
           <div className="amenities">
-            {selectedProperty.amenities.map((amenity) => (
+            {getPropertyAmenities(selectedProperty).map((amenity) => (
               <div key={amenity}>
                 <span className="material-symbols-outlined">check_circle</span>
                 {amenity}
@@ -2285,12 +2403,12 @@ function App() {
         </section>
 
         <section className="content-section policy-panel">
-          <h3>سياسات الإقامة</h3>
+          <h3>{language === 'en' ? 'Stay policies' : 'سياسات الإقامة'}</h3>
           <ul className="policy-list">
-            <li><span className="material-symbols-outlined">schedule</span>تسجيل الوصول من الساعة 3:00 مساءً</li>
-            <li><span className="material-symbols-outlined">logout</span>تسجيل المغادرة حتى الساعة 12:00 ظهراً</li>
-            <li><span className="material-symbols-outlined">pets</span>الحيوانات الأليفة مسموحة في بعض الوحدات</li>
-            <li><span className="material-symbols-outlined">smoke_free</span>ممنوع التدخين داخل الوحدات</li>
+            <li><span className="material-symbols-outlined">schedule</span>{language === 'en' ? 'Check-in from 3:00 PM' : 'تسجيل الوصول من الساعة 3:00 مساءً'}</li>
+            <li><span className="material-symbols-outlined">logout</span>{language === 'en' ? 'Check-out by 12:00 PM' : 'تسجيل المغادرة حتى الساعة 12:00 ظهراً'}</li>
+            <li><span className="material-symbols-outlined">pets</span>{language === 'en' ? 'Pets allowed in select units' : 'الحيوانات الأليفة مسموحة في بعض الوحدات'}</li>
+            <li><span className="material-symbols-outlined">smoke_free</span>{language === 'en' ? 'No smoking inside the units' : 'ممنوع التدخين داخل الوحدات'}</li>
           </ul>
         </section>
 
@@ -2312,14 +2430,32 @@ function App() {
                   </div>
                 ))}
               </div>
+              <div className="chat-suggestions flex flex-wrap gap-1.5 p-2 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700">
+                {[
+                  { ar: 'مواعيد الوصول؟', en: 'Check-in times?' },
+                  { ar: 'سرعة الواي فاي؟', en: 'Wi-Fi speed?' },
+                  { ar: 'موقف السيارات؟', en: 'Parking available?' },
+                  { ar: 'الموقع الدقيق؟', en: 'Exact location?' },
+                ].map((item, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleSendMessage(language === 'en' ? item.en : item.ar)}
+                    className="text-xs font-medium px-2.5 py-1 rounded-full bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 hover:border-emerald-500 transition shadow-sm"
+                  >
+                    {language === 'en' ? item.en : item.ar}
+                  </button>
+                ))}
+              </div>
               <div className="chat-compose">
                 <input
                   type="text"
                   value={chatInput}
                   onChange={(event) => setChatInput(event.target.value)}
                   placeholder={activeText.typeMessage}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleSendMessage() }}
                 />
-                <button type="button" className="primary-button" onClick={handleSendMessage}>
+                <button type="button" className="primary-button" onClick={() => handleSendMessage()}>
                   {activeText.send}
                 </button>
               </div>
@@ -2394,12 +2530,14 @@ function App() {
       language === 'en' ? 'Guest info' : 'بيانات الضيف',
       language === 'en' ? 'Payment' : 'الدفع',
     ]
+    const calendarWeekdays = language === 'en' ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] : ['إثن', 'ثلاث', 'أرب', 'خم', 'جم', 'سب', 'حد']
+    const monthFormatter = new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'ar-EG', { month: 'long', year: 'numeric' })
 
     return (
       <div className="page-shell checkout-shell">
         <section className="checkout-card">
           <div className="checkout-image">
-            <img src={selectedProperty.image} alt={selectedProperty.title} />
+            <img src={selectedProperty.image} alt={getPropertyTitle(selectedProperty)} onError={handleStayImageError} />
           </div>
 
           <div className="checkout-body">
@@ -2413,8 +2551,8 @@ function App() {
 
             <div className="details-header compact">
               <div>
-                <h2>{selectedProperty.title}</h2>
-                <p>{selectedProperty.location}</p>
+                <h2>{getPropertyTitle(selectedProperty)}</h2>
+                <p>{getPropertyLocation(selectedProperty)}</p>
               </div>
               <div className="rating-chip">
                 <span className="material-symbols-outlined">star</span>
@@ -2475,19 +2613,19 @@ function App() {
                   </div>
                 </div>
 
-                <div className="calendar-picker">
+                <div className="calendar-picker" dir={language === 'en' ? 'ltr' : 'rtl'}>
                   <div className="calendar-header">
                     <button type="button" className="calendar-arrow" onClick={() => setCalendarMonth((currentMonth) => new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}>
                       <span className="material-symbols-outlined">chevron_left</span>
                     </button>
-                    <strong>{new Intl.DateTimeFormat('ar-EG', { month: 'long', year: 'numeric' }).format(monthDate)}</strong>
+                    <strong>{monthFormatter.format(monthDate)}</strong>
                     <button type="button" className="calendar-arrow" onClick={() => setCalendarMonth((currentMonth) => new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}>
                       <span className="material-symbols-outlined">chevron_right</span>
                     </button>
                   </div>
 
                   <div className="calendar-weekdays">
-                    {['إثن', 'ثلاث', 'أرب', 'خم', 'جم', 'سب', 'حد'].map((day) => (
+                    {calendarWeekdays.map((day) => (
                       <span key={day}>{day}</span>
                     ))}
                   </div>
@@ -2586,7 +2724,7 @@ function App() {
                 <section className="booking-trust-panel compact-panel">
                   <div className="booking-trust-header">
                     <div>
-                      <span className="summary-kicker">Hajzy promise</span>
+                      <span className="summary-kicker">{language === 'en' ? 'Hajzy promise' : 'وعد حاجزي'}</span>
                       <h3>{language === 'en' ? 'Booking with confidence' : 'حجز بطمأنينة'}</h3>
                     </div>
                     <span className="material-symbols-outlined">verified_user</span>
@@ -2607,33 +2745,140 @@ function App() {
                   </div>
                 </section>
 
+                {/* Split Bill with Friends Feature Banner */}
+                <div className="split-payment-trigger-card">
+                  <div className="split-trigger-copy">
+                    <span className="split-badge">{language === 'en' ? '✨ New Feature' : '✨ ميزة جديدة'}</span>
+                    <strong>{language === 'en' ? 'Traveling with a group or friends?' : 'مسافر مع عائلة أو أصدقاء؟'}</strong>
+                    <p>{language === 'en' ? 'Split the booking total and share a payment link instantly.' : 'قسّم إجمالي الحجز وشارك رابط الدفع معهم في ثوانٍ.'}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="secondary-button split-trigger-btn"
+                    onClick={() => setIsSplitModalOpen(true)}
+                  >
+                    <span className="material-symbols-outlined text-sm">group_work</span>
+                    <span>{language === 'en' ? 'Split Payment' : 'تقسيم الفاتورة'}</span>
+                  </button>
+                </div>
+
                 <section className="payment-card compact-payment">
                   <h3>{activeText.paymentMethod}</h3>
-                  <label className="payment-option">
+
+                  {/* InstaPay */}
+                  <label className={`payment-option ${paymentMethod === 'instapay' ? 'selected' : ''}`}>
                     <div className="label-wrap">
-                      <span className="material-symbols-outlined">credit_card</span>
-                      <span>{language === 'en' ? 'Credit card' : 'بطاقة ائتمان'}</span>
+                      <span className="material-symbols-outlined text-emerald-600">bolt</span>
+                      <div>
+                        <strong>{language === 'en' ? 'InstaPay (Fast Egyptian Transfer)' : 'إنستاباي (InstaPay)'}</strong>
+                        <small className="block text-slate-500">{language === 'en' ? 'Instant bank-to-bank transfer via IPA / Phone' : 'تحويل لحظي مباشر عبر عنوان الدفع IPA أو الهاتف'}</small>
+                      </div>
                     </div>
-                    <input type="radio" name="payment" checked={paymentMethod === 'card'} onChange={() => setPaymentMethod('card')} />
+                    <input type="radio" name="payment" checked={paymentMethod === 'instapay'} onChange={() => setPaymentMethod('instapay')} />
                   </label>
-                  <label className="payment-option">
+
+                  {paymentMethod === 'instapay' && (
+                    <div className="payment-subpanel">
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        {language === 'en' ? 'Your InstaPay IPA Address / Mobile' : 'عنوان الدفع اللحظي (IPA) أو رقم الهاتف'}
+                      </label>
+                      <input
+                        type="text"
+                        value={instapayHandle}
+                        onChange={(e) => setInstapayHandle(e.target.value)}
+                        placeholder="username@instapay"
+                        className="w-full text-sm p-2.5 rounded-lg border border-slate-200"
+                      />
+                      <div className="mt-2 flex items-center justify-between text-xs text-emerald-700 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/50 p-2 rounded-lg">
+                        <span>{language === 'en' ? 'Official Receiver: hajzy@instapay' : 'الحساب المعتمد للاستقبال: hajzy@instapay'}</span>
+                        <span className="material-symbols-outlined text-sm">verified</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Vodafone Cash & Wallets */}
+                  <label className={`payment-option ${paymentMethod === 'wallet' ? 'selected' : ''}`}>
                     <div className="label-wrap">
-                      <span className="material-symbols-outlined">account_balance_wallet</span>
-                      <span>{language === 'en' ? 'Digital wallet' : 'محفظة رقمية'}</span>
+                      <span className="material-symbols-outlined text-rose-600">phone_android</span>
+                      <div>
+                        <strong>{language === 'en' ? 'Vodafone Cash & Mobile Wallets' : 'فودافون كاش والمحافظ الإلكترونية'}</strong>
+                        <small className="block text-slate-500">{language === 'en' ? 'Vodafone, Orange, Etisalat, WE Cash' : 'فودافون، أورنج، اتصالات، وي كاش'}</small>
+                      </div>
                     </div>
                     <input type="radio" name="payment" checked={paymentMethod === 'wallet'} onChange={() => setPaymentMethod('wallet')} />
                   </label>
-                  <label className="payment-option">
-                    <div className="label-wrap">
-                      <span className="material-symbols-outlined">currency_exchange</span>
-                      <span>{language === 'en' ? 'Bank transfer' : 'تحويل بنكي'}</span>
+
+                  {paymentMethod === 'wallet' && (
+                    <div className="payment-subpanel">
+                      <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                        {language === 'en' ? 'Wallet Mobile Number' : 'رقم الهاتف المسجل بالمحفظة'}
+                      </label>
+                      <input
+                        type="tel"
+                        value={walletNumber}
+                        onChange={(e) => setWalletNumber(e.target.value)}
+                        placeholder="010XXXXXXXX"
+                        className="w-full text-sm p-2.5 rounded-lg border border-slate-200"
+                      />
+                      <small className="text-[11px] text-slate-500 mt-1 block">
+                        {language === 'en' ? 'You will receive an OTP confirmation prompt on your phone.' : 'ستصلك رسالة تأكيد وطلب الرقم السري على هاتفك لإتمام الخصم.'}
+                      </small>
                     </div>
-                    <input type="radio" name="payment" checked={paymentMethod === 'bank'} onChange={() => setPaymentMethod('bank')} />
-                  </label>
-                  <label className="payment-option">
+                  )}
+
+                  {/* Fawry */}
+                  <label className={`payment-option ${paymentMethod === 'fawry' ? 'selected' : ''}`}>
                     <div className="label-wrap">
-                      <span className="material-symbols-outlined">payments</span>
-                      <span>{language === 'en' ? 'Cash on arrival' : 'الدفع عند الوصول'}</span>
+                      <span className="material-symbols-outlined text-amber-600">store</span>
+                      <div>
+                        <strong>{language === 'en' ? 'Fawry Pay' : 'فوري (Fawry Pay)'}</strong>
+                        <small className="block text-slate-500">{language === 'en' ? 'Pay at any Fawry retail kiosk nationwide' : 'الدفع في أي ماكينة فوري بكود مرجعي'}</small>
+                      </div>
+                    </div>
+                    <input type="radio" name="payment" checked={paymentMethod === 'fawry'} onChange={() => setPaymentMethod('fawry')} />
+                  </label>
+
+                  {paymentMethod === 'fawry' && (
+                    <div className="payment-subpanel">
+                      <div className="flex items-center justify-between p-2.5 bg-amber-50 dark:bg-amber-950/40 rounded-lg border border-amber-200 dark:border-amber-800">
+                        <div>
+                          <small className="block text-[11px] text-amber-800 dark:text-amber-300">{language === 'en' ? 'Fawry Reference Code (Valid 24h)' : 'الرقم المرجعي لفوري (صالح 24 ساعة)'}</small>
+                          <strong className="text-base font-mono text-amber-950 dark:text-amber-200">{fawryRefCode}</strong>
+                        </div>
+                        <button
+                          type="button"
+                          className="secondary-button small-button text-xs"
+                          onClick={() => {
+                            navigator.clipboard?.writeText(fawryRefCode)
+                            setToast(language === 'en' ? 'Fawry code copied!' : 'تم نسخ كود فوري!')
+                          }}
+                        >
+                          {language === 'en' ? 'Copy Code' : 'نسخ الكود'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Credit Card / Apple Pay */}
+                  <label className={`payment-option ${paymentMethod === 'card' ? 'selected' : ''}`}>
+                    <div className="label-wrap">
+                      <span className="material-symbols-outlined text-sky-600">credit_card</span>
+                      <div>
+                        <strong>{language === 'en' ? 'Credit / Debit Cards & Apple Pay' : 'بطاقات بنكية / ميزة / Apple Pay'}</strong>
+                        <small className="block text-slate-500">Visa, MasterCard, Meeza</small>
+                      </div>
+                    </div>
+                    <input type="radio" name="payment" checked={paymentMethod === 'card'} onChange={() => setPaymentMethod('card')} />
+                  </label>
+
+                  {/* Cash on arrival */}
+                  <label className={`payment-option ${paymentMethod === 'cash' ? 'selected' : ''}`}>
+                    <div className="label-wrap">
+                      <span className="material-symbols-outlined text-slate-600">payments</span>
+                      <div>
+                        <strong>{language === 'en' ? 'Cash on arrival' : 'الدفع نقداً عند الوصول'}</strong>
+                        <small className="block text-slate-500">{language === 'en' ? 'Pay directly to host at check-in' : 'الدفع للمالك مباشرة عند استلام المفتاح'}</small>
+                      </div>
                     </div>
                     <input type="radio" name="payment" checked={paymentMethod === 'cash'} onChange={() => setPaymentMethod('cash')} />
                   </label>
@@ -2643,7 +2888,7 @@ function App() {
                   <div className="booking-summary-header">
                     <div>
                       <span className="summary-kicker">{language === 'en' ? 'Trip details' : 'تفاصيل الرحلة'}</span>
-                      <h3>{selectedProperty.title}</h3>
+                      <h3>{getPropertyTitle(selectedProperty)}</h3>
                     </div>
                     <div className="summary-rating">
                       <span className="material-symbols-outlined">star</span>
@@ -2654,19 +2899,19 @@ function App() {
                   <div className="booking-meta-grid">
                     <div className="meta-tile">
                       <small>{language === 'en' ? 'Check-in' : 'تاريخ الوصول'}</small>
-                      <strong>{formatDate(bookingDates.checkIn)}</strong>
+                      <strong>{formatDate(bookingDates.checkIn, language)}</strong>
                     </div>
                     <div className="meta-tile">
                       <small>{language === 'en' ? 'Check-out' : 'تاريخ المغادرة'}</small>
-                      <strong>{formatDate(bookingDates.checkOut)}</strong>
+                      <strong>{formatDate(bookingDates.checkOut, language)}</strong>
                     </div>
                     <div className="meta-tile">
                       <small>{language === 'en' ? 'Guests' : 'الضيوف'}</small>
-                      <strong>{bookingDates.guests} {language === 'en' ? 'guest(s)' : 'ضيف'}</strong>
+                      <strong>{bookingDates.guests} {language === 'en' ? (bookingDates.guests === 1 ? 'guest' : 'guests') : 'ضيف'}</strong>
                     </div>
                     <div className="meta-tile accent">
                       <small>{language === 'en' ? 'Nights' : 'الليالي'}</small>
-                      <strong>{stayNights} {language === 'en' ? 'nights' : 'ليلة'}</strong>
+                      <strong>{stayNights} {language === 'en' ? (stayNights === 1 ? 'night' : 'nights') : 'ليلة'}</strong>
                     </div>
                   </div>
 
@@ -2674,7 +2919,7 @@ function App() {
                     {bookingBreakdown.map((item, index) => (
                       <div key={`${item.label}-${index}`} className={item.total ? 'booking-price-row total' : 'booking-price-row'}>
                         <span>{item.label}</span>
-                        <strong>{formatCurrency(item.value, selectedProperty.currency)}</strong>
+                        <strong>{formatCurrency(item.value, selectedProperty.currency, language)}</strong>
                       </div>
                     ))}
                   </div>
@@ -2717,20 +2962,24 @@ function App() {
           <div className="booking-summary">
             <div>
               <span>{language === 'en' ? 'Check-in' : 'تاريخ الوصول'}</span>
-              <strong>{formatDate(currentBooking.checkIn)}</strong>
+              <strong>{formatDate(currentBooking.checkIn, language)}</strong>
             </div>
             <div>
               <span>{language === 'en' ? 'Check-out' : 'تاريخ المغادرة'}</span>
-              <strong>{formatDate(currentBooking.checkOut)}</strong>
+              <strong>{formatDate(currentBooking.checkOut, language)}</strong>
             </div>
             <div>
               <span>{language === 'en' ? 'Total amount' : 'إجمالي المبلغ'}</span>
-              <strong>{formatCurrency(currentBooking.total, currentBooking.currency)}</strong>
+              <strong>{formatCurrency(currentBooking.total, currentBooking.currency, language)}</strong>
             </div>
           </div>
 
           <div className="success-actions">
-            <button className="primary-button" onClick={() => navigate('bookings')}>
+            <button className="primary-button" onClick={() => setSelectedInvoiceBooking(currentBooking)}>
+              <span className="material-symbols-outlined text-sm">receipt_long</span>
+              <span>{language === 'en' ? 'Official Invoice' : 'الفاتورة الرسمية'}</span>
+            </button>
+            <button className="secondary-button" onClick={() => navigate('bookings')}>
               {language === 'en' ? 'My bookings' : 'حجوزاتي'}
             </button>
             <button className="secondary-button" onClick={() => navigate('home')}>
@@ -2855,22 +3104,22 @@ function App() {
               const perNight = booking?.total && nights ? Math.round(Number(booking.total) / nights) : (property?.priceValue || 0)
 
               const displayDateRange = checkInVal || checkOutVal
-                ? `${booking?.checkIn ? formatDate(booking.checkIn) : '—'} إلى ${booking?.checkOut ? formatDate(booking.checkOut) : '—'}`
+                ? `${booking?.checkIn ? formatDate(booking.checkIn, language) : '—'} ${language === 'en' ? 'to' : 'إلى'} ${booking?.checkOut ? formatDate(booking.checkOut, language) : '—'}`
                 : '—'
 
               return (
                 <article key={booking.id || `${booking.propertyId || 'booking'}-${index}`} className="booking-card">
                   <div className="booking-image">
-                    <img src={booking.image || property?.image} alt={booking.title || property?.title || 'Booking'} />
+                    <img src={booking.image || property?.image} alt={getPropertyTitle(property) || booking.title || 'Booking'} onError={handleStayImageError} />
                     <span className={`status ${normalizedStatus === 'confirmed' ? 'confirmed' : normalizedStatus === 'cancelled' ? 'cancelled' : 'pending'}`}>
-                      {normalizedStatus === 'confirmed' ? 'مؤكدة' : normalizedStatus === 'cancelled' ? 'ملغية' : 'قيد المراجعة'}
+                      {normalizedStatus === 'confirmed' ? (language === 'en' ? 'Confirmed' : 'مؤكدة') : normalizedStatus === 'cancelled' ? (language === 'en' ? 'Cancelled' : 'ملغية') : (language === 'en' ? 'Pending review' : 'قيد المراجعة')}
                     </span>
                   </div>
                   <div className="booking-body">
                     <div className="booking-head">
                       <div>
-                        <h3>{booking.title || property?.title || 'إقامة'}</h3>
-                        <p>{booking.location || property?.location || 'موقع غير متوفر'}</p>
+                        <h3>{getPropertyTitle(property) || booking.title || (language === 'en' ? 'Stay' : 'إقامة')}</h3>
+                        <p>{getPropertyLocation(property) || booking.location || (language === 'en' ? 'Location not available' : 'موقع غير متوفر')}</p>
                       </div>
                       <div className="rating-chip small">
                         <span className="material-symbols-outlined">star</span>
@@ -2884,8 +3133,8 @@ function App() {
                           {displayDateRange} • {nights} {language === 'en' ? (nights === 1 ? 'night' : 'nights') : 'ليلة'}
                         </small>
                         <div className="booking-pricing">
-                          <span className="per-night">{formatCurrency(perNight, booking.currency || property?.currency || 'EGP')} {language === 'en' ? '/ night' : '/ ليلة'}</span>
-                          <strong className="booking-total">{formatCurrency(Number(booking.total || (perNight * nights)), booking.currency || property?.currency || 'EGP')}</strong>
+                          <span className="per-night">{formatCurrency(perNight, booking.currency || property?.currency || 'EGP', language)} {language === 'en' ? '/ night' : '/ ليلة'}</span>
+                          <strong className="booking-total">{formatCurrency(Number(booking.total || (perNight * nights)), booking.currency || property?.currency || 'EGP', language)}</strong>
                         </div>
                       </div>
 
@@ -2895,6 +3144,15 @@ function App() {
                           onClick={() => navigate('details', property ?? selectedProperty)}
                         >
                           {language === 'en' ? 'Details' : 'تفاصيل'}
+                        </button>
+
+                        <button
+                          type="button"
+                          className="secondary-button small-button booking-receipt"
+                          onClick={() => setSelectedInvoiceBooking(booking)}
+                          title={language === 'en' ? 'View Invoice' : 'عرض الفاتورة'}
+                        >
+                          {language === 'en' ? 'Invoice' : 'الفاتورة'}
                         </button>
 
                         {normalizedStatus !== 'cancelled' && (
@@ -2921,17 +3179,43 @@ function App() {
   }
 
   const renderProfilePage = () => {
-    const savedProperties = properties.filter((property) => favorites.includes(property.id))
+    const savedProperties = properties.filter((property) => isFavorite(property.id))
+    const profileName = user?.name || (language === 'en' ? 'Guest user' : 'مستخدم ضيف')
+    const profileEmail = user?.email || 'guest@hajzy.com'
+    const initials = profileName
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() || '')
+      .join('') || 'ح'
 
     return (
       <div className="page-shell profile-shell">
         <section className="profile-header">
-          <div className="avatar-wrap">
-            <img src={user?.avatar || 'https://via.placeholder.com/96'} alt="صورة المستخدم" />
+          <div className="profile-user-top">
+            <div className="profile-avatar" aria-label="Profile avatar">
+              <span>{initials}</span>
+            </div>
+            <div className="profile-meta">
+              <h2>{profileName}</h2>
+              <p>{profileEmail}</p>
+            </div>
           </div>
-          <h2>{user?.name}</h2>
-          <p>{user?.email}</p>
-          <small>{favorites.length} أماكن محفوظة</small>
+
+          <div className="profile-metrics">
+            <div className="profile-metric-card">
+              <small>{language === 'en' ? 'Saved' : 'محفوظة'}</small>
+              <strong>{favorites.length}</strong>
+            </div>
+            <div className="profile-metric-card">
+              <small>{language === 'en' ? 'Trips' : 'رحلات'}</small>
+              <strong>{bookings.length || 0}</strong>
+            </div>
+            <div className="profile-metric-card">
+              <small>{language === 'en' ? 'Member' : 'عضوية'}</small>
+              <strong>{language === 'en' ? 'Gold' : 'ذهبية'}</strong>
+            </div>
+          </div>
         </section>
 
         <section className="profile-favorites-card">
@@ -2950,7 +3234,7 @@ function App() {
             <div className="favorite-strip">
               {savedProperties.slice(0, 3).map((property) => (
                 <button key={property.id} type="button" className="favorite-item" onClick={() => navigate('details', property)}>
-                  <img src={property.image} alt={property.title} />
+                  <img src={property.image} alt={property.title} onError={handleStayImageError} />
                   <div>
                     <strong>{property.title}</strong>
                     <small>{property.location}</small>
@@ -2963,29 +3247,34 @@ function App() {
         </section>
 
         <section className="profile-list">
-          <button className="profile-item">
+          <button className="profile-item" onClick={() => navigate('home')}>
             <span className="material-symbols-outlined">person</span>
             <span>{language === 'en' ? 'Personal info' : 'المعلومات الشخصية'}</span>
             <span className="material-symbols-outlined chevron">chevron_left</span>
           </button>
-          <button className="profile-item" onClick={() => navigate('home')}>
+          <button className="profile-item" onClick={() => navigate('bookings')}>
             <span className="material-symbols-outlined">favorite</span>
-            <span>{language === 'en' ? 'Favorites' : 'المفضلة'}</span>
+            <span>{language === 'en' ? 'My bookings' : 'حجوزاتي'}</span>
             <span className="material-symbols-outlined chevron">chevron_left</span>
           </button>
-          <button
-            className="profile-item"
-            onClick={() => document.getElementById('profile-settings')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-          >
+          <button className="profile-item" onClick={() => navigate('home')}>
             <span className="material-symbols-outlined">settings</span>
             <span>{language === 'en' ? 'Settings' : 'الإعدادات'}</span>
             <span className="material-symbols-outlined chevron">chevron_left</span>
           </button>
-          <button className="profile-item logout" onClick={handleLogout}>
-            <span className="material-symbols-outlined">logout</span>
-            <span>{language === 'en' ? 'Log out' : 'تسجيل الخروج'}</span>
-            <span className="material-symbols-outlined chevron">chevron_left</span>
-          </button>
+          {!user ? (
+            <button className="profile-item" onClick={() => openAuthScreen('login')}>
+              <span className="material-symbols-outlined">login</span>
+              <span>{language === 'en' ? 'Log in' : 'تسجيل الدخول'}</span>
+              <span className="material-symbols-outlined chevron">chevron_left</span>
+            </button>
+          ) : (
+            <button className="profile-item logout" onClick={handleLogout}>
+              <span className="material-symbols-outlined">logout</span>
+              <span>{language === 'en' ? 'Log out' : 'تسجيل الخروج'}</span>
+              <span className="material-symbols-outlined chevron">chevron_left</span>
+            </button>
+          )}
         </section>
       </div>
     )
@@ -3072,6 +3361,16 @@ function App() {
       )
     }
 
+    if (currentAuthPage === 'marketing') {
+      return (
+        <MarketingPage
+          language={language}
+          onOpenLogin={handleMarketingOpenLogin}
+          onBrowseGuest={handleMarketingBrowseGuest}
+        />
+      )
+    }
+
     return (
       <LoginPage
         language={language}
@@ -3087,7 +3386,9 @@ function App() {
   const renderPageContent = () => {
     if (activePage === 'notifications') return renderNotificationsPage()
     if (isOwner && activePage === 'owner-settings') return renderOwnerSettingsPage()
-    if (isOwner) return renderOwnerPage()
+    if (isOwner && (activePage === 'owner' || activePage === 'dashboard' || activePage === 'home')) {
+      return renderOwnerPage()
+    }
     if (activePage === 'dashboard') {
       return (
         <DashboardPage
@@ -3101,7 +3402,9 @@ function App() {
         />
       )
     }
-    if (activePage === 'home') return renderHomePage()
+    if (activePage === 'home') {
+      return renderHomePage()
+    }
     if (activePage === 'details') return renderDetailsPage()
     if (activePage === 'chat') return (
       <ChatPage
@@ -3124,7 +3427,7 @@ function App() {
     if (activePage === 'bookings') return renderBookingsPage()
     if (activePage === 'profile') return (
       <ProfilePage
-        user={user}
+        user={user || effectiveUser}
         language={language}
         onEdit={() => navigate('profile-edit')}
         onToggleLanguage={handleLanguageToggle}
@@ -3134,47 +3437,177 @@ function App() {
     return renderProfilePage()
   }
 
-  const notificationLabel = language === 'en' ? 'Notifications' : 'الإشعارات'
-  const navLabels = {
-    dashboard: 'لوحة التحكم',
-    home: 'الرئيسية',
-    bookings: 'حجوزاتي',
-    profile: 'الملف الشخصي',
+  const dashboardPageKey = isOwner ? 'owner' : 'dashboard'
+
+  const bottomNavItems = [
+    {
+      key: dashboardPageKey,
+      label: language === 'en' ? 'Dashboard' : 'لوحة التحكم',
+      icon: 'dashboard',
+    },
+    {
+      key: 'home',
+      label: language === 'en' ? 'Home' : 'الرئيسية',
+      icon: 'home',
+    },
+    {
+      key: 'bookings',
+      label: language === 'en' ? 'Bookings' : 'حجوزاتي',
+      icon: 'calendar_month',
+    },
+    {
+      key: 'profile',
+      label: language === 'en' ? 'Profile' : 'الملف الشخصي',
+      icon: 'person',
+    },
+  ]
+
+  const renderInvoiceModal = () => {
+    if (!selectedInvoiceBooking) return null
+
+    const b = selectedInvoiceBooking
+    const prop = properties.find((p) => p.id === b.propertyId) || selectedProperty || {}
+    const checkInDate = b.checkIn ? new Date(b.checkIn) : new Date()
+    const checkOutDate = b.checkOut ? new Date(b.checkOut) : new Date(Date.now() + 86400000)
+    const nights = Math.max(1, Math.round((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24)))
+    const pricePerNight = b.total ? Math.round(Number(b.total) / (nights * 1.08)) : (prop.priceValue || 1000)
+    const subtotal = pricePerNight * nights
+    const serviceFee = Math.round(subtotal * 0.08)
+    const totalAmount = Number(b.total) || (subtotal + serviceFee)
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto" role="dialog" aria-modal="true">
+        <div className="relative w-full max-w-2xl rounded-3xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 p-6 md:p-8 text-slate-900 dark:text-slate-100 my-8">
+          <button
+            type="button"
+            className="absolute top-5 left-5 md:top-6 md:left-6 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition"
+            onClick={() => setSelectedInvoiceBooking(null)}
+            aria-label={language === 'en' ? 'Close' : 'إغلاق'}
+          >
+            <span className="material-symbols-outlined text-lg">close</span>
+          </button>
+
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">Hajzy</span>
+                <span className="text-sm font-bold text-slate-400">| حجزي</span>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">{language === 'en' ? 'Official Booking Receipt & Invoice' : 'فاتورة وسند حجز إلكتروني رسمي'}</p>
+            </div>
+            <div className="text-end">
+              <span className="inline-block rounded-full bg-emerald-100 dark:bg-emerald-950/60 px-3 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                {language === 'en' ? 'CONFIRMED' : 'حجز مؤكد'}
+              </span>
+              <div className="text-xs text-slate-500 font-mono mt-1">{b.reference || '#REF-78921'}</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-5 text-sm">
+            <div className="space-y-1">
+              <span className="text-xs text-slate-500 font-semibold">{language === 'en' ? 'Guest Information' : 'بيانات الضيف'}</span>
+              <div className="font-bold text-base">{b.guestName || user?.name || (language === 'en' ? 'Verified Guest' : 'ضيف مؤكد')}</div>
+              <div className="text-xs text-slate-500">{b.guestEmail || user?.email || '-'}</div>
+              <div className="text-xs text-slate-500">{b.guestPhone || user?.phone || '+20 10...'}</div>
+            </div>
+            <div className="space-y-1">
+              <span className="text-xs text-slate-500 font-semibold">{language === 'en' ? 'Property & Dates' : 'بيانات الإقامة والتواريخ'}</span>
+              <div className="font-bold text-base">{b.title || prop.title || 'إقامة فاخرة'}</div>
+              <div className="text-xs text-slate-500">{b.location || prop.location || 'مصر'}</div>
+              <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                {formatDate(b.checkIn || new Date())} ← {formatDate(b.checkOut || new Date())} ({nights} {language === 'en' ? (nights === 1 ? 'night' : 'nights') : 'ليالٍ'})
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/60 p-4 mb-6">
+            <div className="flex justify-between text-xs font-bold text-slate-500 border-b border-slate-200 dark:border-slate-700 pb-2 mb-2">
+              <span>{language === 'en' ? 'Description' : 'البيان'}</span>
+              <span>{language === 'en' ? 'Amount' : 'المبلغ'}</span>
+            </div>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span>{language === 'en' ? `Accommodation (${nights} nights)` : `تكلفة الإقامة (${nights} ليالٍ)`}</span>
+                <span>{formatCurrency(subtotal, b.currency || 'EGP')}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>{language === 'en' ? 'Platform & Service Fee (8%)' : 'رسوم الخدمة والتأمين (8%)'}</span>
+                <span>{formatCurrency(serviceFee, b.currency || 'EGP')}</span>
+              </div>
+              <div className="flex justify-between text-xs text-slate-500">
+                <span>{language === 'en' ? 'VAT 14% (Included)' : 'ضريبة القيمة المضافة 14% (شاملة)'}</span>
+                <span>{formatCurrency(Math.round(subtotal * 0.14), b.currency || 'EGP')}</span>
+              </div>
+              <div className="border-t border-slate-200 dark:border-slate-700 pt-2 flex justify-between font-extrabold text-base text-emerald-600 dark:text-emerald-400">
+                <span>{language === 'en' ? 'Total Paid' : 'الإجمالي المدفوع'}</span>
+                <span>{formatCurrency(totalAmount, b.currency || 'EGP')}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-800 pt-4 text-xs text-slate-500">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center text-2xl border border-slate-300 dark:border-slate-700">
+                📱
+              </div>
+              <div>
+                <strong className="block text-slate-700 dark:text-slate-300">{language === 'en' ? 'Verified Electronic Voucher' : 'سند إلكتروني معتمد'}</strong>
+                <span>{language === 'en' ? 'Present this invoice upon arrival for instant check-in' : 'أظهر هذه الفاتورة عند الوصول لتسجيل الدخول الفوري'}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 mt-6">
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => setSelectedInvoiceBooking(null)}
+            >
+              {language === 'en' ? 'Close' : 'إغلاق'}
+            </button>
+            <button
+              type="button"
+              className="primary-button flex items-center gap-2"
+              onClick={() => window.print()}
+            >
+              <span className="material-symbols-outlined text-sm">print</span>
+              <span>{language === 'en' ? 'Print Invoice' : 'طباعة الفاتورة'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
+
+  const notificationLabel = language === 'en' ? 'Notifications' : 'الإشعارات'
   const topBarTitle =
-    activePage === 'home' || activePage === 'dashboard' || activePage === 'owner'
+    activePage === 'home' || activePage === dashboardPageKey || activePage === 'owner'
       ? 'Hajzy'
       : isOwner
         ? pageTitlesByLanguage[language][activePage] || pageTitlesByLanguage[language].owner
         : pageTitlesByLanguage[language][activePage] || pageTitlesByLanguage[language].dashboard
 
   const handleMarketingOpenLogin = () => {
+    setIsGuestMode(false)
+    localStorage.setItem('hajzy_guest_mode', 'false')
     setCurrentAuthPage('login')
     setActivePage('home')
   }
 
   const handleMarketingBrowseGuest = () => {
     setIsGuestMode(true)
-    setCurrentAuthPage('landing')
+    setAuthRequired(false)
+    localStorage.setItem('hajzy_guest_mode', 'true')
+    setCurrentAuthPage('login')
     setActivePage('home')
   }
 
-  if (!loading && !user && !isGuestMode && currentAuthPage === 'landing') {
-    return (
-      <MarketingPage
-        language={language}
-        onOpenLogin={handleMarketingOpenLogin}
-        onBrowseGuest={handleMarketingBrowseGuest}
-      />
-    )
-  }
-
-  if (!loading && !user && !isGuestMode) {
+  if (!loading && !user && authRequired) {
     return renderAuthPage()
   }
 
   return (
-    <div className="app-shell">
+  <div className="app-shell" data-theme={theme}>
       <header className="topbar">
         <div className="topbar-inner">
           {activePage !== 'home' && activePage !== 'dashboard' && activePage !== 'profile' ? (
@@ -3185,9 +3618,38 @@ function App() {
             <div className="topbar-ghost" aria-hidden="true" />
           )}
 
-          <h1 className="topbar-brand topbar-logo-wrap">{topBarTitle}</h1>
+          <h1 className="topbar-brand topbar-logo-wrap" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => navigate(isOwner ? 'owner' : 'home')}>
+            {topBarTitle === 'Hajzy' ? (
+              <>
+                <Logo size={30} showText={false} />
+                <span>Hajzy</span>
+              </>
+            ) : (
+              topBarTitle
+            )}
+          </h1>
 
-          <div className="topbar-actions">
+          <div className="topbar-actions flex items-center gap-1.5">
+            <button
+              type="button"
+              className="icon-button"
+              aria-label={theme === 'dark' ? 'الوضع النهاري' : 'الوضع الليلي'}
+              title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+              onClick={toggleTheme}
+            >
+              <span className="material-symbols-outlined">{theme === 'dark' ? 'light_mode' : 'dark_mode'}</span>
+            </button>
+
+            <button
+              type="button"
+              className="icon-button"
+              aria-label={language === 'en' ? 'العربية' : 'English'}
+              title={language === 'en' ? 'العربية' : 'English'}
+              onClick={handleLanguageToggle}
+            >
+              <span className="text-xs font-bold">{language === 'en' ? 'AR' : 'EN'}</span>
+            </button>
+
             <button
               className="icon-button notification-button"
               aria-label={notificationLabel}
@@ -3223,52 +3685,40 @@ function App() {
         )}
       </main>
 
+      {renderInvoiceModal()}
+
+      <SplitPaymentModal
+        isOpen={isSplitModalOpen}
+        onClose={() => setIsSplitModalOpen(false)}
+        totalAmount={grandTotal || 2800}
+        currency={selectedProperty?.currency || 'EGP'}
+        language={language}
+        propertyName={getPropertyTitle(selectedProperty) || 'Hajzy Stay'}
+      />
+
       {toast && (
         <div className="global-toast" role="status" aria-live="polite">
           {toast}
         </div>
       )}
 
-      {!isOwner && (
-        <nav className="bottom-nav" aria-label="التنقل الرئيسي">
+      <nav className="bottom-nav" aria-label="التنقل الرئيسي">
+        {bottomNavItems.map((item) => (
           <button
-            className={activePage === 'dashboard' ? 'nav-item active' : 'nav-item'}
-            onClick={() => navigate('dashboard')}
-            aria-label="لوحة التحكم"
-            title="لوحة التحكم"
+            key={item.key}
+            className={activePage === item.key ? 'nav-item active' : 'nav-item'}
+            onClick={() => navigate(item.key)}
+            aria-label={item.label}
+            title={item.label}
           >
-            <span className="material-symbols-outlined">dashboard</span>
-            <span className="nav-label">لوحة التحكم</span>
+            <span className="nav-icon-wrap">
+              <span className="material-symbols-outlined">{item.icon}</span>
+              {item.badge ? <span className="nav-badge">{item.badge}</span> : null}
+            </span>
+            <span className="nav-label">{item.label}</span>
           </button>
-          <button
-            className={activePage === 'home' ? 'nav-item active' : 'nav-item'}
-            onClick={() => navigate('home')}
-            aria-label="الرئيسية"
-            title="الرئيسية"
-          >
-            <span className="material-symbols-outlined">home</span>
-            <span className="nav-label">الرئيسية</span>
-          </button>
-          <button
-            className={activePage === 'bookings' ? 'nav-item active' : 'nav-item'}
-            onClick={() => navigate('bookings')}
-            aria-label="حجوزاتي"
-            title="حجوزاتي"
-          >
-            <span className="material-symbols-outlined">calendar_month</span>
-            <span className="nav-label">حجوزاتي</span>
-          </button>
-          <button
-            className={activePage === 'profile' ? 'nav-item active' : 'nav-item'}
-            onClick={() => navigate('profile')}
-            aria-label="الملف الشخصي"
-            title="الملف الشخصي"
-          >
-            <span className="material-symbols-outlined">person</span>
-            <span className="nav-label">الملف الشخصي</span>
-          </button>
-        </nav>
-      )}
+        ))}
+      </nav>
     </div>
   )
 }

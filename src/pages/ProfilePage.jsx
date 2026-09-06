@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
+import { changePassword } from '../lib/authApi'
 
-export default function ProfilePage({ user: initialUser, language = 'ar', onEdit = () => {}, onToggleLanguage = () => {} }) {
-  const { updateProfile, updateProfile: _noop, fetchProfile } = useAuth()
+export default function ProfilePage({ user: initialUser, language = 'ar', onEdit: _onEdit = () => {}, onToggleLanguage = () => {} }) {
+  const { updateProfile } = useAuth()
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({ name: initialUser?.name || initialUser?.fullName || '', email: initialUser?.email || '' })
   const [loading, setLoading] = useState(false)
@@ -82,7 +83,6 @@ export default function ProfilePage({ user: initialUser, language = 'ar', onEdit
     setPasswordError('')
     setPasswordMessage('')
     try {
-      const { changePassword } = await import('../lib/authApi')
       const res = await changePassword(passwordForm.current, passwordForm.newPassword)
       if (res) {
         setPasswordMessage(language === 'en' ? 'Password updated.' : 'تم تحديث كلمة المرور.')

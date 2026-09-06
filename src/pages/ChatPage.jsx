@@ -37,7 +37,7 @@ export default function ChatPage({ property, user, language = 'ar', onBack = () 
       if (listRef.current) {
         listRef.current.scrollTop = listRef.current.scrollHeight
       }
-    } catch (err) {
+    } catch {
       // ignore
     }
   }

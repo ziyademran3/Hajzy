@@ -1,8 +1,9 @@
-@import '@fontsource/material-symbols-outlined';
+@import '@fontsource/material-symbols-outlined/400.css';
 @import 'tailwindcss';
+@config '../tailwind.config.js';
 
 :root {
-  font-family: 'Inter', 'Segoe UI', sans-serif;
+  font-family: 'Cairo', 'Poppins', 'Inter', 'Segoe UI', sans-serif;
   line-height: 1.5;
   font-weight: 400;
   color: #0f172a;

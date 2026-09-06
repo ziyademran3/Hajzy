@@ -40,6 +40,8 @@
     "cairoSubtitle": "Multiple options",
     "hurghada": "Hurghada",
     "hurghadaSubtitle": "Villas & apartments",
+    "giza": "Giza",
+    "gizaSubtitle": "Pyramids",
     "sharm": "Sharm El-Sheikh"
   },
   "badges": {
@@ -67,5 +69,9 @@
   "send": "Send",
   "typeMessage": "Type a message",
   "language": "Language",
-  "propertyAdded": "Property added"
+  "propertyAdded": "Property added",
+  "search": "Search",
+  "searchApplied": "Showing search results",
+  "addedToFavorites": "Added to favorites",
+  "removedFromFavorites": "Removed from favorites"
 }

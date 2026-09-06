@@ -44,7 +44,7 @@ export default function Card({
     if (!isInteractive) return
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
-      onClick && onClick(e)
+      onClick?.(e)
     }
   }
 

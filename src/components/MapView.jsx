@@ -39,20 +39,20 @@ export default function MapView({ coordinates = { lat: 30.0333, lng: 31.2333 }, 
       try {
         map.off()
         map.remove()
-      } catch (err) {
+      } catch {
         // ignore
       }
     }
-  }, [containerRef])
+  }, [coordinates.lat, coordinates.lng, markerLabel, zoom])
 
   useEffect(() => {
     if (!mapRef.current) return
     try {
-      mapRef.current.setView([coordinates.lat, coordinates.lng])
-    } catch (err) {
+      mapRef.current.setView([coordinates.lat, coordinates.lng], zoom)
+    } catch {
       // ignore
     }
-  }, [coordinates])
+  }, [coordinates.lat, coordinates.lng, zoom])
 
   return <div ref={containerRef} className="leaflet-map" style={{ width: '100%', height: '220px', borderRadius: '12px', overflow: 'hidden' }} />
 }

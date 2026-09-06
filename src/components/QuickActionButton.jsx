@@ -32,7 +32,7 @@ export default function QuickActionButton({ icon, labelKey, onClick, className =
       }
       const arVal = i18n.getResource('ar', ns, k)
       if (arVal) label = arVal
-    } catch (e) {
+    } catch {
       // ignore
     }
   }

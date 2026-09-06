@@ -27,12 +27,12 @@ export default function SettingsItem({
 
   const handleToggle = (e) => {
     e.stopPropagation()
-    onToggle && onToggle(!value)
+    onToggle?.(!value)
   }
 
   const handleClick = () => {
-    if (variant === 'link') onClick && onClick()
-    else if (variant === 'toggle') onToggle && onToggle(!value)
+    if (variant === 'link') onClick?.()
+    else if (variant === 'toggle') onToggle?.(!value)
   }
 
   return (

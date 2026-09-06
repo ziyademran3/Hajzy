@@ -16,7 +16,7 @@ const AppleIcon = () => (
 )
 
 
-export default function SignupPage({ language = 'ar', onToggleLanguage, onSignup, onSwitchToLogin, onSocialLogin = () => {} }) {
+export default function SignupPage({ language = 'ar', onToggleLanguage: _onToggleLanguage, onSignup, onSwitchToLogin, onSocialLogin = () => {} }) {
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '', agree: false })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -191,12 +191,7 @@ export default function SignupPage({ language = 'ar', onToggleLanguage, onSignup
 
             <div className="mb-5 grid grid-cols-2 gap-2">
               <button type="button" onClick={() => handleSocialClick('google')} disabled={loading} className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-2 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-70">
-                <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
-                  <path fill="#EA4335" d="M12 10.2v3.9h5.4c-.2 1.3-1.5 3.8-5.4 3.8-3.3 0-6-2.7-6-6s2.7-6 6-6c1.9 0 3.2.8 3.9 1.5l2.7-2.6C16.9 3.1 14.7 2.2 12 2.2 6.8 2.2 2.5 6.5 2.5 11.7S6.8 21.2 12 21.2c6.9 0 11.5-4.8 11.5-11.6 0-.8-.1-1.3-.2-1.9H12z" />
-                  <path fill="#34A853" d="M3.8 7.3l3.8 2.8c1-1.9 3-3.2 5.4-3.2 1.9 0 3.2.8 3.9 1.5l2.7-2.6C16.9 3.1 14.7 2.2 12 2.2 8.2 2.2 5 4.5 3.8 7.3z" />
-                  <path fill="#FBBC05" d="M3.8 16.1c1.5 2.9 4.5 4.9 8.2 4.9 2.4 0 4.4-.8 5.9-2.2l-2.8-2.3c-.8.6-1.9 1-3.1 1-2.4 0-4.4-1.7-5.1-4l-3.1 2.4z" />
-                  <path fill="#4285F4" d="M12 19.8c2.2 0 4.1-.7 5.5-2l-2.7-2.1c-.9.6-2 .9-2.8.9-2.5 0-4.7-1.8-5.2-4.1l-3 2.3C1.4 16.8 6.4 19.8 12 19.8z" />
-                </svg>
+                <GoogleIcon />
                 {text.google}
               </button>
               <button type="button" onClick={() => handleSocialClick('apple')} disabled={loading} className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-2 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-70">

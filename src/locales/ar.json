@@ -40,6 +40,8 @@
     "cairoSubtitle": "خيارات متعددة",
     "hurghada": "الغردقة",
     "hurghadaSubtitle": "شاليهات وشقق",
+    "giza": "الجيزة",
+    "gizaSubtitle": "الأهرامات",
     "sharm": "شرم الشيخ"
   },
   "badges": {
@@ -67,5 +69,9 @@
   "send": "إرسال",
   "typeMessage": "اكتب رسالة",
   "language": "اللغة",
-  "propertyAdded": "تمت إضافة العقار"
+  "propertyAdded": "تمت إضافة العقار",
+  "search": "ابحث",
+  "searchApplied": "تم عرض نتائج البحث",
+  "addedToFavorites": "تمت الإضافة إلى المفضلة",
+  "removedFromFavorites": "تمت الإزالة من المفضلة"
 }

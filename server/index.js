@@ -315,7 +315,7 @@ async function ensurePostgresConnection() {
     await pgPool.query('SELECT 1')
     usingMemoryStore = false
     console.log('PostgreSQL connection established.')
-  } catch (error) {
+  } catch {
     console.warn('PostgreSQL is unavailable. Falling back to the in-memory auth store.')
     pgPool = null
     usingMemoryStore = true
@@ -410,8 +410,24 @@ async function sendEmail({ to, subject, html }) {
     }
   }
 
-  const result = await resend.emails.send({ from: emailFrom, to, subject, html })
-  return { ok: true, result }
+  try {
+    const { data, error } = await resend.emails.send({
+      from: emailFrom,
+      to,
+      subject,
+      html,
+    })
+
+    if (error) {
+      console.error('Resend error:', error)
+      return { ok: false, message: error.message || 'Failed to send email.' }
+    }
+
+    return { ok: true, result: data }
+  } catch (error) {
+    console.error('Resend error:', error)
+    return { ok: false, message: error.message || 'Failed to send email.' }
+  }
 }
 
 function buildAuthToken(user) {
@@ -430,6 +446,7 @@ app.get('/api/health', async (_req, res) => {
   res.json({
     ok: true,
     mode: usingMemoryStore ? 'memory' : 'postgres',
+    emailConfigured: Boolean(resend),
     message: usingMemoryStore ? 'API is healthy (local memory store).' : 'API is healthy (PostgreSQL).',
   })
 })
@@ -564,7 +581,7 @@ const authenticate = (req, res, next) => {
     const payload = jwt.verify(token, jwtSecret)
     req.auth = payload
     return next()
-  } catch (error) {
+  } catch {
     return res.status(401).json({ message: 'Invalid or expired token.' })
   }
 }
@@ -834,7 +851,7 @@ app.post('/api/bookings', authenticate, async (req, res) => {
 
     const msPerDay = 1000 * 60 * 60 * 24
     const nights = Math.ceil((end - start) / msPerDay)
-    const pricePerNight = Number(property.price_per_night || property.price_per_night || 0)
+    const pricePerNight = Number(property.price_per_night || property.pricePerNight || property.priceValue || 0)
     const total = Math.max(0, nights * pricePerNight)
 
     try {

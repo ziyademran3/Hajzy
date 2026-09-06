@@ -25,14 +25,14 @@
     const meRes = await fetch(`${base}/auth/me`, { method: 'GET', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${tokenAuth}` } })
     const meText = await meRes.text()
     let me = {}
-    try { me = JSON.parse(meText) } catch (e) { me = { raw: meText } }
+    try { me = JSON.parse(meText) } catch { me = { raw: meText } }
     console.log('ME status:', meRes.status, 'body:', me)
 
     // update profile
     const updRes = await fetch(`${base}/auth/me`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${tokenAuth}` }, body: json({ fullName: 'Profile Updated Tester', email: 'profile.updated@example.com' }) })
     const updText = await updRes.text()
     let upd = {}
-    try { upd = JSON.parse(updText) } catch (e) { upd = { raw: updText } }
+    try { upd = JSON.parse(updText) } catch { upd = { raw: updText } }
     console.log('UPDATE status:', updRes.status, 'body:', upd)
   } catch (err) {
     console.error('E2E PROFILE ERROR:', err.message)

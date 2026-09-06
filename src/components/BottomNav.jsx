@@ -20,7 +20,7 @@ export default function BottomNav({ initial = 'home', onChange }) {
 
   const handleClick = (id) => {
     setActive(id)
-    onChange && onChange(id)
+    onChange?.(id)
   }
 
   // inline style for active background (teal 10%) — uses hajzy primary #14B8A6

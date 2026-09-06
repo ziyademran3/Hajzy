@@ -38,7 +38,7 @@ export default function LanguageSwitcher({ className = '' }) {
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem('hajzy-language', code)
       }
-    } catch (e) {
+    } catch {
       // ignore
     }
   }

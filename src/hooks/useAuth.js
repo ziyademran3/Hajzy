@@ -8,8 +8,9 @@ const DEMO_OWNER = {
   role: 'owner',
 }
 
-const USERS_KEY = 'stitch_users'
-const CURRENT_USER_KEY = 'stitch_user'
+const USERS_KEY = 'hajzy_users'
+const CURRENT_USER_KEY = 'hajzy_user'
+const AUTH_TOKEN_KEY = 'hajzy_auth_token'
 
 const normalizeRole = (user) => {
   if (!user) return 'user'
@@ -27,7 +28,7 @@ const safeUserRecord = (user) => {
 
 const readUsers = () => {
   try {
-    const savedUsers = localStorage.getItem(USERS_KEY)
+    const savedUsers = localStorage.getItem(USERS_KEY) || localStorage.getItem('stitch_users')
     const defaultUsers = [{
       id: 'owner-demo',
       name: DEMO_OWNER.name,
@@ -79,7 +80,7 @@ export const useAuth = () => {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    const savedUser = localStorage.getItem(CURRENT_USER_KEY)
+    const savedUser = localStorage.getItem(CURRENT_USER_KEY) || localStorage.getItem('stitch_user')
     if (savedUser) {
       try {
         setUser(JSON.parse(savedUser))
@@ -97,6 +98,8 @@ export const useAuth = () => {
     if (!authUser) {
       setUser(null)
       localStorage.removeItem(CURRENT_USER_KEY)
+      localStorage.removeItem('stitch_user')
+      localStorage.removeItem(AUTH_TOKEN_KEY)
       localStorage.removeItem('stitch_auth_token')
       return null
     }
@@ -110,6 +113,7 @@ export const useAuth = () => {
     localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(normalizedUser))
 
     if (token) {
+      localStorage.setItem(AUTH_TOKEN_KEY, token)
       localStorage.setItem('stitch_auth_token', token)
     }
 
@@ -147,7 +151,7 @@ export const useAuth = () => {
         setError(null)
         return persistUser(authUser, response.token)
       }
-    } catch (apiError) {
+    } catch {
       // Ignore API errors and fall back to the demo local auth logic when the backend is absent.
     }
 
@@ -198,7 +202,7 @@ export const useAuth = () => {
         setError(null)
         return persistUser(authUser)
       }
-    } catch (apiError) {
+    } catch {
       // Continue to the local demo fallback if the backend is not running.
     }
 
@@ -231,6 +235,8 @@ export const useAuth = () => {
   const logout = () => {
     setUser(null)
     localStorage.removeItem(CURRENT_USER_KEY)
+    localStorage.removeItem('stitch_user')
+    localStorage.removeItem(AUTH_TOKEN_KEY)
     localStorage.removeItem('stitch_auth_token')
   }
 
@@ -249,7 +255,7 @@ export const useAuth = () => {
         persistUser(authUser)
         return authUser
       }
-    } catch (err) {
+    } catch {
       // ignore
     }
     return null

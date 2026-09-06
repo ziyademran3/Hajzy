@@ -32,13 +32,13 @@ export default function NotificationCard({ notification, onDelete, onToggleRead 
 
       // fallback to short date
       return d.toLocaleDateString(locale, { day: 'numeric', month: 'short' })
-    } catch (err) {
+    } catch {
       return fallback || ''
     }
   }
-  const { id, type, title, body, time, read, thumbnail } = notification
+  const { id, type, title, body, time, read, thumbnail, date } = notification
   const [swipeX, setSwipeX] = useState(0)
-  const [dragging, setDragging] = useState(false)
+  const [_dragging, setDragging] = useState(false)
   const startX = useRef(null)
   const threshold = 60 // px
 
@@ -71,10 +71,10 @@ export default function NotificationCard({ notification, onDelete, onToggleRead 
     setDragging(false)
     if (swipeX > threshold) {
       // swipe right => delete
-      onDelete && onDelete(id)
+      onDelete?.(id)
     } else if (swipeX < -threshold) {
       // swipe left => mark read/unread
-      onToggleRead && onToggleRead(id)
+      onToggleRead?.(id)
     }
     setSwipeX(0)
     startX.current = null
@@ -82,13 +82,15 @@ export default function NotificationCard({ notification, onDelete, onToggleRead 
 
   const desktopDelete = (e) => {
     e.stopPropagation()
-    onDelete && onDelete(id)
+    onDelete?.(id)
   }
 
   const desktopToggle = (e) => {
     e.stopPropagation()
-    onToggleRead && onToggleRead(id)
+    onToggleRead?.(id)
   }
+
+  const displayTime = formatTimeLabel(date, time)
 
   return (
     <div className="relative">
@@ -136,7 +138,7 @@ export default function NotificationCard({ notification, onDelete, onToggleRead 
               <p className="text-xs text-gray-500 dark:text-hajzy-muted truncate">{body}</p>
             </div>
 
-            <div className="flex-none text-xs text-gray-400 ltr:text-right rtl:text-left">{time}</div>
+            <div className="flex-none text-xs text-gray-400 ltr:text-right rtl:text-left">{displayTime}</div>
           </div>
 
           <div className="mt-2 flex items-center gap-3">

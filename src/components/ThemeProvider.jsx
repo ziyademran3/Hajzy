@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 
 const ThemeContext = createContext({ theme: 'light', setTheme: () => {}, toggleTheme: () => {} })
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useTheme() {
   return useContext(ThemeContext)
 }
@@ -13,7 +14,7 @@ export function ThemeProvider({ children }) {
       if (stored) return stored
       const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
       return prefersDark ? 'dark' : 'light'
-    } catch (e) {
+    } catch {
       return 'light'
     }
   })
@@ -21,7 +22,7 @@ export function ThemeProvider({ children }) {
   useEffect(() => {
     try {
       window.localStorage.setItem('hajzy-theme', theme)
-    } catch (e) {
+    } catch {
       // ignore
     }
 

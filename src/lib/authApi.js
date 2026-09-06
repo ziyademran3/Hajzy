@@ -1,7 +1,10 @@
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
 
 async function requestJson(path, options = {}) {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('stitch_auth_token') : null
+  const token =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('hajzy_auth_token') || localStorage.getItem('stitch_auth_token')
+      : null
   const response = await fetch(`${API_BASE}${path}`, {
     headers: {
       'Content-Type': 'application/json',

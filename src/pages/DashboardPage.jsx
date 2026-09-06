@@ -1,7 +1,7 @@
-import i18n from '../i18n'
+import { useTranslation } from 'react-i18next'
 
-export default function DashboardPage({ user, bookings = [], properties = [], onNavigate, onLogout, language = 'ar', onSupportRequest }) {
-  const t = i18n.t.bind(i18n)
+export default function DashboardPage({ user, bookings = [], properties = [], onNavigate, onLogout: _onLogout, language = 'ar', onSupportRequest }) {
+  const { t } = useTranslation()
   const totalSpend = bookings.reduce((sum, booking) => sum + Number(booking.total || 0), 0)
   const upcomingStay = bookings[0]
   const featuredProperty = properties.find((item) => item.id === upcomingStay?.propertyId) || properties[0]
@@ -92,11 +92,15 @@ export default function DashboardPage({ user, bookings = [], properties = [], on
         <div className="summary-card summary-primary">
             <div className="summary-label">{t('upcomingStay', { defaultValue: language === 'en' ? 'UPCOMINGSTAY' : 'إقامتك القادمة' })}</div>
           <div className="summary-title">
-            {featuredProperty?.title || upcomingStay?.title || (language === 'en' ? 'Curated stay' : 'إقامة مختارة')}
+            {language === 'en'
+              ? (featuredProperty?.titleEn || featuredProperty?.title || upcomingStay?.title || 'Curated stay')
+              : (featuredProperty?.title || upcomingStay?.title || 'إقامة مختارة')}
           </div>
           <div className="summary-meta">
             <span className="material-symbols-outlined">location_on</span>
-            {featuredProperty?.location || upcomingStay?.location || (language === 'en' ? 'Your city escape' : 'موقعك المفضل')}
+            {language === 'en'
+              ? (featuredProperty?.locationEn || featuredProperty?.location || upcomingStay?.location || 'Your city escape')
+              : (featuredProperty?.location || upcomingStay?.location || 'موقعك المفضل')}
           </div>
           <div className="summary-meta">
             <span className="material-symbols-outlined">date_range</span>
@@ -177,7 +181,7 @@ export default function DashboardPage({ user, bookings = [], properties = [], on
                 <div key={booking.id} className="activity-item">
                   {property?.image && <img className="activity-thumb" src={property.image} alt={property.title || 'Property'} />}
                   <div className="activity-copy">
-                    <strong>{property?.title || booking.title || (language === 'en' ? 'Property stay' : 'إقامة عقار')}</strong>
+                    <strong>{language === 'en' ? (property?.titleEn || property?.title || booking.title || 'Property stay') : (property?.title || booking.title || 'إقامة عقار')}</strong>
                     <span>{booking.status === 'confirmed' ? (language === 'en' ? 'Confirmed' : 'مؤكد') : (language === 'en' ? 'Pending review' : 'قيد المراجعة')}</span>
                     <small className="activity-time">{timeLabel}</small>
                   </div>
