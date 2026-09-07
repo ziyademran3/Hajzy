@@ -9,9 +9,26 @@ export const supabase = SUPABASE_URL && SUPABASE_ANON_KEY
 
 const photo = (id) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=1400&q=80`
 
+export const BROKEN_PHOTO_REPLACEMENTS = {
+  'photo-1539650116574-75c0c6d73a6e': 'photo-1503177119275-0aa32b3a9368',
+  'photo-1551882547-ff40c63fe97d': 'photo-1582719478250-c89cae4dc85b',
+  'photo-1618773928922-de9e3ec5341d': 'photo-1590490360182-c33d57733427',
+}
+
+export const sanitizePhotoUrl = (url) => {
+  if (!url || typeof url !== 'string') return FALLBACK_STAY_PHOTO
+  let cleanUrl = url
+  for (const [brokenId, fixId] of Object.entries(BROKEN_PHOTO_REPLACEMENTS)) {
+    if (cleanUrl.includes(brokenId)) {
+      cleanUrl = cleanUrl.replace(brokenId, fixId)
+    }
+  }
+  return cleanUrl
+}
+
 export const CITY_PHOTOS = {
   'الإسكندرية': photo('photo-1507525428034-b723cf961d3e'),
-  'القاهرة': photo('photo-1539650116574-75c0c6d73a6e'),
+  'القاهرة': photo('photo-1568322445389-f64ac2515020'),
   'الجيزة': photo('photo-1553913861-c0fddf2619ee'),
   'الغردقة': photo('photo-1544551763-46a013bb70d5'),
   'شرم الشيخ': photo('photo-1571896349842-33c89424de2d'),
@@ -128,7 +145,7 @@ export const propertySeed = [
     rating: 4.8,
     reviews: 154,
     image: photo('photo-1582719478250-c89cae4dc85b'),
-    images: [photo('photo-1551882547-ff40c63fe97d'), photo('photo-1618773928922-de9e3ec5341d')],
+    images: [photo('photo-1578683010236-d716f9a3f461'), photo('photo-1590490360182-c33d57733427')],
     details: ['جناح عائلي', 'مسبح', 'شاطئ قريب'],
     detailsEn: ['Family Suite', 'Pool', 'Near Beach'],
     description: 'إقامة فندقية هادئة في ستانلي، قريبة من الكوبري الشهير والمطاعم الساحلية.',
@@ -242,8 +259,8 @@ export const propertySeed = [
     guests: 4,
     rating: 4.8,
     reviews: 298,
-    image: photo('photo-1539650116574-75c0c6d73a6e'),
-    images: [photo('photo-1566073771259-6a8506099945'), photo('photo-1551882547-ff40c63fe97d')],
+    image: photo('photo-1503177119275-0aa32b3a9368'),
+    images: [photo('photo-1566073771259-6a8506099945'), photo('photo-1582719478250-c89cae4dc85b')],
     details: ['غرفة إطلالة أهرامات', 'مسبح', 'عشاء'],
     detailsEn: ['Pyramid View Room', 'Pool', 'Dinner'],
     description: 'فندق بإطلالة مباشرة على الأهرامات، مع مسبح خارجي وخدمة نقل للمناطق السياحية.',
@@ -335,7 +352,7 @@ export const propertySeed = [
     rating: 4.8,
     reviews: 176,
     image: photo('photo-1568084680786-a84f91d1153c'),
-    images: [photo('photo-1507525428034-b723cf961d3e'), photo('photo-1551882547-ff40c63fe97d')],
+    images: [photo('photo-1507525428034-b723cf961d3e'), photo('photo-1540541338287-41700207dee6')],
     details: ['جناح عائلي', 'شاطئ خاص', 'سبا'],
     detailsEn: ['Family Suite', 'Private Beach', 'Spa'],
     description: 'منتجع فندقي على الشعاب مع شاطئ خاص وأنشطة مائية للعائلات.',
@@ -462,6 +479,12 @@ const propertySeedById = Object.fromEntries(propertySeed.map((item) => [String(i
 
 const normalizeProperty = (property) => {
   const seed = propertySeedById[String(property?.id)] || {}
+  const rawImage = property.image || seed.image || FALLBACK_STAY_PHOTO
+  const image = sanitizePhotoUrl(rawImage)
+  const rawImages = property.images || seed.images || [image]
+  const images = (Array.isArray(rawImages) ? rawImages : [rawImages])
+    .map(sanitizePhotoUrl)
+    .filter(Boolean)
 
   return {
     id: property.id || seed.id || `property-${Date.now()}`,
@@ -478,8 +501,8 @@ const normalizeProperty = (property) => {
     guests: Number(property.guests || seed.guests || 2),
     rating: Number(property.rating || seed.rating || 4.8),
     reviews: Number(property.reviews || seed.reviews || 0),
-    image: property.image || seed.image,
-    images: property.images || seed.images || [property.image || seed.image].filter(Boolean),
+    image,
+    images: images.length ? images : [image],
     details: property.details || seed.details || [],
     detailsEn: property.detailsEn || seed.detailsEn || [],
     description: property.description || seed.description || '',
@@ -491,21 +514,24 @@ const normalizeProperty = (property) => {
   }
 }
 
-const normalizeBooking = (booking) => ({
-  id: booking.id || `booking-${Date.now()}`,
-  propertyId: booking.propertyId,
-  title: booking.title,
-  location: booking.location,
-  image: booking.image,
-  checkIn: booking.checkIn,
-  checkOut: booking.checkOut,
-  guests: Number(booking.guests || 1),
-  total: Number(booking.total || 0),
-  currency: booking.currency || 'EGP',
-  status: booking.status || 'confirmed',
-  reference: booking.reference || '#REF-00000',
-  paymentMethod: booking.paymentMethod || 'card',
-})
+const normalizeBooking = (booking) => {
+  const rawImage = booking.image || FALLBACK_STAY_PHOTO
+  return {
+    id: booking.id || `booking-${Date.now()}`,
+    propertyId: booking.propertyId,
+    title: booking.title,
+    location: booking.location,
+    image: sanitizePhotoUrl(rawImage),
+    checkIn: booking.checkIn,
+    checkOut: booking.checkOut,
+    guests: Number(booking.guests || 1),
+    total: Number(booking.total || 0),
+    currency: booking.currency || 'EGP',
+    status: booking.status || 'confirmed',
+    reference: booking.reference || '#REF-00000',
+    paymentMethod: booking.paymentMethod || 'card',
+  }
+}
 
 export const fetchProperties = async () => {
   if (supabase) {

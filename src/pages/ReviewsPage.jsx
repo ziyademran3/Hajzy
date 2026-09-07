@@ -8,6 +8,7 @@ export default function ReviewsPage({ property, user, language = 'ar', onBack = 
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState({ rating: 5, text: '', image: null })
   const [submitting, setSubmitting] = useState(false)
+  const [successMsg, setSuccessMsg] = useState('')
 
   const loadReviews = async () => {
     setLoading(true)
@@ -39,6 +40,7 @@ export default function ReviewsPage({ property, user, language = 'ar', onBack = 
     e.preventDefault()
     if (!form.text.trim()) return
     setSubmitting(true)
+    setSuccessMsg('')
     try {
       const payload = {
         id: `rev-${Date.now()}`,
@@ -52,6 +54,7 @@ export default function ReviewsPage({ property, user, language = 'ar', onBack = 
       }
       await addPropertyReview(payload)
       setForm({ rating: 5, text: '', image: null })
+      setSuccessMsg(language === 'en' ? 'Thank you! Your review has been submitted.' : 'شكراً لك! تم إرسال تقييمك بنجاح.')
       await loadReviews()
     } catch (err) {
       console.error('Failed to submit review', err)
@@ -73,12 +76,18 @@ export default function ReviewsPage({ property, user, language = 'ar', onBack = 
       </div>
 
       <div className="reviews-content">
+        {successMsg && (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800" role="status">
+            {successMsg}
+          </div>
+        )}
+
         {loading ? (
           <Skeleton count={4} />
         ) : (
           <div className="review-list">
             {reviews.length === 0 ? (
-              <div className="empty-reviews">{language === 'en' ? 'No reviews yet.' : 'لا توجد مراجعات بعد.'}</div>
+              <div className="empty-reviews">{language === 'en' ? 'No reviews yet. Be the first to review!' : 'لا توجد مراجعات بعد. كن أول من يقيّم هذه الإقامة!'}</div>
             ) : (
               reviews.map((r) => <ReviewCard key={r.id} review={r} />)
             )}
@@ -87,23 +96,48 @@ export default function ReviewsPage({ property, user, language = 'ar', onBack = 
 
         <form className="review-form" onSubmit={handleSubmit}>
           <h3>{language === 'en' ? 'Write a review' : 'كتابة مراجعة'}</h3>
+          
+          <div className="review-rating-picker mb-3">
+            <span className="block text-sm font-medium mb-1.5">{language === 'en' ? 'Rating' : 'التقييم'}</span>
+            <div className="flex items-center gap-1.5">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, rating: star }))}
+                  className={`text-2xl transition hover:scale-110 ${form.rating >= star ? 'text-amber-400' : 'text-slate-300'}`}
+                  aria-label={`${star} ${language === 'en' ? 'stars' : 'نجوم'}`}
+                >
+                  ★
+                </button>
+              ))}
+              <span className="ms-2 font-bold text-slate-700 dark:text-slate-200">{form.rating} / 5</span>
+            </div>
+          </div>
+
           <label>
-            <span>{language === 'en' ? 'Rating' : 'التقييم'}</span>
-            <select value={form.rating} onChange={(e) => setForm((f) => ({ ...f, rating: e.target.value }))}>
-              {[5,4,3,2,1].map((r) => <option key={r} value={r}>{r} ⭐</option>)}
-            </select>
+            <span>{language === 'en' ? 'Review text' : 'نص المراجعة'}</span>
+            <textarea
+              value={form.text}
+              onChange={(e) => setForm((f) => ({ ...f, text: e.target.value }))}
+              placeholder={language === 'en' ? 'Share your experience staying here...' : 'شاركنا تفاصيل تجربتك وانطباعك عن الإقامة...'}
+              rows="4"
+              required
+            />
           </label>
+          
           <label>
-            <span>{language === 'en' ? 'Review' : 'المراجعة'}</span>
-            <textarea value={form.text} onChange={(e) => setForm((f) => ({ ...f, text: e.target.value }))} rows="4" />
-          </label>
-          <label>
-            <span>{language === 'en' ? 'Photo (optional)' : 'صورة (اختياري)'} </span>
+            <span>{language === 'en' ? 'Photo (optional)' : 'صورة من الإقامة (اختياري)'}</span>
             <input type="file" accept="image/*" onChange={(e) => handleFile(e.target.files?.[0])} />
           </label>
+          
           <div className="form-actions">
-            <button className="secondary-button" type="button" onClick={() => setForm({ rating:5, text:'', image:null })}>{language === 'en' ? 'Reset' : 'إعادة'}</button>
-            <button className="primary-button" type="submit" disabled={submitting}>{submitting ? (language === 'en' ? 'Submitting...' : 'جارٍ الإرسال...') : (language === 'en' ? 'Submit review' : 'إرسال المراجعة')}</button>
+            <button className="secondary-button" type="button" onClick={() => setForm({ rating: 5, text: '', image: null })}>
+              {language === 'en' ? 'Reset' : 'إعادة تعيين'}
+            </button>
+            <button className="primary-button" type="submit" disabled={submitting || !form.text.trim()}>
+              {submitting ? (language === 'en' ? 'Submitting...' : 'جارٍ الإرسال...') : (language === 'en' ? 'Submit review' : 'إرسال المراجعة')}
+            </button>
           </div>
         </form>
       </div>

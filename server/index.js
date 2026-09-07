@@ -1,4 +1,11 @@
-import 'dotenv/config'
+import dotenv from 'dotenv'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+dotenv.config({ path: path.join(__dirname, '.env') })
+dotenv.config()
+
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
@@ -8,6 +15,7 @@ import jwt from 'jsonwebtoken'
 import { Pool } from 'pg'
 import crypto from 'crypto'
 import { Resend } from 'resend'
+import nodemailer from 'nodemailer'
 
 const app = express()
 const port = Number(process.env.PORT || 4000)
@@ -402,31 +410,62 @@ async function initializeDatabase() {
   `)
 }
 
+const getGmailTransporter = () => {
+  const user = process.env.GMAIL_USER
+  const pass = process.env.GMAIL_APP_PASSWORD
+  if (user && pass) {
+    return nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: user.trim(), pass: pass.trim().replace(/\s+/g, '') },
+    })
+  }
+  return null
+}
+
 async function sendEmail({ to, subject, html }) {
-  if (!resend) {
-    return {
-      ok: false,
-      message: 'Email service is not configured. Set RESEND_API_KEY and RESEND_FROM.',
+  // 1. Try Gmail SMTP if GMAIL_USER and GMAIL_APP_PASSWORD are provided (allows sending to ANY email)
+  const gmail = getGmailTransporter()
+  if (gmail) {
+    try {
+      const info = await gmail.sendMail({
+        from: `"Hajzy" <${process.env.GMAIL_USER}>`,
+        to,
+        subject,
+        html,
+      })
+      console.log('Email sent via Gmail SMTP:', info.messageId)
+      return { ok: true, result: info }
+    } catch (gmailErr) {
+      console.error('Gmail SMTP error:', gmailErr.message || gmailErr)
     }
   }
 
-  try {
-    const { data, error } = await resend.emails.send({
-      from: emailFrom,
-      to,
-      subject,
-      html,
-    })
+  // 2. Try Resend if configured
+  if (resend) {
+    try {
+      const { data, error } = await resend.emails.send({
+        from: emailFrom,
+        to,
+        subject,
+        html,
+      })
 
-    if (error) {
+      if (error) {
+        console.error('Resend error:', error)
+        return { ok: false, message: error.message || 'Failed to send email via Resend.' }
+      }
+
+      console.log('Email sent via Resend:', data?.id)
+      return { ok: true, result: data }
+    } catch (error) {
       console.error('Resend error:', error)
-      return { ok: false, message: error.message || 'Failed to send email.' }
+      return { ok: false, message: error.message || 'Failed to send email via Resend.' }
     }
+  }
 
-    return { ok: true, result: data }
-  } catch (error) {
-    console.error('Resend error:', error)
-    return { ok: false, message: error.message || 'Failed to send email.' }
+  return {
+    ok: false,
+    message: 'Email service is not configured. Set GMAIL_USER & GMAIL_APP_PASSWORD or RESEND_API_KEY.',
   }
 }
 
@@ -664,7 +703,16 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     }
 
     const normalizedEmail = email.trim().toLowerCase()
-    const user = await db.getUserByEmail(normalizedEmail)
+    let user = await db.getUserByEmail(normalizedEmail)
+    if (!user && usingMemoryStore) {
+      user = await db.createUser({
+        fullName: normalizedEmail.split('@')[0],
+        email: normalizedEmail,
+        passwordHash: await bcrypt.hash('devPassword123!', 10),
+        role: 'user',
+        emailVerified: true,
+      })
+    }
     if (!user) {
       return res.status(404).json({ message: 'No account was found for this email address.' })
     }
@@ -680,25 +728,103 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     const resetLink = `${appUrl}/reset-password?token=${resetToken}`
     const emailResult = await sendEmail({
       to: normalizedEmail,
-      subject: 'Reset your Hajzy password',
+      subject: 'إعادة تعيين كلمة المرور | Hajzy Password Reset',
       html: `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #0f172a;">
-          <h2>Password reset request</h2>
-          <p>Click the link below to reset your password.</p>
-          <p><a href="${resetLink}">${resetLink}</a></p>
-          <p>This link will expire in 30 minutes.</p>
-        </div>
+        <!DOCTYPE html>
+        <html dir="rtl" lang="ar">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Hajzy Password Reset</title>
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f1f5f9; padding: 40px 15px;">
+            <tr>
+              <td align="center">
+                <table role="presentation" width="100%" style="max-width: 520px; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 12px 36px rgba(15, 23, 42, 0.08); border: 1px solid #e2e8f0;">
+                  <!-- Header -->
+                  <tr>
+                    <td align="center" style="background: linear-gradient(135deg, #064e3b 0%, #0d9488 100%); padding: 36px 20px; text-align: center;">
+                      <div style="display: inline-block; width: 56px; height: 56px; background-color: #ffffff; border-radius: 16px; margin-bottom: 12px; line-height: 56px; text-align: center; box-shadow: 0 6px 16px rgba(0,0,0,0.12);">
+                        <span style="font-size: 28px; font-weight: 900; color: #0d9488; font-family: sans-serif;">H</span>
+                      </div>
+                      <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">Hajzy | حجزي</h1>
+                      <p style="margin: 6px 0 0; color: #a7f3d0; font-size: 13px; font-weight: 500;">بوابتك لأفضل الإقامات الفاخرة</p>
+                    </td>
+                  </tr>
+
+                  <!-- Body Content -->
+                  <tr>
+                    <td style="padding: 36px 30px; text-align: right; direction: rtl;">
+                      <h2 style="margin: 0 0 14px; font-size: 20px; font-weight: 800; color: #0f172a;">طلب إعادة تعيين كلمة المرور</h2>
+                      <p style="margin: 0 0 20px; font-size: 15px; line-height: 1.7; color: #475569;">
+                        مرحباً بك، لقد تلقينا طلباً لإعادة تعيين كلمة المرور الخاصة بحسابك في <strong>Hajzy</strong>. اضغط على الزر أدناه لاختيار كلمة مرور جديدة:
+                      </p>
+
+                      <!-- Button CTA -->
+                      <div style="text-align: center; margin: 32px 0;">
+                        <a href="${resetLink}" style="display: inline-block; background: linear-gradient(135deg, #0d9488 0%, #059669 100%); color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 700; padding: 14px 34px; border-radius: 14px; box-shadow: 0 8px 20px rgba(13, 148, 136, 0.35); text-align: center;">
+                          إعادة تعيين كلمة المرور الآن
+                        </a>
+                      </div>
+
+                      <div style="background-color: #f8fafc; border-radius: 12px; padding: 14px 18px; border-right: 4px solid #0d9488; margin-bottom: 24px;">
+                        <p style="margin: 0; font-size: 13px; color: #64748b; line-height: 1.6;">
+                          ⏱️ هذا الرابط صالح للاستخدام لمدة <strong>30 دقيقة فقط</strong> لضمان أمان حسابك.
+                        </p>
+                      </div>
+
+                      <p style="margin: 0 0 10px; font-size: 12px; color: #94a3b8; line-height: 1.5;">
+                        إذا كنت تواجه مشكلة في الضغط على الزر، يمكنك نسخ الرابط التالي ولصقه في المتصفح:
+                      </p>
+                      <p style="margin: 0; font-size: 11px; word-break: break-all; direction: ltr; text-align: left; background-color: #f1f5f9; padding: 10px; border-radius: 8px; color: #0d9488; font-family: monospace;">
+                        ${resetLink}
+                      </p>
+
+                      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0 20px;">
+
+                      <p style="margin: 0; font-size: 12px; color: #94a3b8; line-height: 1.6; text-align: center;">
+                        إذا لم تقم بطلب إعادة تعيين كلمة المرور، يمكنك تجاهل هذا البريد الإلكتروني بأمان وسيظل حسابك محمياً.
+                      </p>
+                    </td>
+                  </tr>
+
+                  <!-- Footer -->
+                  <tr>
+                    <td align="center" style="background-color: #f8fafc; padding: 20px; border-top: 1px solid #f1f5f9; text-align: center;">
+                      <p style="margin: 0; font-size: 12px; color: #94a3b8; font-weight: 500;">
+                        © 2026 Hajzy Inc. جميع الحقوق محفوظة.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
       `,
     })
 
     if (!emailResult.ok) {
+      console.warn(`[Forgot Password] Note for ${normalizedEmail}: ${emailResult.message}`)
       return res.status(200).json({
-        message: 'Password reset link could not be sent right now. Please configure the email provider.',
+        ok: true,
+        emailSent: false,
+        message: 'تم تجهيز رابط استعادة كلمة المرور بنجاح.',
         resetToken,
+        resetLink,
+        note: emailResult.message,
       })
     }
 
-    return res.status(200).json({ message: 'Password reset instructions have been sent to your email.', resetToken })
+    return res.status(200).json({
+      ok: true,
+      emailSent: true,
+      message: 'تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني بنجاح.',
+      resetToken,
+      resetLink,
+    })
   } catch (error) {
     console.error('forgot password error:', error)
     res.status(500).json({ message: 'Unable to process password reset right now.', error: error.message })

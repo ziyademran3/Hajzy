@@ -1,11 +1,20 @@
 import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
-import { changePassword } from '../lib/authApi'
 
-export default function ProfilePage({ user: initialUser, language = 'ar', onEdit: _onEdit = () => {}, onToggleLanguage = () => {} }) {
-  const { updateProfile } = useAuth()
+export default function ProfilePage({
+  user: initialUser,
+  language = 'ar',
+  onEdit: _onEdit = () => {},
+  onToggleLanguage = () => {},
+  onLogout,
+}) {
+  const { updateProfile, changeUserPassword, logout } = useAuth()
   const [editing, setEditing] = useState(false)
-  const [form, setForm] = useState({ name: initialUser?.name || initialUser?.fullName || '', email: initialUser?.email || '' })
+  const [form, setForm] = useState({
+    name: initialUser?.name || initialUser?.fullName || '',
+    email: initialUser?.email || '',
+    phone: initialUser?.phone || '',
+  })
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
@@ -21,20 +30,26 @@ export default function ProfilePage({ user: initialUser, language = 'ar', onEdit
     title: 'Profile',
     email: 'Email',
     name: 'Full name',
+    phone: 'Phone number',
     edit: 'Edit profile',
     save: 'Save changes',
     cancel: 'Cancel',
     joined: 'Member since',
     success: 'Profile updated successfully.',
+    logout: 'Log out',
+    logoutConfirm: 'Are you sure you want to log out?',
   } : {
     title: 'الملف الشخصي',
     email: 'البريد الإلكتروني',
     name: 'الاسم الكامل',
+    phone: 'رقم الهاتف',
     edit: 'تعديل الملف',
     save: 'حفظ التغييرات',
     cancel: 'إلغاء',
     joined: 'عضو منذ',
     success: 'تم تحديث الملف الشخصي بنجاح.',
+    logout: 'تسجيل الخروج',
+    logoutConfirm: 'هل أنت متأكد أنك تريد تسجيل الخروج؟',
   }
 
   const handleChange = (e) => {
@@ -48,8 +63,13 @@ export default function ProfilePage({ user: initialUser, language = 'ar', onEdit
     setLoading(true)
     setError('')
     try {
-      const data = { fullName: form.name, email: form.email }
-      if (avatarPreview && avatarPreview.startsWith('data:')) {
+      const data = {
+        fullName: form.name,
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+      }
+      if (avatarPreview) {
         data.avatar_url = avatarPreview
       }
       const updated = await updateProfile(data)
@@ -74,6 +94,14 @@ export default function ProfilePage({ user: initialUser, language = 'ar', onEdit
   }
 
   const handlePasswordChange = async () => {
+    if (!passwordForm.current) {
+      setPasswordError(language === 'en' ? 'Please enter current password.' : 'يرجى إدخال كلمة المرور الحالية.')
+      return
+    }
+    if (!passwordForm.newPassword || passwordForm.newPassword.length < 8) {
+      setPasswordError(language === 'en' ? 'New password must be at least 8 characters.' : 'يجب أن تكون كلمة المرور 8 أحرف على الأقل.')
+      return
+    }
     if (passwordForm.newPassword !== passwordForm.confirmNewPassword) {
       setPasswordError(language === 'en' ? 'New passwords do not match.' : 'كلمات المرور الجديدة غير متطابقة.')
       return
@@ -83,15 +111,26 @@ export default function ProfilePage({ user: initialUser, language = 'ar', onEdit
     setPasswordError('')
     setPasswordMessage('')
     try {
-      const res = await changePassword(passwordForm.current, passwordForm.newPassword)
+      const res = await changeUserPassword(passwordForm.current, passwordForm.newPassword)
       if (res) {
-        setPasswordMessage(language === 'en' ? 'Password updated.' : 'تم تحديث كلمة المرور.')
+        setPasswordMessage(language === 'en' ? 'Password updated successfully.' : 'تم تحديث كلمة المرور بنجاح.')
         setPasswordForm({ current: '', newPassword: '', confirmNewPassword: '' })
       }
     } catch (err) {
-      setPasswordError(err.message || 'Unable to change password')
+      setPasswordError(err.message || (language === 'en' ? 'Unable to change password.' : 'تعذر تغيير كلمة المرور.'))
     } finally {
       setPasswordLoading(false)
+    }
+  }
+
+  const handleLogoutClick = () => {
+    if (onLogout) {
+      onLogout()
+    } else {
+      const confirmed = window.confirm(text.logoutConfirm)
+      if (confirmed) {
+        logout()
+      }
     }
   }
 
@@ -162,6 +201,12 @@ export default function ProfilePage({ user: initialUser, language = 'ar', onEdit
               <input name="email" value={form.email} onChange={handleChange} />
             )}
           </div>
+          <div className="detail-item">
+            <label>{text.phone}</label>
+            {!editing ? <div>{initialUser?.phone || (language === 'en' ? 'Not set' : 'لم يحدد')}</div> : (
+              <input name="phone" value={form.phone} onChange={handleChange} placeholder="+20 10..." />
+            )}
+          </div>
         </div>
 
         <div className="avatar-section">
@@ -199,7 +244,11 @@ export default function ProfilePage({ user: initialUser, language = 'ar', onEdit
           <div className="profile-form-actions">
             <button className="secondary-button" type="button" onClick={() => {
               setEditing(false)
-              setForm({ name: initialUser?.name || initialUser?.fullName || '', email: initialUser?.email || '' })
+              setForm({
+                name: initialUser?.name || initialUser?.fullName || '',
+                email: initialUser?.email || '',
+                phone: initialUser?.phone || '',
+              })
             }}>{text.cancel}</button>
             <button className="primary-button" type="button" onClick={handleSave} disabled={loading}>{loading ? '...' : text.save}</button>
           </div>
@@ -281,6 +330,18 @@ export default function ProfilePage({ user: initialUser, language = 'ar', onEdit
           <button className="primary-button" onClick={handlePasswordChange} disabled={passwordLoading}>{passwordLoading ? '...' : (language === 'en' ? 'Change password' : 'تغيير كلمة المرور')}</button>
         </div>
       </section>
+
+      <div className="profile-logout-wrap">
+        <button
+          type="button"
+          onClick={handleLogoutClick}
+          className="profile-logout-btn"
+          id="profile-logout-button"
+        >
+          <span className="material-symbols-outlined">logout</span>
+          <span>{text.logout}</span>
+        </button>
+      </div>
     </div>
   )
 }

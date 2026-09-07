@@ -27,6 +27,20 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background: linear-gradient(135deg, #f4f7f4 0%, #eef7f6 100%);
+  color: #0f172a;
+}
+
+html.dark,
+html[data-theme='dark'],
+body[data-theme='dark'] {
+  color-scheme: dark;
+  background: #090b0d !important;
+  color: #f8fafc;
+}
+
+html.dark body,
+body[data-theme='dark'] {
+  background: #090b0d !important;
 }
 
 img,

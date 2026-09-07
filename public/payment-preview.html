@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>بوابة الدفع - Hajzy Checkout</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Cairo', sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 30px 15px;
+      color: #f8fafc;
+    }
+
+    .payment-wrapper {
+      width: 100%;
+      max-width: 460px;
+    }
+
+    .brand-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .brand-title {
+      font-size: 26px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #60a5fa, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 4px;
+    }
+
+    .brand-subtitle {
+      font-size: 13px;
+      color: #94a3b8;
+    }
+
+    .payment-container {
+      background: rgba(30, 41, 59, 0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 28px;
+      padding: 26px 22px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 35px rgba(59, 130, 246, 0.12);
+    }
+
+    /* شريط تبديل طرق الدفع */
+    .method-tabs {
+      display: flex;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 5px;
+      margin-bottom: 22px;
+      gap: 6px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      padding: 10px 8px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.25s ease;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+    }
+
+    /* محتوى التبويبات */
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* بطاقة البنك التفاعلية */
+    .card-preview {
+      background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #0284c7 100%);
+      border-radius: 20px;
+      padding: 22px;
+      color: white;
+      height: 200px;
+      position: relative;
+      box-shadow: 0 16px 30px -8px rgba(37, 99, 235, 0.45);
+      margin-bottom: 22px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .card-preview::before {
+      content: '';
+      position: absolute;
+      top: -60%;
+      right: -60%;
+      width: 220%;
+      height: 220%;
+      background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .card-chip {
+      width: 42px;
+      height: 30px;
+      background: linear-gradient(135deg, #fbbf24, #d97706);
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+
+    .card-brand {
+      font-weight: 800;
+      font-size: 20px;
+      letter-spacing: 2px;
+      color: #fff;
+    }
+
+    .card-number-display {
+      font-size: 20px;
+      letter-spacing: 3px;
+      font-family: 'Courier New', Courier, monospace;
+      font-weight: 700;
+      direction: ltr;
+      text-align: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .card-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      position: relative;
+      z-index: 2;
+    }
+
+    .card-label {
+      display: block;
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.75);
+      margin-bottom: 2px;
+    }
+
+    .card-val {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    /* واجهة المحافظ الإلكترونية */
+    .wallet-hero {
+      background: linear-gradient(135deg, #b91c1c 0%, #dc2626 50%, #991b1b 100%);
+      border-radius: 20px;
+      padding: 22px;
+      color: white;
+      margin-bottom: 22px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 16px 30px -8px rgba(220, 38, 38, 0.35);
+      transition: all 0.35s ease;
+    }
+
+    .wallet-hero.orange {
+      background: linear-gradient(135deg, #c2410c 0%, #ea580c 50%, #9a3412 100%);
+      box-shadow: 0 16px 30px -8px rgba(234, 88, 12, 0.35);
+    }
+
+    .wallet-hero.etisalat {
+      background: linear-gradient(135deg, #15803d 0%, #16a34a 50%, #166534 100%);
+      box-shadow: 0 16px 30px -8px rgba(22, 163, 74, 0.35);
+    }
+
+    .wallet-hero.we {
+      background: linear-gradient(135deg, #6b21a8 0%, #7e22ce 50%, #581c87 100%);
+      box-shadow: 0 16px 30px -8px rgba(126, 34, 206, 0.35);
+    }
+
+    .wallet-badge-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .wallet-name-title {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .wallet-number-preview {
+      font-size: 22px;
+      font-family: 'Courier New', Courier, monospace;
+      font-weight: 800;
+      direction: ltr;
+      text-align: right;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+
+    .wallet-hint {
+      font-size: 11px;
+      opacity: 0.9;
+      line-height: 1.5;
+    }
+
+    /* شبكات المحافظ */
+    .wallet-providers {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .provider-pill {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1.5px solid #334155;
+      border-radius: 12px;
+      padding: 10px 4px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .provider-pill.active {
+      border-color: #3b82f6;
+      background: rgba(59, 130, 246, 0.15);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+    }
+
+    .provider-pill .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin: 0 auto 6px;
+    }
+
+    .provider-pill.vodafone .dot { background: #ef4444; }
+    .provider-pill.orange .dot { background: #f97316; }
+    .provider-pill.etisalat .dot { background: #22c55e; }
+    .provider-pill.we .dot { background: #a855f7; }
+
+    .provider-pill span {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+
+    /* حقول الإدخال */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 6px;
+    }
+
+    .input-icon-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-icon-wrap .icon {
+      position: absolute;
+      left: 14px;
+      font-size: 18px;
+      pointer-events: none;
+    }
+
+    input {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1.5px solid #334155;
+      border-radius: 14px;
+      padding: 13px 16px;
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+      transition: all 0.25s ease;
+      direction: ltr;
+      text-align: right;
+    }
+
+    .input-icon-wrap input {
+      padding-left: 45px;
+    }
+
+    input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+      background: rgba(15, 23, 42, 0.95);
+    }
+
+    .form-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .form-row .half {
+      flex: 1;
+    }
+
+    /* أزرار الدفع */
+    .pay-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border: none;
+      border-radius: 14px;
+      padding: 15px;
+      color: white;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.5);
+      transition: all 0.25s ease;
+      margin-top: 8px;
+    }
+
+    .pay-btn.wallet-btn {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      box-shadow: 0 10px 20px -5px rgba(220, 38, 38, 0.5);
+    }
+
+    .pay-btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.1);
+    }
+
+    .pay-btn:active {
+      transform: translateY(0);
+    }
+
+    .info-box {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 12px;
+      color: #93c5fd;
+      line-height: 1.6;
+      margin-bottom: 16px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .security-badges {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 12px;
+      color: #64748b;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="payment-wrapper">
+    <div class="brand-header">
+      <h1 class="brand-title">Hajzy Checkout</h1>
+      <p class="brand-subtitle">بوابة الدفع الإلكتروني الآمن لحجز إقامتك</p>
+    </div>
+
+    <div class="payment-container">
+      <!-- شريط تبديل طريقة الدفع -->
+      <div class="method-tabs">
+        <button class="tab-btn active" onclick="switchTab('card')">
+          <span>💳</span>
+          <span>بطاقة بنكية</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('wallet')">
+          <span>📱</span>
+          <span>المحافظ الإلكترونية</span>
+        </button>
+      </div>
+
+      <!-- ================= 1. قسم البطاقة البنكية ================= -->
+      <div id="tab-card" class="tab-content active">
+        <div class="card-preview" id="cardPreview">
+          <div class="card-top">
+            <div class="card-chip"></div>
+            <div class="card-brand" id="cardBrand">VISA</div>
+          </div>
+          <div class="card-number-display" id="cardNumberDisplay">•••• •••• •••• ••••</div>
+          <div class="card-bottom">
+            <div class="card-holder-group">
+              <span class="card-label">اسم حامل البطاقة</span>
+              <span class="card-val" id="cardHolderDisplay">ZIYAD EMRAN</span>
+            </div>
+            <div class="card-expiry-group">
+              <span class="card-label">تاريخ الانتهاء</span>
+              <span class="card-val" id="cardExpiryDisplay">12/28</span>
+            </div>
+          </div>
+        </div>
+
+        <form id="cardForm" onsubmit="return false;">
+          <div class="form-group">
+            <label for="cardNumber">رقم البطاقة</label>
+            <div class="input-icon-wrap">
+              <input type="text" id="cardNumber" maxlength="19" placeholder="4242 4242 4242 4242" autocomplete="cc-number" required />
+              <span class="icon">💳</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="cardHolder">اسم صاحب البطاقة</label>
+            <div class="input-icon-wrap">
+              <input type="text" id="cardHolder" placeholder="الاسم كما هو مدون على البطاقة" autocomplete="cc-name" required />
+              <span class="icon">👤</span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group half">
+              <label for="cardExpiry">تاريخ الصلاحية</label>
+              <input type="text" id="cardExpiry" maxlength="5" placeholder="MM/YY" autocomplete="cc-exp" required />
+            </div>
+            <div class="form-group half">
+              <label for="cardCvv">رمز الأمان (CVV)</label>
+              <input type="password" id="cardCvv" maxlength="4" placeholder="•••" autocomplete="cc-csc" required />
+            </div>
+          </div>
+
+          <button type="submit" class="pay-btn" id="payCardBtn">
+            <span>تأكيد ودفع الحجز بالبطاقة</span>
+            <span>🔒</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- ================= 2. قسم المحافظ الإلكترونية ================= -->
+      <div id="tab-wallet" class="tab-content">
+        <!-- المعاينة الحية للمحفظة -->
+        <div class="wallet-hero vodafone" id="walletHero">
+          <div class="wallet-badge-row">
+            <span class="wallet-name-title" id="walletProviderName">فودافون كاش</span>
+            <span style="font-size: 22px;">📱</span>
+          </div>
+          <div class="wallet-number-preview" id="walletNumberPreview">010XXXXXXXX</div>
+          <div class="wallet-hint">
+            ستصلك رسالة فورية عبر هاتفك لطلب إدخال الرقم السري (PIN) وتأكيد الدفع.
+          </div>
+        </div>
+
+        <!-- اختيار الشبكة -->
+        <div class="wallet-providers">
+          <div class="provider-pill vodafone active" onclick="selectWallet('vodafone', 'فودافون كاش', '010')">
+            <div class="dot"></div>
+            <span>فودافون</span>
+          </div>
+          <div class="provider-pill orange" onclick="selectWallet('orange', 'أورنج كاش', '012')">
+            <div class="dot"></div>
+            <span>أورنج</span>
+          </div>
+          <div class="provider-pill etisalat" onclick="selectWallet('etisalat', 'اتصالات كاش', '011')">
+            <div class="dot"></div>
+            <span>اتصالات</span>
+          </div>
+          <div class="provider-pill we" onclick="selectWallet('we', 'وي باي (WE)', '015')">
+            <div class="dot"></div>
+            <span>وي كاش</span>
+          </div>
+        </div>
+
+        <form id="walletForm" onsubmit="return false;">
+          <div class="form-group">
+            <label for="walletInput">رقم هاتف المحفظة</label>
+            <div class="input-icon-wrap">
+              <input type="tel" id="walletInput" maxlength="11" placeholder="01012345678" required />
+              <span class="icon">📱</span>
+            </div>
+          </div>
+
+          <div class="info-box">
+            <span>ℹ️</span>
+            <div>
+              تأكد من فتح تطبيق محفظتك أو متابعة شاشة هاتفك، حيث سيظهر لك إشعار USSD لإدخال الرقم السري وتأكيد السحب خلال دقيقة واحدة.
+            </div>
+          </div>
+
+          <button type="submit" class="pay-btn wallet-btn" id="payWalletBtn">
+            <span>طلب سحب الحجز من المحفظة</span>
+            <span>🚀</span>
+          </button>
+        </form>
+      </div>
+
+      <div class="security-badges">
+        <span>🛡️ مشفّر ومحمي بأعلى معايير الأمان 256-bit SSL</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // تبديل التبويبات
+    function switchTab(type) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+      if (type === 'card') {
+        document.querySelector('.method-tabs .tab-btn:first-child').classList.add('active');
+        document.getElementById('tab-card').classList.add('active');
+      } else {
+        document.querySelector('.method-tabs .tab-btn:last-child').classList.add('active');
+        document.getElementById('tab-wallet').classList.add('active');
+      }
+    }
+
+    // منطق المحافظ الإلكترونية
+    const walletInput = document.getElementById('walletInput');
+    const walletNumberPreview = document.getElementById('walletNumberPreview');
+    const walletProviderName = document.getElementById('walletProviderName');
+    const walletHero = document.getElementById('walletHero');
+    const payWalletBtn = document.getElementById('payWalletBtn');
+
+    function selectWallet(carrier, name, prefix) {
+      document.querySelectorAll('.provider-pill').forEach(p => p.classList.remove('active'));
+      document.querySelector(`.provider-pill.${carrier}`)?.classList.add('active');
+
+      walletProviderName.innerText = name;
+      walletHero.className = `wallet-hero ${carrier}`;
+
+      if (!walletInput.value.startsWith(prefix)) {
+        walletInput.value = prefix;
+        walletNumberPreview.innerText = prefix + 'XXXXXXXX'.substring(0, 8);
+      }
+    }
+
+    // كشف شبكة المحفظة تلقائياً أثناء كتابة الرقم
+    walletInput.addEventListener('input', (e) => {
+      let val = e.target.value.replace(/\D/g, '');
+      e.target.value = val;
+      walletNumberPreview.innerText = val || '010XXXXXXXX';
+
+      if (val.startsWith('010')) {
+        selectWallet('vodafone', 'فودافون كاش', '010');
+      } else if (val.startsWith('012')) {
+        selectWallet('orange', 'أورنج كاش', '012');
+      } else if (val.startsWith('011')) {
+        selectWallet('etisalat', 'اتصالات كاش', '011');
+      } else if (val.startsWith('015')) {
+        selectWallet('we', 'وي باي (WE)', '015');
+      }
+    });
+
+    // تفاعل الدفع عبر المحفظة
+    document.getElementById('walletForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const num = walletInput.value;
+      if (num.length < 11) {
+        alert('يرجى إدخال رقم هاتف محفظة صحيح مكون من 11 رقماً');
+        return;
+      }
+
+      payWalletBtn.innerHTML = 'جاري إرسال طلب السحب لهاتفك... 📲';
+      payWalletBtn.style.opacity = '0.8';
+      payWalletBtn.disabled = true;
+
+      setTimeout(() => {
+        payWalletBtn.innerHTML = 'تم إرسال الإشعار! يرجى تأكيد العملية عبر هاتفك ✅';
+        payWalletBtn.style.background = 'linear-gradient(135deg, #16a34a, #15803d)';
+        payWalletBtn.style.opacity = '1';
+      }, 1500);
+    });
+
+    // منطق البطاقة البنكية
+    const numberInput = document.getElementById('cardNumber');
+    const holderInput = document.getElementById('cardHolder');
+    const expiryInput = document.getElementById('cardExpiry');
+    const numberDisplay = document.getElementById('cardNumberDisplay');
+    const holderDisplay = document.getElementById('cardHolderDisplay');
+    const expiryDisplay = document.getElementById('cardExpiryDisplay');
+    const brandDisplay = document.getElementById('cardBrand');
+    const cardPreview = document.getElementById('cardPreview');
+
+    numberInput.addEventListener('input', (e) => {
+      let value = e.target.value.replace(/\D/g, '');
+      let formatted = value.match(/.{1,4}/g)?.join(' ') || '';
+      e.target.value = formatted;
+      numberDisplay.innerText = formatted || '•••• •••• •••• ••••';
+
+      if (value.startsWith('4')) {
+        brandDisplay.innerText = 'VISA';
+        cardPreview.style.background = 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #0284c7 100%)';
+      } else if (value.startsWith('5')) {
+        brandDisplay.innerText = 'MASTERCARD';
+        cardPreview.style.background = 'linear-gradient(135deg, #b91c1c 0%, #ea580c 50%, #d97706 100%)';
+      } else {
+        brandDisplay.innerText = 'CARD';
+        cardPreview.style.background = 'linear-gradient(135deg, #334155 0%, #1e293b 100%)';
+      }
+    });
+
+    holderInput.addEventListener('input', (e) => {
+      holderDisplay.innerText = e.target.value.toUpperCase() || 'YOUR NAME';
+    });
+
+    expiryInput.addEventListener('input', (e) => {
+      let val = e.target.value.replace(/\D/g, '');
+      if (val.length >= 2) {
+        val = val.substring(0, 2) + '/' + val.substring(2, 4);
+      }
+      e.target.value = val;
+      expiryDisplay.innerText = val || 'MM/YY';
+    });
+
+    document.getElementById('cardForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('payCardBtn');
+      btn.innerHTML = 'جاري معالجة الدفع بالبطاقة... ⏳';
+      btn.style.opacity = '0.8';
+      btn.disabled = true;
+
+      setTimeout(() => {
+        btn.innerHTML = 'تم الدفع بنجاح! شكراً لك ✅';
+        btn.style.background = 'linear-gradient(135deg, #16a34a, #15803d)';
+        btn.style.opacity = '1';
+      }, 1500);
+    });
+  </script>
+</body>
+</html>

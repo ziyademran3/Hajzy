@@ -2,6 +2,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import Card from './Card'
 import { FiChevronLeft } from 'react-icons/fi'
+import { FALLBACK_STAY_PHOTO } from '../lib/dataService'
 
 // RecentActivity component
 // - uses t('dashboard.recentActivity') for heading
@@ -14,14 +15,14 @@ const SAMPLE = [
     titleKey: 'activity.bookingConfirmed',
     titleDefault: 'حجز مؤكد — فيلا على البحر',
     location: 'الإسكندرية',
-    thumbnail: 'https://images.unsplash.com/photo-1505691723518-36a5a4b9b8b9?q=80&w=400&auto=format&fit=crop&ixlib=rb-4.0.3&s=placeholder',
+    thumbnail: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=400&auto=format&fit=crop',
   },
   {
     id: 'a2',
     titleKey: 'activity.reviewLeft',
     titleDefault: 'مراجعة جديدة من ضيف',
     location: 'القاهرة',
-    thumbnail: 'https://images.unsplash.com/photo-1542224566-3d3b8cde8c8b?q=80&w=400&auto=format&fit=crop&ixlib=rb-4.0.3&s=placeholder',
+    thumbnail: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=400&auto=format&fit=crop',
   },
 ]
 
@@ -56,7 +57,16 @@ export default function RecentActivity({ activities = SAMPLE }) {
           <Card key={act.id} variant="default" size="sm" className="p-3">
             <div className="flex items-center gap-3">
               <div className="w-14 h-14 rounded-md overflow-hidden flex-shrink-0">
-                <img src={act.thumbnail} alt="thumb" className="w-full h-full object-cover" />
+                <img
+                  src={act.thumbnail || FALLBACK_STAY_PHOTO}
+                  alt="thumb"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    if (e.currentTarget.src !== FALLBACK_STAY_PHOTO) {
+                      e.currentTarget.src = FALLBACK_STAY_PHOTO
+                    }
+                  }}
+                />
               </div>
 
               <div className="flex-1 min-w-0">

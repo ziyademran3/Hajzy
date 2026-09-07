@@ -1,5 +1,9 @@
 import { useState } from 'react'
 import { forgotPassword } from '../lib/authApi'
+import Logo from '../components/Logo'
+import SocialAuthModal from '../components/SocialAuthModal'
+import { triggerGoogleLogin } from '../lib/googleAuth'
+import { useTheme } from '../components/ThemeProvider'
 
 // Reusable social icons, kept locally for a small and clean dependency footprint.
 const GoogleIcon = () => (
@@ -11,14 +15,11 @@ const GoogleIcon = () => (
   </svg>
 )
 
-const AppleIcon = () => (
-  <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-current">
-    <path d="M15.7 12.8c0-2.4 2-3.5 2.1-3.5-1.1-1.7-2.8-1.9-3.4-1.9-1.5-.2-2.8.9-3.6.9-.8 0-2-.9-3.2-.9C5.2 7.5 3.6 8.8 2.9 10.6c-1.4 2.4-.4 5.9 1 7.8.7 1 1.5 2.1 2.6 2 1.1-.1 1.5-.7 2.8-.7 1.3 0 1.7.7 2.9.7 1.2 0 2-.9 2.7-1.9 0.8-1.2 1.2-2.5 1.2-2.6-.1-.1-2.2-.8-3.7-2.1Zm-2.6-6.7c.6-.7 1.1-1.7 1-2.7-.9-.1-2.1.6-2.8 1.3-.6.7-1.2 1.7-1 2.7 1 .2 2.1-.6 2.8-1.3Z" />
-  </svg>
-)
 
+export default function LoginPage({ language = 'ar', onToggleLanguage, onLogin, onSwitchToSignup, onSwitchToForgotPassword, onSocialLogin = () => {} }) {
+  const { theme, toggleTheme } = useTheme()
+  const isDark = theme === 'dark'
 
-export default function LoginPage({ language = 'ar', onToggleLanguage: _onToggleLanguage, onLogin, onSwitchToSignup, onSwitchToForgotPassword, onSocialLogin = () => {} }) {
   // Use a single source of truth for translated strings to keep labels and validation consistent.
   const text = language === 'en'
     ? {
@@ -157,59 +158,127 @@ export default function LoginPage({ language = 'ar', onToggleLanguage: _onToggle
     }
   }
 
+  const [socialModalProvider, setSocialModalProvider] = useState(null)
+
   const handleSocialClick = async (provider) => {
     if (loading) return
+    if (provider === 'google') {
+      try {
+        setLoading(true)
+        setErrors({})
+        const account = await triggerGoogleLogin()
+        if (account) {
+          await onSocialLogin(account)
+        }
+      } catch (err) {
+        console.error('Google Sign-In error:', err)
+        const errMsg = err?.message || ''
+        if (
+          errMsg.includes('popup_closed') ||
+          errMsg.includes('access_denied') ||
+          errMsg.includes('closed')
+        ) {
+          // User closed popup without selecting an account
+        } else if (errMsg.includes('origin_mismatch')) {
+          setErrors({
+            form:
+              language === 'en'
+                ? 'Google OAuth origin mismatch: Please make sure http://localhost:5173 is added to Authorized JavaScript origins in Google Cloud Console.'
+                : 'خطأ نطاق Google: يرجى التأكد من إضافة http://localhost:5173 في Authorized JavaScript origins في Google Cloud Console.',
+          })
+        } else {
+          setErrors({
+            form:
+              language === 'en'
+                ? `Google sign-in failed: ${errMsg}`
+                : `تعذر تسجيل الدخول بـ Google: ${errMsg}`,
+          })
+        }
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+    setSocialModalProvider(provider)
+  }
+
+  const handleSelectSocialAccount = async (account) => {
     setLoading(true)
     try {
-      const guestUser = await onSocialLogin(provider)
-      if (guestUser && typeof guestUser === 'object') {
-        return guestUser
-      }
+      await onSocialLogin(account)
     } finally {
       setLoading(false)
+      setSocialModalProvider(null)
     }
-    return null
   }
 
   const emailPlaceholder = language === 'en' ? 'your@email.com' : 'أدخل بريدك الإلكتروني'
 
   return (
     <div
-      className={`min-h-screen bg-[#f4faf7] px-4 py-8 sm:px-6 lg:px-8 ${language === 'ar' ? 'rtl' : 'ltr'}`}
+      className={`min-h-screen bg-[#f4faf7] dark:bg-[#090b0d] px-4 py-8 sm:px-6 lg:px-8 transition-colors duration-200 ${language === 'ar' ? 'rtl' : 'ltr'}`}
       dir={language === 'ar' ? 'rtl' : 'ltr'}
     >
       <div className="mx-auto flex min-h-screen max-w-md items-center justify-center">
-        <div className="w-full overflow-hidden rounded-[28px] border border-emerald-100 bg-white/95 shadow-[0_25px_80px_rgba(15,118,110,0.08)] backdrop-blur-xl">
-          <main className="bg-white p-6 sm:p-8">
+        <div className="w-full overflow-hidden rounded-[28px] border border-emerald-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 shadow-[0_25px_80px_rgba(15,118,110,0.08)] dark:shadow-[0_25px_80px_rgba(0,0,0,0.4)] backdrop-blur-xl transition-colors duration-200">
+          <main className="bg-white dark:bg-slate-900 p-6 sm:p-8 transition-colors duration-200">
+            <div className="mb-6 flex items-center justify-between">
+              <Logo size={32} showText={true} />
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                  aria-label={isDark ? (language === 'ar' ? 'تفعيل الوضع النهاري' : 'Switch to light mode') : (language === 'ar' ? 'تفعيل الوضع الليلي' : 'Switch to dark mode')}
+                  title={isDark ? (language === 'ar' ? 'تفعيل الوضع النهاري' : 'Switch to light mode') : (language === 'ar' ? 'تفعيل الوضع الليلي' : 'Switch to dark mode')}
+                >
+                  <span className="material-symbols-outlined text-[19px]">
+                    {isDark ? 'light_mode' : 'dark_mode'}
+                  </span>
+                </button>
+                {typeof onToggleLanguage === 'function' && (
+                  <button
+                    type="button"
+                    onClick={onToggleLanguage}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                    aria-label={language === 'en' ? 'Switch to Arabic' : 'التبديل إلى الإنجليزية'}
+                  >
+                    <span>{language === 'en' ? 'العربية' : 'English'}</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="mb-8">
-              <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
+              <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white sm:text-4xl">
                 {text.title}
               </h1>
             </div>
 
-            <div className="mb-5 grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => handleSocialClick('google')} disabled={loading} className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-2 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-70">
+            <div className="mb-5">
+              <button
+                type="button"
+                onClick={() => handleSocialClick('google')}
+                disabled={loading}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-4 py-3 text-sm font-semibold text-slate-700 dark:text-slate-200 transition hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-70"
+              >
                 <GoogleIcon />
-                Google
-              </button>
-              <button type="button" onClick={() => handleSocialClick('apple')} disabled={loading} className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-2 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-70">
-                <AppleIcon />
-                Apple
+                {text.socialGoogle}
               </button>
             </div>
 
-            <div className="mb-5 flex items-center gap-3 text-xs text-slate-500">
-              <div className="h-[2px] flex-1 bg-slate-200" />
+            <div className="mb-5 flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+              <div className="h-[1px] flex-1 bg-slate-200 dark:bg-slate-700" />
               <span>{language === 'en' ? 'or continue with email' : 'أو تابع بالبريد الإلكتروني'}</span>
-              <div className="h-[2px] flex-1 bg-slate-200" />
+              <div className="h-[1px] flex-1 bg-slate-200 dark:bg-slate-700" />
             </div>
 
             <form className="space-y-5" onSubmit={handleSubmit} noValidate>
               <div>
-                <label htmlFor="email" className="mb-2 block text-sm font-semibold text-slate-300">
+                <label htmlFor="email" className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">
                   {text.emailLabel}
                 </label>
-                <div className={`flex items-center gap-3 rounded-2xl border bg-slate-50 px-3 transition ${errors.email ? 'border-[#f1c5c9] bg-[#fff8f8] shadow-[0_0_0_4px_rgba(241,197,201,0.16)]' : 'border-slate-200 focus-within:border-emerald-400 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.12)]'}`}>
+                <div className={`flex items-center gap-3 rounded-2xl border bg-slate-50 dark:bg-slate-800/60 px-3 transition ${errors.email ? 'border-[#f1c5c9] dark:border-red-800/60 bg-[#fff8f8] dark:bg-red-950/20 shadow-[0_0_0_4px_rgba(241,197,201,0.16)]' : 'border-slate-200 dark:border-slate-700 focus-within:border-emerald-500 focus-within:bg-white dark:focus-within:bg-slate-900 focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.12)]'}`}>
                   <input
                     id="email"
                     name="email"
@@ -221,11 +290,11 @@ export default function LoginPage({ language = 'ar', onToggleLanguage: _onToggle
                     disabled={loading}
                     aria-invalid={Boolean(errors.email)}
                     aria-describedby={errors.email ? 'email-error' : undefined}
-                    className="w-full border-0 bg-transparent py-3.5 text-slate-900 placeholder:text-slate-500 focus:outline-none"
+                    className="w-full border-0 bg-transparent py-3.5 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
                   />
                 </div>
                 {errors.email && (
-                  <p id="email-error" className="mt-2 text-sm font-medium text-[#c86b73]">
+                  <p id="email-error" className="mt-2 text-sm font-medium text-red-600 dark:text-red-400">
                     {errors.email}
                   </p>
                 )}
@@ -233,13 +302,13 @@ export default function LoginPage({ language = 'ar', onToggleLanguage: _onToggle
 
               <div>
                 <div className="mb-2 flex items-center justify-between gap-3">
-                  <label htmlFor="password" className="block text-sm font-semibold text-slate-300">
+                  <label htmlFor="password" className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
                     {text.passwordLabel}
                   </label>
                   <button
                     type="button"
                     onClick={() => setShowPassword((current) => !current)}
-                    className="flex items-center justify-center w-10 h-10 text-emerald-300 transition hover:text-emerald-200 hover:bg-emerald-500/10 rounded-lg"
+                    className="flex items-center justify-center w-10 h-10 text-emerald-600 dark:text-emerald-400 transition hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg"
                     aria-label={showPassword ? text.hidePassword : text.togglePassword}
                     title={showPassword ? text.hidePassword : text.togglePassword}
                   >
@@ -247,7 +316,7 @@ export default function LoginPage({ language = 'ar', onToggleLanguage: _onToggle
                   </button>
                 </div>
 
-                <div className={`flex items-center gap-3 rounded-2xl border bg-slate-50 px-3 transition ${errors.password ? 'border-[#f1c5c9] bg-[#fff8f8] shadow-[0_0_0_4px_rgba(241,197,201,0.16)]' : 'border-slate-200 focus-within:border-emerald-400 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.12)]'}`}>
+                <div className={`flex items-center gap-3 rounded-2xl border bg-slate-50 dark:bg-slate-800/60 px-3 transition ${errors.password ? 'border-[#f1c5c9] dark:border-red-800/60 bg-[#fff8f8] dark:bg-red-950/20 shadow-[0_0_0_4px_rgba(241,197,201,0.16)]' : 'border-slate-200 dark:border-slate-700 focus-within:border-emerald-500 focus-within:bg-white dark:focus-within:bg-slate-900 focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.12)]'}`}>
                   <input
                     id="password"
                     name="password"
@@ -259,24 +328,24 @@ export default function LoginPage({ language = 'ar', onToggleLanguage: _onToggle
                     disabled={loading}
                     aria-invalid={Boolean(errors.password)}
                     aria-describedby={errors.password ? 'password-error' : undefined}
-                    className="w-full border-0 bg-transparent py-3.5 text-slate-900 placeholder:text-slate-500 focus:outline-none"
+                    className="w-full border-0 bg-transparent py-3.5 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
                   />
                 </div>
                 {errors.password && (
-                  <p id="password-error" className="mt-2 text-sm font-medium text-[#c86b73]">
+                  <p id="password-error" className="mt-2 text-sm font-medium text-red-600 dark:text-red-400">
                     {errors.password}
                   </p>
                 )}
               </div>
 
               <div className="flex items-center justify-between gap-3 text-sm">
-                <label className="inline-flex cursor-pointer items-center gap-2 text-slate-300">
+                <label className="inline-flex cursor-pointer items-center gap-2 text-slate-700 dark:text-slate-300">
                   <input
                     type="checkbox"
                     name="remember"
                     checked={form.remember}
                     onChange={handleChange}
-                    className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-400"
+                    className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-emerald-600 focus:ring-emerald-500"
                   />
                   <span>{text.remember}</span>
                 </label>
@@ -284,7 +353,7 @@ export default function LoginPage({ language = 'ar', onToggleLanguage: _onToggle
                 <button
                   type="button"
                   onClick={onSwitchToForgotPassword || handleForgotPassword}
-                  className="font-semibold text-emerald-300 underline-offset-4 transition hover:text-emerald-200 hover:underline"
+                  className="font-semibold text-emerald-600 dark:text-emerald-400 underline-offset-4 transition hover:text-emerald-700 dark:hover:text-emerald-300 hover:underline"
                 >
                   {text.forgot}
                 </button>
@@ -293,19 +362,19 @@ export default function LoginPage({ language = 'ar', onToggleLanguage: _onToggle
               <button
                 type="button"
                 onClick={onSwitchToSignup}
-                className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 active:scale-[0.99]"
+                className="w-full rounded-2xl border border-emerald-300 dark:border-emerald-700/60 bg-white dark:bg-slate-800/80 px-4 py-2.5 text-sm font-semibold text-emerald-700 dark:text-emerald-300 transition hover:bg-emerald-50 dark:hover:bg-emerald-950/40 active:scale-[0.99]"
               >
                 {text.createAccount}
               </button>
 
               {resetMessage && (
-                <div className="rounded-xl border border-emerald-500/40 bg-emerald-900/30 px-3 py-2 text-sm font-medium text-emerald-200" role="status" aria-live="polite">
+                <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-2 text-sm font-medium text-emerald-800 dark:text-emerald-200" role="status" aria-live="polite">
                   {resetMessage}
                 </div>
               )}
 
               {errors.form && (
-                <div className="rounded-xl border border-red-500/40 bg-red-950/30 px-3 py-2 text-sm font-medium text-red-200" role="alert">
+                <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm font-medium text-red-700 dark:text-red-300" role="alert">
                   {errors.form}
                 </div>
               )}
@@ -329,6 +398,14 @@ export default function LoginPage({ language = 'ar', onToggleLanguage: _onToggle
           </main>
         </div>
       </div>
+
+      <SocialAuthModal
+        isOpen={Boolean(socialModalProvider)}
+        provider={socialModalProvider || 'google'}
+        language={language}
+        onClose={() => setSocialModalProvider(null)}
+        onSelectAccount={handleSelectSocialAccount}
+      />
     </div>
   )
 }

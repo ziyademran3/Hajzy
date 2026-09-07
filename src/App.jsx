@@ -40,9 +40,9 @@ import {
 } from './lib/dataService'
 
 const handleStayImageError = (event) => {
-  if (event.currentTarget.dataset.fallbackApplied === 'true') return
-  event.currentTarget.dataset.fallbackApplied = 'true'
-  event.currentTarget.src = FALLBACK_STAY_PHOTO
+  if (event.currentTarget.src !== FALLBACK_STAY_PHOTO) {
+    event.currentTarget.src = FALLBACK_STAY_PHOTO
+  }
 }
 
 const pageTitlesByLanguage = {
@@ -72,6 +72,84 @@ const pageTitlesByLanguage = {
   },
 }
 
+const NOTIFICATION_TRANSLATIONS = {
+  ar: {
+    'تم تأكيد حجزك': 'تم تأكيد حجزك',
+    'Booking Confirmed': 'تم تأكيد حجزك',
+    'إقامة فيستا الإسكندرية - الوصول غدًا في 15:00': 'إقامة فيستا الإسكندرية - الوصول غدًا في 15:00',
+    'Alexandria Vista Stay - Arrival tomorrow at 15:00': 'إقامة فيستا الإسكندرية - الوصول غدًا في 15:00',
+    'انخفض سعر إقامتك المفضلة': 'انخفض سعر إقامتك المفضلة',
+    'Price drop on your favorite stay': 'انخفض سعر إقامتك المفضلة',
+    'تم تخفيض سعر شاليه البحر الأحمر بنسبة 12%': 'تم تخفيض سعر شاليه البحر الأحمر بنسبة 12%',
+    'Red Sea Chalet price was reduced by 12%': 'تم تخفيض سعر شاليه البحر الأحمر بنسبة 12%',
+    'تذكير الوصول': 'تذكير الوصول',
+    'Check-in Reminder': 'تذكير الوصول',
+    'يرجى تأكيد موعد الوصول قبل 24 ساعة': 'يرجى تأكيد موعد الوصول قبل 24 ساعة',
+    'Please confirm arrival time 24 hours prior': 'يرجى تأكيد موعد الوصول قبل 24 ساعة',
+    'Please confirm check-in time 24 hours prior': 'يرجى تأكيد موعد الوصول قبل 24 ساعة',
+    'تم إلغاء الحجز': 'تم إلغاء الحجز',
+    'Booking Cancelled': 'تم إلغاء الحجز',
+    'تم تحديث حالة الحجز بنجاح وسيتم إبلاغك بأي تغييرات لاحقًا.': 'تم تحديث حالة الحجز بنجاح وسيتم إبلاغك بأي تغييرات لاحقًا.',
+    'Booking status updated successfully. You will be notified of any changes.': 'تم تحديث حالة الحجز بنجاح وسيتم إبلاغك بأي تغييرات لاحقًا.',
+    'الآن': 'الآن',
+    'Just now': 'الآن',
+    'منذ 2 س': 'منذ 2 س',
+    '2h ago': 'منذ 2 س',
+    'أمس': 'أمس',
+    'Yesterday': 'أمس',
+  },
+  en: {
+    'تم تأكيد حجزك': 'Booking Confirmed',
+    'Booking Confirmed': 'Booking Confirmed',
+    'إقامة فيستا الإسكندرية - الوصول غدًا في 15:00': 'Alexandria Vista Stay - Arrival tomorrow at 15:00',
+    'Alexandria Vista Stay - Arrival tomorrow at 15:00': 'Alexandria Vista Stay - Arrival tomorrow at 15:00',
+    'انخفض سعر إقامتك المفضلة': 'Price drop on your favorite stay',
+    'Price drop on your favorite stay': 'Price drop on your favorite stay',
+    'تم تخفيض سعر شاليه البحر الأحمر بنسبة 12%': 'Red Sea Chalet price was reduced by 12%',
+    'Red Sea Chalet price was reduced by 12%': 'Red Sea Chalet price was reduced by 12%',
+    'تذكير الوصول': 'Check-in Reminder',
+    'Check-in Reminder': 'Check-in Reminder',
+    'يرجى تأكيد موعد الوصول قبل 24 ساعة': 'Please confirm arrival time 24 hours prior',
+    'Please confirm arrival time 24 hours prior': 'Please confirm arrival time 24 hours prior',
+    'Please confirm check-in time 24 hours prior': 'Please confirm arrival time 24 hours prior',
+    'تم إلغاء الحجز': 'Booking Cancelled',
+    'Booking Cancelled': 'Booking Cancelled',
+    'تم تحديث حالة الحجز بنجاح وسيتم إبلاغك بأي تغييرات لاحقًا.': 'Booking status updated successfully. You will be notified of any changes.',
+    'Booking status updated successfully. You will be notified of any changes.': 'Booking status updated successfully. You will be notified of any changes.',
+    'الآن': 'Just now',
+    'Just now': 'Just now',
+    'منذ 2 س': '2h ago',
+    '2h ago': '2h ago',
+    'أمس': 'Yesterday',
+    'Yesterday': 'Yesterday',
+  },
+}
+
+const getLocalizedNotificationText = (text, lang) => {
+  if (!text) return ''
+  if (typeof text === 'object') {
+    return text[lang] || text.ar || text.en || ''
+  }
+  if (typeof text === 'string') {
+    const targetLang = lang === 'en' ? 'en' : 'ar'
+    if (NOTIFICATION_TRANSLATIONS[targetLang] && NOTIFICATION_TRANSLATIONS[targetLang][text]) {
+      return NOTIFICATION_TRANSLATIONS[targetLang][text]
+    }
+    if (targetLang === 'en') {
+      const bookingMatch = text.match(/^تم حجز (.+?) بنجاح، موعد الوصول (.+?)، وإجمالي (.+?)\.$/)
+      if (bookingMatch) {
+        return `Successfully booked ${bookingMatch[1]}, arrival on ${bookingMatch[2]}, total ${bookingMatch[3]}.`
+      }
+    } else {
+      const bookingEnMatch = text.match(/^Successfully booked (.+?), arrival on (.+?), total (.+?)\.$/)
+      if (bookingEnMatch) {
+        return `تم حجز ${bookingEnMatch[1]} بنجاح، موعد الوصول ${bookingEnMatch[2]}، وإجمالي ${bookingEnMatch[3]}.`
+      }
+    }
+  }
+  return text
+}
+
 const getDefaultBookingDates = () => {
   const tomorrow = new Date()
   tomorrow.setDate(tomorrow.getDate() + 1)
@@ -91,17 +169,18 @@ function App() {
   const { theme, toggleTheme } = useTheme()
   const [selectedInvoiceBooking, setSelectedInvoiceBooking] = useState(null)
   const [activePage, setActivePage] = useState('home')
-  const [authRequired, setAuthRequired] = useState(false)
+  const [authRequired, setAuthRequired] = useState(() => {
+    try {
+      const savedUser = localStorage.getItem('hajzy_user') || localStorage.getItem('stitch_user')
+      const isGuest = localStorage.getItem('hajzy_guest_mode') === 'true'
+      const isForceLogin = localStorage.getItem('hajzy_force_login') === 'true'
+      if (isForceLogin) return true
+      if (savedUser || isGuest) return false
+    } catch {}
+    return true
+  })
   const [isGuestMode, setIsGuestMode] = useState(() => {
-    if (typeof window === 'undefined') return true
-
-    const savedGuestMode = localStorage.getItem('hajzy_guest_mode')
-    if (savedGuestMode === null) {
-      localStorage.setItem('hajzy_guest_mode', 'true')
-      return true
-    }
-
-    return savedGuestMode === 'true'
+    try { return localStorage.getItem('hajzy_guest_mode') === 'true' } catch { return false }
   })
   const [properties, setProperties] = useState([])
   const [bookings, setBookings] = useState([])
@@ -156,25 +235,52 @@ function App() {
   const [notifications, setNotifications] = useState([
     {
       id: 'welcome-note',
-      title: 'تم تأكيد حجزك',
-      detail: 'إقامة فيستا الإسكندرية - الوصول غدًا في 15:00',
-      time: 'الآن',
+      title: {
+        ar: 'تم تأكيد حجزك',
+        en: 'Booking Confirmed',
+      },
+      detail: {
+        ar: 'إقامة فيستا الإسكندرية - الوصول غدًا في 15:00',
+        en: 'Alexandria Vista Stay - Arrival tomorrow at 15:00',
+      },
+      time: {
+        ar: 'الآن',
+        en: 'Just now',
+      },
       type: 'success',
       read: false,
     },
     {
       id: 'price-drop-note',
-      title: 'انخفض سعر إقامتك المفضلة',
-      detail: 'تم تخفيض سعر شاليه البحر الأحمر بنسبة 12%',
-      time: 'منذ 2 س',
+      title: {
+        ar: 'انخفض سعر إقامتك المفضلة',
+        en: 'Price drop on your favorite stay',
+      },
+      detail: {
+        ar: 'تم تخفيض سعر شاليه البحر الأحمر بنسبة 12%',
+        en: 'Red Sea Chalet price was reduced by 12%',
+      },
+      time: {
+        ar: 'منذ 2 س',
+        en: '2h ago',
+      },
       type: 'info',
       read: false,
     },
     {
       id: 'reminder-note',
-      title: 'تذكير الوصول',
-      detail: 'يرجى تأكيد موعد الوصول قبل 24 ساعة',
-      time: 'أمس',
+      title: {
+        ar: 'تذكير الوصول',
+        en: 'Check-in Reminder',
+      },
+      detail: {
+        ar: 'يرجى تأكيد موعد الوصول قبل 24 ساعة',
+        en: 'Please confirm arrival time 24 hours prior',
+      },
+      time: {
+        ar: 'أمس',
+        en: 'Yesterday',
+      },
       type: 'warning',
       read: true,
     },
@@ -443,7 +549,7 @@ function App() {
 
     if (isGuestMode) {
       setIsGuestMode(false)
-      setAuthRequired(false)
+      setAuthRequired(true)
       setCurrentAuthPage('login')
       setActivePage('home')
       return
@@ -541,18 +647,18 @@ function App() {
     showToast(t('searchApplied'))
   }
 
-  const addNotification = (title, detail, type = 'info') => {
+  const addNotification = (title, detail, type = 'info', time = null) => {
     setNotifications((currentNotifications) => [
       {
         id: Date.now().toString(),
         title,
         detail,
         type,
-        time: 'الآن',
+        time: time || { ar: 'الآن', en: 'Just now' },
         read: false,
       },
       ...currentNotifications,
-    ].slice(0, 5))
+    ].slice(0, 10))
   }
 
   const markAllNotificationsRead = () => {
@@ -978,7 +1084,11 @@ function App() {
     setBookings((currentBookings) =>
       currentBookings.map((booking) => (booking.id === bookingId ? { ...booking, status: cancelledBooking?.status || 'cancelled' } : booking)),
     )
-    addNotification('تم إلغاء الحجز', 'تم تحديث حالة الحجز بنجاح وسيتم إبلاغك بأي تغييرات لاحقًا.', 'warning')
+    addNotification(
+      { ar: 'تم إلغاء الحجز', en: 'Booking Cancelled' },
+      { ar: 'تم تحديث حالة الحجز بنجاح وسيتم إبلاغك بأي تغييرات لاحقًا.', en: 'Booking status updated successfully. You will be notified of any changes.' },
+      'warning'
+    )
     showToast('تم إلغاء الحجز بنجاح')
   }
 
@@ -1035,69 +1145,113 @@ function App() {
 
       setLastBooking({ ...savedBooking, paymentMethod })
       setBookings((currentBookings) => [{ ...savedBooking, paymentMethod }, ...currentBookings])
-      addNotification('تم تأكيد حجزك', `تم حجز ${selectedProperty.title} بنجاح، موعد الوصول ${bookingDates.checkIn}، وإجمالي ${formatCurrency(grandTotal, selectedProperty.currency)}.`, 'success')
+      addNotification(
+        { ar: 'تم تأكيد حجزك', en: 'Booking Confirmed' },
+        {
+          ar: `تم حجز ${selectedProperty.title} بنجاح، موعد الوصول ${bookingDates.checkIn}، وإجمالي ${formatCurrency(grandTotal, selectedProperty.currency, 'ar')}.`,
+          en: `Successfully booked ${selectedProperty.title_en || selectedProperty.title}, arrival on ${bookingDates.checkIn}, total ${formatCurrency(grandTotal, selectedProperty.currency, 'en')}.`,
+        },
+        'success'
+      )
       navigate('success')
     } finally {
       setIsProcessingPayment(false)
     }
   }
 
+  const pendingOwnerBookingsCount = ownerBookings.filter((b) => b.status === 'pending').length
+
   const renderOwnerPage = () => (
-    <div className="page-shell owner-shell">
-      <div className="owner-dashboard-header">
+    <div className="page-shell owner-shell space-y-6">
+      <div className="owner-dashboard-header flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-2">
         <div>
-          <span className="owner-dashboard-kicker">Owner Dashboard</span>
-          <h2>لوحة تحكم المالك</h2>
+          <span className="owner-dashboard-kicker">Owner Portal</span>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">لوحة تحكم المالك</h2>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+            مرحباً بك، {user?.name || user?.fullName || 'المالك'} • إدارة العقارات والطلبات والأرباح في مكان واحد
+          </p>
         </div>
-        <div className="owner-header-actions">
-          <button type="button" className="secondary-button small-button" onClick={() => document.getElementById('owner-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
-            إضافة شقة جديدة
+        <div className="owner-header-actions flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:from-emerald-500 hover:to-teal-500 transition"
+            onClick={() => document.getElementById('owner-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          >
+            <span className="material-symbols-outlined text-base">add_circle</span>
+            <span>إضافة شقة جديدة</span>
           </button>
-          <button type="button" className="primary-button small-button" onClick={() => navigate('owner-settings')}>
-            إعدادات المالك
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+            onClick={() => navigate('owner-settings')}
+          >
+            <span className="material-symbols-outlined text-base text-emerald-600 dark:text-emerald-400">tune</span>
+            <span>إعدادات المالك</span>
           </button>
         </div>
       </div>
 
-      <div className="owner-summary">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="owner-summary-card accent">
           <div className="owner-card-topline">
-            <p>إجمالي الشقق</p>
+            <p>إجمالي العقارات</p>
             <span className="owner-stat-icon material-symbols-outlined">apartment</span>
           </div>
           <strong>{ownerProperties.length}</strong>
-          <small>+{Math.max(2, Math.round(ownerProperties.length * 0.3))} هذا الشهر</small>
+          <small>+{Math.max(1, Math.round(ownerProperties.length * 0.3))} هذا الشهر</small>
         </div>
-        <div className="owner-summary-card warn">
+
+        <div
+          onClick={() => setBookingFilter('pending')}
+          className="owner-summary-card warn cursor-pointer hover:shadow-md transition"
+        >
           <div className="owner-card-topline">
-            <p>الطلبات</p>
-            <span className="owner-stat-icon material-symbols-outlined">event_available</span>
+            <p>الطلبات المعلقة</p>
+            <span className="owner-stat-icon material-symbols-outlined">pending_actions</span>
           </div>
-          <strong>{ownerBookings.length}</strong>
-          <small>{Math.max(1, Math.min(8, ownerBookings.length))} قيد المراجعة</small>
+          <strong>{pendingOwnerBookingsCount}</strong>
+          <small>{pendingOwnerBookingsCount ? `${pendingOwnerBookingsCount} تحتاج مراجعة` : 'لا توجد طلبات معلقة'}</small>
         </div>
+
         <div className="owner-summary-card success">
           <div className="owner-card-topline">
-            <p>الإيرادات</p>
+            <p>إجمالي الإيرادات</p>
             <span className="owner-stat-icon material-symbols-outlined">payments</span>
           </div>
           <strong>{formatCurrency(ownerRevenue)}</strong>
           <small>+18.4% مقارنة بالأسبوع الماضي</small>
         </div>
+
+        <div className="owner-summary-card accent">
+          <div className="owner-card-topline">
+            <p>تقييم المضيف</p>
+            <span className="owner-stat-icon material-symbols-outlined text-amber-500">star</span>
+          </div>
+          <strong>4.9 ★</strong>
+          <small>متوسط رضا الضيوف (12+ تقييم)</small>
+        </div>
       </div>
 
-      <div className="owner-action-rail">
-        <button type="button" className="secondary-button small-button" onClick={() => document.getElementById('owner-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
-          + إضافة عقار
+      <div className="owner-action-rail flex flex-wrap gap-2 pt-1">
+        <button type="button" className="secondary-button small-button inline-flex items-center gap-1" onClick={() => document.getElementById('owner-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+          <span className="material-symbols-outlined text-sm">add</span>
+          <span>إضافة عقار</span>
         </button>
-        <button type="button" className="secondary-button small-button" onClick={() => setBookingFilter('pending')}>
-          مراجعة الطلبات
+        <button type="button" className="secondary-button small-button inline-flex items-center gap-1" onClick={() => setBookingFilter('pending')}>
+          <span className="material-symbols-outlined text-sm">pending_actions</span>
+          <span>مراجعة الطلبات ({pendingOwnerBookingsCount})</span>
         </button>
-        <button type="button" className="secondary-button small-button" onClick={() => navigate('owner-settings')}>
-          إعدادات التشغيل
+        <button type="button" className="secondary-button small-button inline-flex items-center gap-1" onClick={() => setBookingFilter('all')}>
+          <span className="material-symbols-outlined text-sm">list_alt</span>
+          <span>كل الحجوزات ({ownerBookings.length})</span>
         </button>
-        <button type="button" className="secondary-button small-button" onClick={() => handleOwnerQuickAction('report')}>
-          تصدير تقرير
+        <button type="button" className="secondary-button small-button inline-flex items-center gap-1" onClick={() => handleOwnerQuickAction('report')}>
+          <span className="material-symbols-outlined text-sm">download</span>
+          <span>تصدير تقرير</span>
+        </button>
+        <button type="button" className="secondary-button small-button inline-flex items-center gap-1" onClick={() => navigate('owner-settings')}>
+          <span className="material-symbols-outlined text-sm">settings</span>
+          <span>إعدادات التشغيل</span>
         </button>
       </div>
 
@@ -2139,7 +2293,7 @@ function App() {
             <span className="material-symbols-outlined">chevron_left</span>
           </button>
 
-          <img src={galleryImages[selectedGalleryIndex] || galleryImages[0]} alt={getPropertyTitle(selectedProperty)} onError={handleStayImageError} />
+          <img key={selectedGalleryIndex} src={galleryImages[selectedGalleryIndex] || galleryImages[0]} alt={getPropertyTitle(selectedProperty)} onError={handleStayImageError} />
 
           <button
             type="button"
@@ -3001,30 +3155,63 @@ function App() {
     return (
       <div className="page-shell notifications-shell">
         <div className="notification-toolbar">
-          <button type="button" className="secondary-button small-button" onClick={markAllNotificationsRead}>
-            {language === 'en' ? 'Mark all as read' : 'تحديد الكل كمقروء'}
-          </button>
+          <div className="notification-toolbar-info">
+            <span className="notification-count-tag">
+              {language === 'en'
+                ? `${notifications.length} ${notifications.length === 1 ? 'Notification' : 'Notifications'}`
+                : `${notifications.length} إشعارات`}
+            </span>
+          </div>
+          {notifications.length > 0 && (
+            <button type="button" className="secondary-button small-button" onClick={markAllNotificationsRead}>
+              {language === 'en' ? 'Mark all as read' : 'تحديد الكل كمقروء'}
+            </button>
+          )}
         </div>
 
         <div className="notification-list-page">
-          {notifications.map((notification) => (
-            <div key={notification.id} className={`notification-item-page ${notification.type} ${notification.read ? 'read' : 'unread'}`}>
-              {!notification.read && <span className="notification-dot" aria-hidden="true" />}
-              <div className="notification-icon-wrap">
-                <span className="material-symbols-outlined">
-                  {notification.type === 'success' ? 'check_circle' : notification.type === 'warning' ? 'schedule' : 'info'}
-                </span>
-              </div>
-              <div className="notification-copy">
-                <strong>{notification.title}</strong>
-                <p>{notification.detail}</p>
-                <small>{notification.time}</small>
-              </div>
-              <button type="button" className="notification-delete" onClick={() => removeNotification(notification.id)} aria-label={language === 'en' ? 'Delete notification' : 'حذف الإشعار'}>
-                <span className="material-symbols-outlined">close</span>
-              </button>
+          {notifications.length === 0 ? (
+            <div className="empty-notifications-state">
+              <span className="material-symbols-outlined empty-icon">notifications_none</span>
+              <h3>{language === 'en' ? 'No notifications yet' : 'لا توجد إشعارات'}</h3>
+              <p>
+                {language === 'en'
+                  ? 'We will notify you when there are updates on your bookings or offers.'
+                  : 'سنخطرك عند توفر تحديثات حول حجوزاتك أو العروض الجديدة.'}
+              </p>
             </div>
-          ))}
+          ) : (
+            notifications.map((notification) => {
+              const localizedTitle = getLocalizedNotificationText(notification.title, language)
+              const localizedDetail = getLocalizedNotificationText(notification.detail, language)
+              const localizedTime = getLocalizedNotificationText(notification.time, language)
+
+              return (
+                <div key={notification.id} className={`notification-item-page ${notification.type} ${notification.read ? 'read' : 'unread'}`}>
+                  {!notification.read && <span className="notification-dot" aria-hidden="true" />}
+                  <div className={`notification-icon-wrap ${notification.type}`}>
+                    <span className="material-symbols-outlined">
+                      {notification.type === 'success' ? 'check_circle' : notification.type === 'warning' ? 'schedule' : 'info'}
+                    </span>
+                  </div>
+                  <div className="notification-copy">
+                    <strong>{localizedTitle}</strong>
+                    <p>{localizedDetail}</p>
+                    <small>{localizedTime}</small>
+                  </div>
+                  <button
+                    type="button"
+                    className="notification-delete"
+                    onClick={() => removeNotification(notification.id)}
+                    aria-label={language === 'en' ? 'Delete notification' : 'حذف الإشعار'}
+                    title={language === 'en' ? 'Delete notification' : 'حذف الإشعار'}
+                  >
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+              )
+            })
+          )}
         </div>
       </div>
     )
@@ -3282,29 +3469,29 @@ function App() {
 
   const renderOwnerSettingsPage = () => (
     <div className="page-shell owner-shell settings-shell">
-      <div className="settings-card">
+      <div className="settings-card dark:!bg-slate-900/90 dark:!border-slate-800">
         <div className="settings-header">
           <div className="avatar-wrap small-avatar">
             <img src={user?.avatar || 'https://via.placeholder.com/96'} alt="مالك العقارات" />
           </div>
           <div>
-            <h3>{user?.name}</h3>
-            <p>{user?.email}</p>
+            <h3 className="dark:!text-white">{user?.name}</h3>
+            <p className="dark:!text-slate-400">{user?.email}</p>
           </div>
         </div>
 
         <div className="settings-grid">
-          <div className="setting-box">
-            <span>الدور</span>
-            <strong>مالك عقارات</strong>
+          <div className="setting-box dark:!bg-slate-800/60 dark:!border-slate-700/60">
+            <span className="dark:!text-slate-400">الدور</span>
+            <strong className="dark:!text-white">مالك عقارات</strong>
           </div>
-          <div className="setting-box">
-            <span>حالة الاتصال</span>
-            <strong>{hasSupabaseConnection ? 'متصل بـ Supabase' : 'وضع تجريبي محلي'}</strong>
+          <div className="setting-box dark:!bg-slate-800/60 dark:!border-slate-700/60">
+            <span className="dark:!text-slate-400">حالة الاتصال</span>
+            <strong className="dark:!text-emerald-400">{hasSupabaseConnection ? 'متصل بـ Supabase' : 'وضع تجريبي محلي'}</strong>
           </div>
-          <div className="setting-box wide-setting">
-            <span>مفتاح المشروع</span>
-            <strong>{hasSupabaseConnection ? 'تمت تهيئة البيئة بنجاح' : 'أضف VITE_SUPABASE_URL و VITE_SUPABASE_ANON_KEY'}</strong>
+          <div className="setting-box wide-setting dark:!bg-slate-800/60 dark:!border-slate-700/60">
+            <span className="dark:!text-slate-400">مفتاح المشروع</span>
+            <strong className="dark:!text-slate-200">{hasSupabaseConnection ? 'تمت تهيئة البيئة بنجاح' : 'أضف VITE_SUPABASE_URL و VITE_SUPABASE_ANON_KEY'}</strong>
           </div>
         </div>
 
@@ -3312,7 +3499,7 @@ function App() {
           <button className="primary-button" onClick={() => navigate('owner')}>
             العودة للوحة التحكم
           </button>
-          <button className="secondary-button" onClick={handleLogout}>
+          <button className="secondary-button dark:!bg-rose-950/40 dark:!border-rose-900/50 dark:!text-rose-400 hover:dark:!bg-rose-900/50" onClick={handleLogout}>
             تسجيل الخروج
           </button>
         </div>
@@ -3337,6 +3524,7 @@ function App() {
       return (
         <ForgotPasswordPage
           language={language}
+          onToggleLanguage={handleLanguageToggle}
           onBackToLogin={() => setCurrentAuthPage('login')}
           onSwitchToSignup={() => setCurrentAuthPage('signup')}
         />
@@ -3347,6 +3535,7 @@ function App() {
       return (
         <ResetPasswordPage
           language={language}
+          onToggleLanguage={handleLanguageToggle}
           onBackToLogin={() => setCurrentAuthPage('login')}
         />
       )
@@ -3431,6 +3620,7 @@ function App() {
         language={language}
         onEdit={() => navigate('profile-edit')}
         onToggleLanguage={handleLanguageToggle}
+        onLogout={handleLogout}
       />
     )
 
@@ -3610,7 +3800,7 @@ function App() {
   <div className="app-shell" data-theme={theme}>
       <header className="topbar">
         <div className="topbar-inner">
-          {activePage !== 'home' && activePage !== 'dashboard' && activePage !== 'profile' ? (
+          {(!isOwner ? (activePage !== 'home' && activePage !== 'dashboard' && activePage !== 'profile') : activePage !== 'owner') ? (
             <button className="icon-button" aria-label="العودة" onClick={() => navigate(isOwner ? 'owner' : 'home')}>
               <span className="material-symbols-outlined">arrow_back</span>
             </button>
@@ -3702,23 +3892,25 @@ function App() {
         </div>
       )}
 
-      <nav className="bottom-nav" aria-label="التنقل الرئيسي">
-        {bottomNavItems.map((item) => (
-          <button
-            key={item.key}
-            className={activePage === item.key ? 'nav-item active' : 'nav-item'}
-            onClick={() => navigate(item.key)}
-            aria-label={item.label}
-            title={item.label}
-          >
-            <span className="nav-icon-wrap">
-              <span className="material-symbols-outlined">{item.icon}</span>
-              {item.badge ? <span className="nav-badge">{item.badge}</span> : null}
-            </span>
-            <span className="nav-label">{item.label}</span>
-          </button>
-        ))}
-      </nav>
+      {!isOwner && (
+        <nav className="bottom-nav" aria-label="التنقل الرئيسي">
+          {bottomNavItems.map((item) => (
+            <button
+              key={item.key}
+              className={activePage === item.key ? 'nav-item active' : 'nav-item'}
+              onClick={() => navigate(item.key)}
+              aria-label={item.label}
+              title={item.label}
+            >
+              <span className="nav-icon-wrap">
+                <span className="material-symbols-outlined">{item.icon}</span>
+                {item.badge ? <span className="nav-badge">{item.badge}</span> : null}
+              </span>
+              <span className="nav-label">{item.label}</span>
+            </button>
+          ))}
+        </nav>
+      )}
     </div>
   )
 }

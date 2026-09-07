@@ -123,7 +123,14 @@ export default function NotificationCard({ notification, onDelete, onToggleRead 
       >
         <div className={`flex-none w-14 h-14 rounded-md overflow-hidden flex items-center justify-center ${colorForType[type] || ''}`}>
           {thumbnail ? (
-            <img src={thumbnail} alt="thumb" className="w-full h-full object-cover" />
+            <img
+              src={thumbnail}
+              alt="thumb"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none'
+              }}
+            />
           ) : (
             <div className="w-10 h-10 flex items-center justify-center">
               {iconForType[type] || <AiOutlineBell size={18} />}

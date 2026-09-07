@@ -1,4 +1,8 @@
 import { useState } from 'react'
+import Logo from '../components/Logo'
+import SocialAuthModal from '../components/SocialAuthModal'
+import { triggerGoogleLogin } from '../lib/googleAuth'
+import { useTheme } from '../components/ThemeProvider'
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
@@ -9,14 +13,10 @@ const GoogleIcon = () => (
   </svg>
 )
 
-const AppleIcon = () => (
-  <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-current">
-    <path d="M15.7 12.8c0-2.4 2-3.5 2.1-3.5-1.1-1.7-2.8-1.9-3.4-1.9-1.5-.2-2.8.9-3.6.9-.8 0-2-.9-3.2-.9C5.2 7.5 3.6 8.8 2.9 10.6c-1.4 2.4-.4 5.9 1 7.8.7 1 1.5 2.1 2.6 2 1.1-.1 1.5-.7 2.8-.7 1.3 0 1.7.7 2.9.7 1.2 0 2-.9 2.7-1.9 0.8-1.2 1.2-2.5 1.2-2.6-.1-.1-2.2-.8-3.7-2.1Zm-2.6-6.7c.6-.7 1.1-1.7 1-2.7-.9-.1-2.1.6-2.8 1.3-.6.7-1.2 1.7-1 2.7 1 .2 2.1-.6 2.8-1.3Z" />
-  </svg>
-)
 
-
-export default function SignupPage({ language = 'ar', onToggleLanguage: _onToggleLanguage, onSignup, onSwitchToLogin, onSocialLogin = () => {} }) {
+export default function SignupPage({ language = 'ar', onToggleLanguage, onSignup, onSwitchToLogin, onSocialLogin = () => {} }) {
+  const { theme, toggleTheme } = useTheme()
+  const isDark = theme === 'dark'
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '', agree: false })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -146,13 +146,57 @@ export default function SignupPage({ language = 'ar', onToggleLanguage: _onToggl
     }
   }
 
+  const [socialModalProvider, setSocialModalProvider] = useState(null)
+
   const handleSocialClick = async (provider) => {
-    if (loading) return null
+    if (loading) return
+    if (provider === 'google') {
+      try {
+        setLoading(true)
+        setErrors({})
+        const account = await triggerGoogleLogin()
+        if (account) {
+          await onSocialLogin(account)
+        }
+      } catch (err) {
+        console.error('Google Sign-In error:', err)
+        const errMsg = err?.message || ''
+        if (
+          errMsg.includes('popup_closed') ||
+          errMsg.includes('access_denied') ||
+          errMsg.includes('closed')
+        ) {
+          // User closed popup without selecting an account
+        } else if (errMsg.includes('origin_mismatch')) {
+          setErrors({
+            general:
+              language === 'en'
+                ? 'Google OAuth origin mismatch: Please make sure http://localhost:5173 is added to Authorized JavaScript origins in Google Cloud Console.'
+                : 'خطأ نطاق Google: يرجى التأكد من إضافة http://localhost:5173 في Authorized JavaScript origins في Google Cloud Console.',
+          })
+        } else {
+          setErrors({
+            general:
+              language === 'en'
+                ? `Google sign-in failed: ${errMsg}`
+                : `تعذر تسجيل الدخول بـ Google: ${errMsg}`,
+          })
+        }
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+    setSocialModalProvider(provider)
+  }
+
+  const handleSelectSocialAccount = async (account) => {
     setLoading(true)
     try {
-      return await onSocialLogin(provider)
+      await onSocialLogin(account)
     } finally {
       setLoading(false)
+      setSocialModalProvider(null)
     }
   }
 
@@ -177,41 +221,69 @@ export default function SignupPage({ language = 'ar', onToggleLanguage: _onToggl
 
   return (
     <div
-      className={`min-h-screen bg-[#f4faf7] px-4 py-8 sm:px-6 lg:px-8 ${language === 'ar' ? 'rtl' : 'ltr'}`}
+      className={`min-h-screen bg-[#f4faf7] dark:bg-[#090b0d] px-4 py-8 sm:px-6 lg:px-8 transition-colors duration-200 ${language === 'ar' ? 'rtl' : 'ltr'}`}
       dir={language === 'ar' ? 'rtl' : 'ltr'}
     >
       <div className="mx-auto flex min-h-screen max-w-md items-center justify-center">
-        <div className="w-full overflow-hidden rounded-[28px] border border-emerald-100 bg-white/95 shadow-[0_25px_80px_rgba(15,118,110,0.08)] backdrop-blur-xl">
-          <main className="bg-white p-6 sm:p-8">
+        <div className="w-full overflow-hidden rounded-[28px] border border-emerald-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 shadow-[0_25px_80px_rgba(15,118,110,0.08)] dark:shadow-[0_25px_80px_rgba(0,0,0,0.4)] backdrop-blur-xl transition-colors duration-200">
+          <main className="bg-white dark:bg-slate-900 p-6 sm:p-8 transition-colors duration-200">
+            <div className="mb-6 flex items-center justify-between">
+              <Logo size={32} showText={true} />
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                  aria-label={isDark ? (language === 'ar' ? 'تفعيل الوضع النهاري' : 'Switch to light mode') : (language === 'ar' ? 'تفعيل الوضع الليلي' : 'Switch to dark mode')}
+                  title={isDark ? (language === 'ar' ? 'تفعيل الوضع النهاري' : 'Switch to light mode') : (language === 'ar' ? 'تفعيل الوضع الليلي' : 'Switch to dark mode')}
+                >
+                  <span className="material-symbols-outlined text-[19px]">
+                    {isDark ? 'light_mode' : 'dark_mode'}
+                  </span>
+                </button>
+                {typeof onToggleLanguage === 'function' && (
+                  <button
+                    type="button"
+                    onClick={onToggleLanguage}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                    aria-label={language === 'en' ? 'Switch to Arabic' : 'التبديل إلى الإنجليزية'}
+                  >
+                    <span>{language === 'en' ? 'العربية' : 'English'}</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="mb-8">
-              <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">
+              <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white sm:text-4xl">
                 {text.title}
               </h1>
             </div>
 
-            <div className="mb-5 grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => handleSocialClick('google')} disabled={loading} className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-2 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-70">
+            <div className="mb-5">
+              <button
+                type="button"
+                onClick={() => handleSocialClick('google')}
+                disabled={loading}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-4 py-3 text-sm font-semibold text-slate-700 dark:text-slate-200 transition hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-70"
+              >
                 <GoogleIcon />
                 {text.google}
               </button>
-              <button type="button" onClick={() => handleSocialClick('apple')} disabled={loading} className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-2 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-70">
-                <AppleIcon />
-                Apple
-              </button>
             </div>
 
-            <div className="mb-5 flex items-center gap-3 text-xs text-slate-500">
-              <div className="h-[2px] flex-1 bg-slate-200" />
+            <div className="mb-5 flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+              <div className="h-[1px] flex-1 bg-slate-200 dark:bg-slate-700" />
               <span>{language === 'en' ? 'or continue with email' : 'أو تابع بالبريد الإلكتروني'}</span>
-              <div className="h-[2px] flex-1 bg-slate-200" />
+              <div className="h-[1px] flex-1 bg-slate-200 dark:bg-slate-700" />
             </div>
 
             <form className="space-y-5" onSubmit={handleSubmit} noValidate>
               <div>
-                <label htmlFor="name" className="mb-2 block text-sm font-semibold text-slate-300">
+                <label htmlFor="name" className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">
                   {text.fullName}
                 </label>
-                <div className={`flex items-center gap-3 rounded-2xl border bg-slate-50 px-3 transition ${errors.name ? 'border-[#f1c5c9] bg-[#fff8f8] shadow-[0_0_0_4px_rgba(241,197,201,0.16)]' : 'border-slate-200 focus-within:border-emerald-400 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.12)]'}`}>
+                <div className={`flex items-center gap-3 rounded-2xl border bg-slate-50 dark:bg-slate-800/60 px-3 transition ${errors.name ? 'border-[#f1c5c9] dark:border-red-800/60 bg-[#fff8f8] dark:bg-red-950/20 shadow-[0_0_0_4px_rgba(241,197,201,0.16)]' : 'border-slate-200 dark:border-slate-700 focus-within:border-emerald-500 focus-within:bg-white dark:focus-within:bg-slate-900 focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.12)]'}`}>
                   <input
                     id="name"
                     name="name"
@@ -223,17 +295,17 @@ export default function SignupPage({ language = 'ar', onToggleLanguage: _onToggl
                     disabled={loading}
                     aria-invalid={Boolean(errors.name)}
                     aria-describedby={errors.name ? 'name-error' : undefined}
-                    className="w-full border-0 bg-transparent py-3.5 text-slate-900 placeholder:text-slate-500 focus:outline-none"
+                    className="w-full border-0 bg-transparent py-3.5 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
                   />
                 </div>
-                {errors.name && <p id="name-error" className="mt-2 text-sm font-medium text-[#c86b73]">{errors.name}</p>}
+                {errors.name && <p id="name-error" className="mt-2 text-sm font-medium text-red-600 dark:text-red-400">{errors.name}</p>}
               </div>
 
               <div>
-                <label htmlFor="email" className="mb-2 block text-sm font-semibold text-slate-300">
+                <label htmlFor="email" className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">
                   {text.email}
                 </label>
-                <div className={`flex items-center gap-3 rounded-2xl border bg-slate-50 px-3 transition ${errors.email ? 'border-[#f1c5c9] bg-[#fff8f8] shadow-[0_0_0_4px_rgba(241,197,201,0.16)]' : 'border-slate-200 focus-within:border-emerald-400 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.12)]'}`}>
+                <div className={`flex items-center gap-3 rounded-2xl border bg-slate-50 dark:bg-slate-800/60 px-3 transition ${errors.email ? 'border-[#f1c5c9] dark:border-red-800/60 bg-[#fff8f8] dark:bg-red-950/20 shadow-[0_0_0_4px_rgba(241,197,201,0.16)]' : 'border-slate-200 dark:border-slate-700 focus-within:border-emerald-500 focus-within:bg-white dark:focus-within:bg-slate-900 focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.12)]'}`}>
                   <input
                     id="email"
                     name="email"
@@ -245,21 +317,21 @@ export default function SignupPage({ language = 'ar', onToggleLanguage: _onToggl
                     disabled={loading}
                     aria-invalid={Boolean(errors.email)}
                     aria-describedby={errors.email ? 'email-error' : undefined}
-                    className="w-full border-0 bg-transparent py-3.5 text-slate-900 placeholder:text-slate-500 focus:outline-none"
+                    className="w-full border-0 bg-transparent py-3.5 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
                   />
                 </div>
-                {errors.email && <p id="email-error" className="mt-2 text-sm font-medium text-[#c86b73]">{errors.email}</p>}
+                {errors.email && <p id="email-error" className="mt-2 text-sm font-medium text-red-600 dark:text-red-400">{errors.email}</p>}
               </div>
 
               <div>
                 <div className="mb-2 flex items-center justify-between gap-3">
-                  <label htmlFor="password" className="block text-sm font-semibold text-slate-300">
+                  <label htmlFor="password" className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
                     {text.password}
                   </label>
                   <button
                     type="button"
                     onClick={() => setShowPassword((current) => !current)}
-                    className="flex items-center justify-center w-10 h-10 text-emerald-300 transition hover:text-emerald-200 hover:bg-emerald-500/10 rounded-lg"
+                    className="flex items-center justify-center w-10 h-10 text-emerald-600 dark:text-emerald-400 transition hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg"
                     aria-label={showPassword ? text.hidePassword : text.togglePassword}
                     title={showPassword ? text.hidePassword : text.togglePassword}
                   >
@@ -267,7 +339,7 @@ export default function SignupPage({ language = 'ar', onToggleLanguage: _onToggl
                   </button>
                 </div>
 
-                <div className={`flex items-center gap-3 rounded-2xl border bg-slate-50 px-3 transition ${errors.password ? 'border-red-500 bg-red-50 shadow-[0_0_0_4px_rgba(239,68,68,0.08)]' : 'border-slate-200 focus-within:border-emerald-400 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.12)]'}`}>
+                <div className={`flex items-center gap-3 rounded-2xl border bg-slate-50 dark:bg-slate-800/60 px-3 transition ${errors.password ? 'border-red-500 bg-red-50 dark:bg-red-950/20 shadow-[0_0_0_4px_rgba(239,68,68,0.08)]' : 'border-slate-200 dark:border-slate-700 focus-within:border-emerald-500 focus-within:bg-white dark:focus-within:bg-slate-900 focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.12)]'}`}>
                   <input
                     id="password"
                     name="password"
@@ -279,50 +351,50 @@ export default function SignupPage({ language = 'ar', onToggleLanguage: _onToggl
                     disabled={loading}
                     aria-invalid={Boolean(errors.password)}
                     aria-describedby={errors.password ? 'password-error' : undefined}
-                    className="w-full border-0 bg-transparent py-3.5 text-slate-900 placeholder:text-slate-500 focus:outline-none"
+                    className="w-full border-0 bg-transparent py-3.5 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
                   />
                 </div>
                 <div className="mt-2 flex items-center gap-2">
-                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-200">
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
                    <span className={`block h-full rounded-full ${passwordStrength.level === 0 ? 'w-0' : passwordStrength.level === 1 ? 'w-1/3 bg-red-400' : passwordStrength.level === 2 ? 'w-2/3 bg-amber-400' : 'w-full bg-emerald-500'}`} />
                   </div>
-                  <span className="text-xs font-medium text-slate-600">{passwordStrength.label}</span>
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{passwordStrength.label}</span>
                 </div>
                 <div className="mt-3 space-y-2">
-                  <div className="text-xs font-medium text-slate-500">{text.passwordRequirements}</div>
+                  <div className="text-xs font-medium text-slate-500 dark:text-slate-400">{text.passwordRequirements}</div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center justify-center w-4 h-4 rounded text-xs font-bold ${passwordRequirements.has8Chars ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
+                      <span className={`inline-flex items-center justify-center w-4 h-4 rounded text-xs font-bold ${passwordRequirements.has8Chars ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
                         {passwordRequirements.has8Chars ? '✓' : '○'}
                       </span>
-                      <span className={`text-xs ${passwordRequirements.has8Chars ? 'text-emerald-600 font-medium' : 'text-slate-500'}`}>{text.req8Chars}</span>
+                      <span className={`text-xs ${passwordRequirements.has8Chars ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-slate-500 dark:text-slate-400'}`}>{text.req8Chars}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center justify-center w-4 h-4 rounded text-xs font-bold ${passwordRequirements.hasUppercase ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
+                      <span className={`inline-flex items-center justify-center w-4 h-4 rounded text-xs font-bold ${passwordRequirements.hasUppercase ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
                         {passwordRequirements.hasUppercase ? '✓' : '○'}
                       </span>
-                      <span className={`text-xs ${passwordRequirements.hasUppercase ? 'text-emerald-600 font-medium' : 'text-slate-500'}`}>{text.reqUppercase}</span>
+                      <span className={`text-xs ${passwordRequirements.hasUppercase ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-slate-500 dark:text-slate-400'}`}>{text.reqUppercase}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center justify-center w-4 h-4 rounded text-xs font-bold ${passwordRequirements.hasNumber ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
+                      <span className={`inline-flex items-center justify-center w-4 h-4 rounded text-xs font-bold ${passwordRequirements.hasNumber ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
                         {passwordRequirements.hasNumber ? '✓' : '○'}
                       </span>
-                      <span className={`text-xs ${passwordRequirements.hasNumber ? 'text-emerald-600 font-medium' : 'text-slate-500'}`}>{text.reqNumber}</span>
+                      <span className={`text-xs ${passwordRequirements.hasNumber ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-slate-500 dark:text-slate-400'}`}>{text.reqNumber}</span>
                     </div>
                   </div>
                 </div>
-                {errors.password && <p id="password-error" className="mt-2 text-sm font-medium text-red-400">{errors.password}</p>}
+                {errors.password && <p id="password-error" className="mt-2 text-sm font-medium text-red-600 dark:text-red-400">{errors.password}</p>}
               </div>
 
               <div>
                 <div className="mb-2 flex items-center justify-between gap-3">
-                  <label htmlFor="confirmPassword" className="block text-sm font-semibold text-slate-300">
+                  <label htmlFor="confirmPassword" className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
                     {text.confirmPassword}
                   </label>
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword((current) => !current)}
-                    className="flex items-center justify-center w-10 h-10 text-emerald-300 transition hover:text-emerald-200 hover:bg-emerald-500/10 rounded-lg"
+                    className="flex items-center justify-center w-10 h-10 text-emerald-600 dark:text-emerald-400 transition hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg"
                     aria-label={showConfirmPassword ? text.hidePassword : text.togglePassword}
                     title={showConfirmPassword ? text.hidePassword : text.togglePassword}
                   >
@@ -330,7 +402,7 @@ export default function SignupPage({ language = 'ar', onToggleLanguage: _onToggl
                   </button>
                 </div>
 
-                <div className={`flex items-center gap-3 rounded-2xl border bg-slate-50 px-3 transition ${errors.confirmPassword ? 'border-red-500 bg-red-50 shadow-[0_0_0_4px_rgba(239,68,68,0.08)]' : 'border-slate-200 focus-within:border-emerald-400 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.12)]'}`}>
+                <div className={`flex items-center gap-3 rounded-2xl border bg-slate-50 dark:bg-slate-800/60 px-3 transition ${errors.confirmPassword ? 'border-red-500 bg-red-50 dark:bg-red-950/20 shadow-[0_0_0_4px_rgba(239,68,68,0.08)]' : 'border-slate-200 dark:border-slate-700 focus-within:border-emerald-500 focus-within:bg-white dark:focus-within:bg-slate-900 focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.12)]'}`}>
                   <input
                     id="confirmPassword"
                     name="confirmPassword"
@@ -342,29 +414,29 @@ export default function SignupPage({ language = 'ar', onToggleLanguage: _onToggl
                     disabled={loading}
                     aria-invalid={Boolean(errors.confirmPassword)}
                     aria-describedby={errors.confirmPassword ? 'confirm-password-error' : undefined}
-                    className="w-full border-0 bg-transparent py-3.5 text-slate-900 placeholder:text-slate-500 focus:outline-none"
+                    className="w-full border-0 bg-transparent py-3.5 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
                   />
                 </div>
-                {errors.confirmPassword && <p id="confirm-password-error" className="mt-2 text-sm font-medium text-red-400">{errors.confirmPassword}</p>}
+                {errors.confirmPassword && <p id="confirm-password-error" className="mt-2 text-sm font-medium text-red-600 dark:text-red-400">{errors.confirmPassword}</p>}
               </div>
 
-              <label className="inline-flex cursor-pointer items-center gap-3 text-sm text-slate-700">
+              <label className="inline-flex cursor-pointer items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
                 <input
                   type="checkbox"
                   name="agree"
                   checked={form.agree}
                   onChange={handleChange}
-                  className="h-4 w-4 rounded border-slate-300 bg-white text-emerald-500 focus:ring-emerald-400"
+                  className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-emerald-500 focus:ring-emerald-400"
                 />
                 <span>
-                  <a href="#" onClick={(event) => event.preventDefault()} className="font-medium text-emerald-700 underline-offset-2 hover:underline">{language === 'en' ? 'Terms of service' : 'شروط الخدمة'}</a>
+                  <a href="#" onClick={(event) => event.preventDefault()} className="font-medium text-emerald-700 dark:text-emerald-400 underline-offset-2 hover:underline">{language === 'en' ? 'Terms of service' : 'شروط الخدمة'}</a>
                   {' '}
                   {language === 'en' ? 'and' : 'و'}
                   {' '}
-                  <a href="#" onClick={(event) => event.preventDefault()} className="font-medium text-emerald-700 underline-offset-2 hover:underline">{language === 'en' ? 'Privacy Policy' : 'سياسة الخصوصية'}</a>
+                  <a href="#" onClick={(event) => event.preventDefault()} className="font-medium text-emerald-700 dark:text-emerald-400 underline-offset-2 hover:underline">{language === 'en' ? 'Privacy Policy' : 'سياسة الخصوصية'}</a>
                 </span>
               </label>
-              {errors.agree && <p className="-mt-2 text-sm font-medium text-red-400">{errors.agree}</p>}
+              {errors.agree && <p className="-mt-2 text-sm font-medium text-red-500 dark:text-red-400">{errors.agree}</p>}
 
               {errors.form && (
                 <div className="rounded-xl border border-red-500/40 bg-red-950/30 px-3 py-2 text-sm font-medium text-red-200" role="alert">
@@ -388,15 +460,23 @@ export default function SignupPage({ language = 'ar', onToggleLanguage: _onToggl
               </button>
             </form>
 
-            <p className="mt-8 text-center text-sm text-slate-400">
+            <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
               {text.alreadyHave}{' '}
-              <button type="button" onClick={onSwitchToLogin} className="font-bold text-emerald-300 transition hover:text-emerald-200">
+              <button type="button" onClick={onSwitchToLogin} className="font-bold text-emerald-600 dark:text-emerald-400 transition hover:text-emerald-700 dark:hover:text-emerald-300">
                 {text.login}
               </button>
             </p>
           </main>
         </div>
       </div>
+
+      <SocialAuthModal
+        isOpen={Boolean(socialModalProvider)}
+        provider={socialModalProvider || 'google'}
+        language={language}
+        onClose={() => setSocialModalProvider(null)}
+        onSelectAccount={handleSelectSocialAccount}
+      />
     </div>
   )
 }

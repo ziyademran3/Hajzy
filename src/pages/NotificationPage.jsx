@@ -25,7 +25,7 @@ const SAMPLE = [
     body: 'تم تأكيد حجزك من 10-09 إلى 15-09. الرقم المرجعي: 8231',
     time: 'الآن',
     read: false,
-    thumbnail: 'https://images.unsplash.com/photo-1505691723518-36a5a4b9b8b9?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=placeholder',
+    thumbnail: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=800&auto=format&fit=crop',
     date: new Date().toISOString(),
   },
   {
@@ -55,7 +55,7 @@ const SAMPLE = [
     body: 'مرحبا! هل تحتاج مساعدة في الوصول؟',
     time: '3 أيام مضت',
     read: true,
-    thumbnail: 'https://images.unsplash.com/photo-1542224566-3d3b8cde8c8b?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.0.3&s=placeholder',
+    thumbnail: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800&auto=format&fit=crop',
     date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
   },
 ]

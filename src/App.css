@@ -7335,6 +7335,694 @@ body[data-theme='dark'] .app-shell {
   border-color: rgba(255, 255, 255, 0.12);
 }
 
+/* =========================================================
+   Notifications Page
+   ========================================================= */
+
+.notifications-shell {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+  width: 100%;
+}
+
+.notification-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  gap: 1rem;
+}
+
+.notification-count-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  background: rgba(15, 118, 110, 0.08);
+  color: var(--primary, #0f766e);
+  font-size: 0.825rem;
+  font-weight: 600;
+}
+
+.notification-list-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.notification-item-page {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem;
+  border-radius: var(--radius-md, 16px);
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--line, rgba(0, 67, 63, 0.08));
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.notification-item-page:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+.notification-item-page.unread {
+  background: rgba(240, 253, 250, 0.85);
+  border-color: rgba(15, 118, 110, 0.22);
+}
+
+.notification-dot {
+  position: absolute;
+  top: 1rem;
+  inset-inline-end: 1rem;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #0f766e;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
+}
+
+.notification-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.notification-icon-wrap .material-symbols-outlined {
+  font-size: 1.4rem;
+}
+
+.notification-icon-wrap.success {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+.notification-icon-wrap.warning {
+  background: rgba(245, 158, 11, 0.12);
+  color: #d97706;
+}
+
+.notification-icon-wrap.info {
+  background: rgba(14, 165, 233, 0.12);
+  color: #0284c7;
+}
+
+.notification-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.notification-copy strong {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text, #101b1a);
+  line-height: 1.35;
+}
+
+.notification-copy p {
+  font-size: 0.875rem;
+  color: var(--muted, #4b5563);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.notification-copy small {
+  font-size: 0.775rem;
+  color: #9ca3af;
+  font-weight: 500;
+  margin-top: 0.25rem;
+}
+
+.notification-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.notification-delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.notification-delete .material-symbols-outlined {
+  font-size: 1.15rem;
+}
+
+.empty-notifications-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4rem 1.5rem;
+  background: var(--bg-card, #ffffff);
+  border: 1px dashed var(--line, rgba(0, 67, 63, 0.14));
+  border-radius: var(--radius-lg, 20px);
+  margin-top: 1rem;
+}
+
+.empty-notifications-state .empty-icon {
+  font-size: 3.5rem;
+  color: #9ca3af;
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+.empty-notifications-state h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text, #101b1a);
+  margin-bottom: 0.35rem;
+}
+
+.empty-notifications-state p {
+  font-size: 0.9rem;
+  color: var(--muted, #4b5563);
+  max-width: 340px;
+  margin: 0;
+}
+
+/* Dark mode overrides */
+.app-shell[data-theme='dark'] .notification-item-page {
+  background: rgba(30, 41, 59, 0.7);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.app-shell[data-theme='dark'] .notification-item-page.unread {
+  background: rgba(15, 118, 110, 0.14);
+  border-color: rgba(45, 212, 191, 0.3);
+}
+
+.app-shell[data-theme='dark'] .notification-copy strong {
+  color: #f1f5f9;
+}
+
+.app-shell[data-theme='dark'] .notification-copy p {
+  color: #cbd5e1;
+}
+
+.app-shell[data-theme='dark'] .notification-copy small {
+  color: #64748b;
+}
+
+.app-shell[data-theme='dark'] .notification-count-tag {
+  background: rgba(45, 212, 191, 0.15);
+  color: #2dd4bf;
+}
+
+.app-shell[data-theme='dark'] .empty-notifications-state {
+  background: rgba(30, 41, 59, 0.5);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.app-shell[data-theme='dark'] .empty-notifications-state h3 {
+  color: #f1f5f9;
+}
+
+.app-shell[data-theme='dark'] .empty-notifications-state p {
+  color: #94a3b8;
+}
+
+/* Profile Logout Button */
+.profile-logout-wrap {
+  margin-top: 24px;
+  margin-bottom: 36px;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.profile-logout-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #dc2626;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1.5px solid rgba(239, 68, 68, 0.25);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.profile-logout-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.45);
+  transform: translateY(-1px);
+}
+
+.profile-logout-btn:active {
+  transform: translateY(0);
+}
+
+.app-shell[data-theme='dark'] .profile-logout-btn {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #f87171;
+}
+
+.app-shell[data-theme='dark'] .profile-logout-btn:hover {
+  background: rgba(239, 68, 68, 0.22);
+  border-color: rgba(239, 68, 68, 0.55);
+}
+
+/* =========================================================
+   OWNER DASHBOARD - DARK THEME OVERRIDES
+   ========================================================= */
+
+html[data-theme='dark'] .owner-summary-card,
+body[data-theme='dark'] .owner-summary-card,
+.dark .owner-summary-card,
+.app-shell[data-theme='dark'] .owner-summary-card {
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.92) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35) !important;
+  backdrop-filter: blur(12px);
+}
+
+html[data-theme='dark'] .owner-summary-card.accent,
+body[data-theme='dark'] .owner-summary-card.accent,
+.dark .owner-summary-card.accent,
+.app-shell[data-theme='dark'] .owner-summary-card.accent {
+  background: linear-gradient(145deg, rgba(14, 116, 144, 0.25) 0%, rgba(15, 23, 42, 0.94) 100%) !important;
+  border: 1px solid rgba(14, 116, 144, 0.4) !important;
+  box-shadow: 0 10px 25px rgba(14, 116, 144, 0.15) !important;
+}
+
+html[data-theme='dark'] .owner-summary-card.warn,
+body[data-theme='dark'] .owner-summary-card.warn,
+.dark .owner-summary-card.warn,
+.app-shell[data-theme='dark'] .owner-summary-card.warn {
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.22) 0%, rgba(15, 23, 42, 0.94) 100%) !important;
+  border: 1px solid rgba(245, 158, 11, 0.4) !important;
+  box-shadow: 0 10px 25px rgba(245, 158, 11, 0.15) !important;
+}
+
+html[data-theme='dark'] .owner-summary-card.success,
+body[data-theme='dark'] .owner-summary-card.success,
+.dark .owner-summary-card.success,
+.app-shell[data-theme='dark'] .owner-summary-card.success {
+  background: linear-gradient(145deg, rgba(16, 185, 129, 0.22) 0%, rgba(15, 23, 42, 0.94) 100%) !important;
+  border: 1px solid rgba(16, 185, 129, 0.4) !important;
+  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.15) !important;
+}
+
+/* Owner summary typography in dark mode */
+html[data-theme='dark'] .owner-summary-card p,
+html[data-theme='dark'] .owner-card-topline p,
+.dark .owner-summary-card p,
+.dark .owner-card-topline p,
+.app-shell[data-theme='dark'] .owner-summary-card p,
+.app-shell[data-theme='dark'] .owner-card-topline p {
+  color: #94a3b8 !important;
+  font-weight: 700 !important;
+}
+
+html[data-theme='dark'] .owner-summary-card strong,
+.dark .owner-summary-card strong,
+.app-shell[data-theme='dark'] .owner-summary-card strong {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+}
+
+html[data-theme='dark'] .owner-summary-card small,
+html[data-theme='dark'] .owner-summary-card span,
+.dark .owner-summary-card small,
+.dark .owner-summary-card span,
+.app-shell[data-theme='dark'] .owner-summary-card small,
+.app-shell[data-theme='dark'] .owner-summary-card span {
+  color: #94a3b8 !important;
+}
+
+html[data-theme='dark'] .owner-summary-card.accent small,
+.dark .owner-summary-card.accent small,
+.app-shell[data-theme='dark'] .owner-summary-card.accent small {
+  color: #38bdf8 !important;
+  font-weight: 700 !important;
+}
+
+html[data-theme='dark'] .owner-summary-card.warn small,
+.dark .owner-summary-card.warn small,
+.app-shell[data-theme='dark'] .owner-summary-card.warn small {
+  color: #fbbf24 !important;
+  font-weight: 700 !important;
+}
+
+html[data-theme='dark'] .owner-summary-card.success small,
+.dark .owner-summary-card.success small,
+.app-shell[data-theme='dark'] .owner-summary-card.success small {
+  color: #34d399 !important;
+  font-weight: 700 !important;
+}
+
+/* Stat Icons in dark mode */
+html[data-theme='dark'] .owner-stat-icon,
+.dark .owner-stat-icon,
+.app-shell[data-theme='dark'] .owner-stat-icon {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #f1f5f9 !important;
+}
+
+html[data-theme='dark'] .owner-summary-card.accent .owner-stat-icon,
+.dark .owner-summary-card.accent .owner-stat-icon,
+.app-shell[data-theme='dark'] .owner-summary-card.accent .owner-stat-icon {
+  background: rgba(14, 116, 144, 0.3) !important;
+  color: #38bdf8 !important;
+}
+
+html[data-theme='dark'] .owner-summary-card.warn .owner-stat-icon,
+.dark .owner-summary-card.warn .owner-stat-icon,
+.app-shell[data-theme='dark'] .owner-summary-card.warn .owner-stat-icon {
+  background: rgba(245, 158, 11, 0.3) !important;
+  color: #fbbf24 !important;
+}
+
+html[data-theme='dark'] .owner-summary-card.success .owner-stat-icon,
+.dark .owner-summary-card.success .owner-stat-icon,
+.app-shell[data-theme='dark'] .owner-summary-card.success .owner-stat-icon {
+  background: rgba(16, 185, 129, 0.3) !important;
+  color: #34d399 !important;
+}
+
+/* Action Rail Buttons in dark mode */
+html[data-theme='dark'] .owner-action-rail .secondary-button,
+.dark .owner-action-rail .secondary-button,
+.app-shell[data-theme='dark'] .owner-action-rail .secondary-button {
+  background: rgba(30, 41, 59, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #f8fafc !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
+html[data-theme='dark'] .owner-action-rail .secondary-button:hover,
+.dark .owner-action-rail .secondary-button:hover,
+.app-shell[data-theme='dark'] .owner-action-rail .secondary-button:hover {
+  background: rgba(51, 65, 85, 0.95) !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+}
+
+/* Quick Actions buttons */
+html[data-theme='dark'] .owner-quick-actions .secondary-button,
+.dark .owner-quick-actions .secondary-button,
+.app-shell[data-theme='dark'] .owner-quick-actions .secondary-button {
+  background: rgba(30, 41, 59, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme='dark'] .owner-quick-actions .secondary-button:hover,
+.dark .owner-quick-actions .secondary-button:hover,
+.app-shell[data-theme='dark'] .owner-quick-actions .secondary-button:hover {
+  background: rgba(51, 65, 85, 0.95) !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+}
+
+/* Panels and Cards in Owner Dashboard */
+html[data-theme='dark'] .owner-overview-card,
+html[data-theme='dark'] .owner-operational-panel,
+html[data-theme='dark'] .owner-analytics-surface,
+html[data-theme='dark'] .owner-analytics-card,
+html[data-theme='dark'] .owner-leading-listings,
+html[data-theme='dark'] .owner-main-panel,
+html[data-theme='dark'] .owner-table-card,
+.dark .owner-overview-card,
+.dark .owner-operational-panel,
+.dark .owner-analytics-surface,
+.dark .owner-analytics-card,
+.dark .owner-leading-listings,
+.dark .owner-main-panel,
+.dark .owner-table-card,
+.app-shell[data-theme='dark'] .owner-overview-card,
+.app-shell[data-theme='dark'] .owner-operational-panel,
+.app-shell[data-theme='dark'] .owner-analytics-surface,
+.app-shell[data-theme='dark'] .owner-analytics-card,
+.app-shell[data-theme='dark'] .owner-leading-listings,
+.app-shell[data-theme='dark'] .owner-main-panel,
+.app-shell[data-theme='dark'] .owner-table-card {
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.65) 0%, rgba(15, 23, 42, 0.88) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important;
+  color: #f8fafc !important;
+}
+
+/* Inner elements inside cards */
+html[data-theme='dark'] .owner-metrics-grid > div,
+html[data-theme='dark'] .rating-score-box,
+html[data-theme='dark'] .owner-listing-card,
+html[data-theme='dark'] .owner-alert-row,
+html[data-theme='dark'] .owner-mini-metrics > div,
+.dark .owner-metrics-grid > div,
+.dark .rating-score-box,
+.dark .owner-listing-card,
+.dark .owner-alert-row,
+.dark .owner-mini-metrics > div,
+.app-shell[data-theme='dark'] .owner-metrics-grid > div,
+.app-shell[data-theme='dark'] .rating-score-box,
+.app-shell[data-theme='dark'] .owner-listing-card,
+.app-shell[data-theme='dark'] .owner-alert-row,
+.app-shell[data-theme='dark'] .owner-mini-metrics > div {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+}
+
+html[data-theme='dark'] .owner-listing-copy strong,
+html[data-theme='dark'] .owner-metrics-grid strong,
+html[data-theme='dark'] .owner-alert-row strong,
+html[data-theme='dark'] .owner-mini-metrics strong,
+.dark .owner-listing-copy strong,
+.dark .owner-metrics-grid strong,
+.dark .owner-alert-row strong,
+.dark .owner-mini-metrics strong,
+.app-shell[data-theme='dark'] .owner-listing-copy strong,
+.app-shell[data-theme='dark'] .owner-metrics-grid strong,
+.app-shell[data-theme='dark'] .owner-alert-row strong,
+.app-shell[data-theme='dark'] .owner-mini-metrics strong {
+  color: #f8fafc !important;
+}
+
+html[data-theme='dark'] .owner-listing-copy span,
+html[data-theme='dark'] .owner-listing-meta span,
+html[data-theme='dark'] .owner-metrics-grid span,
+html[data-theme='dark'] .owner-alert-row small,
+html[data-theme='dark'] .owner-mini-metrics span,
+html[data-theme='dark'] .owner-analytics-bar-wrap,
+html[data-theme='dark'] .owner-chart-bar-wrap span,
+.dark .owner-listing-copy span,
+.dark .owner-listing-meta span,
+.dark .owner-metrics-grid span,
+.dark .owner-alert-row small,
+.dark .owner-mini-metrics span,
+.dark .owner-analytics-bar-wrap,
+.dark .owner-chart-bar-wrap span,
+.app-shell[data-theme='dark'] .owner-listing-copy span,
+.app-shell[data-theme='dark'] .owner-listing-meta span,
+.app-shell[data-theme='dark'] .owner-metrics-grid span,
+.app-shell[data-theme='dark'] .owner-alert-row small,
+.app-shell[data-theme='dark'] .owner-mini-metrics span,
+.app-shell[data-theme='dark'] .owner-analytics-bar-wrap,
+.app-shell[data-theme='dark'] .owner-chart-bar-wrap span {
+  color: #94a3b8 !important;
+}
+
+html[data-theme='dark'] .owner-alert-row .material-symbols-outlined,
+.dark .owner-alert-row .material-symbols-outlined,
+.app-shell[data-theme='dark'] .owner-alert-row .material-symbols-outlined {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+}
+
+html[data-theme='dark'] .owner-task-list li,
+.dark .owner-task-list li,
+.app-shell[data-theme='dark'] .owner-task-list li {
+  color: #cbd5e1 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+html[data-theme='dark'] .owner-table th,
+.dark .owner-table th,
+.app-shell[data-theme='dark'] .owner-table th {
+  color: #94a3b8 !important;
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+html[data-theme='dark'] .owner-table td,
+.dark .owner-table td,
+.app-shell[data-theme='dark'] .owner-table td {
+  color: #f8fafc !important;
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* =========================================================
+   SETTINGS & PROFILE - DARK THEME OVERRIDES
+   ========================================================= */
+
+/* Settings Card (Owner Settings & General Settings) */
+html[data-theme='dark'] .settings-card,
+body[data-theme='dark'] .settings-card,
+.dark .settings-card,
+.app-shell[data-theme='dark'] .settings-card {
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.92) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.45) !important;
+  backdrop-filter: blur(14px);
+  color: #f8fafc !important;
+}
+
+html[data-theme='dark'] .settings-header h3,
+body[data-theme='dark'] .settings-header h3,
+.dark .settings-header h3,
+.app-shell[data-theme='dark'] .settings-header h3 {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+}
+
+html[data-theme='dark'] .settings-header p,
+body[data-theme='dark'] .settings-header p,
+.dark .settings-header p,
+.app-shell[data-theme='dark'] .settings-header p {
+  color: #94a3b8 !important;
+}
+
+html[data-theme='dark'] .setting-box,
+body[data-theme='dark'] .setting-box,
+.dark .setting-box,
+.app-shell[data-theme='dark'] .setting-box {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+html[data-theme='dark'] .setting-box span,
+body[data-theme='dark'] .setting-box span,
+.dark .setting-box span,
+.app-shell[data-theme='dark'] .setting-box span {
+  color: #94a3b8 !important;
+  font-weight: 600 !important;
+}
+
+html[data-theme='dark'] .setting-box strong,
+body[data-theme='dark'] .setting-box strong,
+.dark .setting-box strong,
+.app-shell[data-theme='dark'] .setting-box strong {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+html[data-theme='dark'] .settings-actions .secondary-button,
+body[data-theme='dark'] .settings-actions .secondary-button,
+.dark .settings-actions .secondary-button,
+.app-shell[data-theme='dark'] .settings-actions .secondary-button {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border: 1.5px solid rgba(239, 68, 68, 0.35) !important;
+  color: #f87171 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+  font-weight: 700 !important;
+}
+
+html[data-theme='dark'] .settings-actions .secondary-button:hover,
+body[data-theme='dark'] .settings-actions .secondary-button:hover,
+.dark .settings-actions .secondary-button:hover,
+.app-shell[data-theme='dark'] .settings-actions .secondary-button:hover {
+  background: rgba(239, 68, 68, 0.22) !important;
+  border-color: rgba(239, 68, 68, 0.55) !important;
+  color: #fca5a5 !important;
+}
+
+/* Profile Header & Lists in Dark Mode */
+html[data-theme='dark'] .profile-header,
+html[data-theme='dark'] .profile-favorites-card,
+html[data-theme='dark'] .profile-list,
+body[data-theme='dark'] .profile-header,
+body[data-theme='dark'] .profile-favorites-card,
+body[data-theme='dark'] .profile-list,
+.dark .profile-header,
+.dark .profile-favorites-card,
+.dark .profile-list,
+.app-shell[data-theme='dark'] .profile-header,
+.app-shell[data-theme='dark'] .profile-favorites-card,
+.app-shell[data-theme='dark'] .profile-list {
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.92) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35) !important;
+}
+
+html[data-theme='dark'] .profile-metric-card,
+body[data-theme='dark'] .profile-metric-card,
+.dark .profile-metric-card,
+.app-shell[data-theme='dark'] .profile-metric-card {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+html[data-theme='dark'] .profile-metric-card strong,
+.dark .profile-metric-card strong,
+.app-shell[data-theme='dark'] .profile-metric-card strong {
+  color: #34d399 !important;
+}
+
+html[data-theme='dark'] .profile-metric-card small,
+.dark .profile-metric-card small,
+.app-shell[data-theme='dark'] .profile-metric-card small {
+  color: #94a3b8 !important;
+}
+
+html[data-theme='dark'] .profile-meta h2,
+.dark .profile-meta h2,
+.app-shell[data-theme='dark'] .profile-meta h2 {
+  color: #ffffff !important;
+}
+
+html[data-theme='dark'] .profile-meta p,
+.dark .profile-meta p,
+.app-shell[data-theme='dark'] .profile-meta p {
+  color: #94a3b8 !important;
+}
+
+html[data-theme='dark'] .profile-item,
+body[data-theme='dark'] .profile-item,
+.dark .profile-item,
+.app-shell[data-theme='dark'] .profile-item {
+  color: #f1f5f9 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+html[data-theme='dark'] .profile-item:hover,
+body[data-theme='dark'] .profile-item:hover,
+.dark .profile-item:hover,
+.app-shell[data-theme='dark'] .profile-item:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+
+
+
 
 
 

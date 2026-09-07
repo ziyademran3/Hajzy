@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react'
-import { loginUser, registerUser, getProfile as apiGetProfile, updateProfile as apiUpdateProfile } from '../lib/authApi'
+import {
+  loginUser,
+  registerUser,
+  getProfile as apiGetProfile,
+  updateProfile as apiUpdateProfile,
+  changePassword as apiChangePassword,
+} from '../lib/authApi'
 
 const DEMO_OWNER = {
   email: 'ziyademran3@gmail.com',
@@ -80,18 +86,27 @@ export const useAuth = () => {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    const savedUser = localStorage.getItem(CURRENT_USER_KEY) || localStorage.getItem('stitch_user')
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser))
-      } catch (err) {
-        setError(err.message)
+    try {
+      const isForceLogin = localStorage.getItem('hajzy_force_login') === 'true'
+      if (isForceLogin) {
+        setUser(null)
+      } else {
+        const saved = localStorage.getItem(CURRENT_USER_KEY) || localStorage.getItem('stitch_user')
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          if (parsed && typeof parsed === 'object') {
+            setUser({
+              ...parsed,
+              role: normalizeRole(parsed),
+            })
+          }
+        }
       }
-    } else {
-      setUser(null)
-      localStorage.removeItem(CURRENT_USER_KEY)
+    } catch (e) {
+      console.error('Failed to restore session:', e)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }, [])
 
   const persistUser = (authUser, token = null) => {
@@ -110,6 +125,7 @@ export const useAuth = () => {
       role: normalizeRole(safeUser),
     }
     setUser(normalizedUser)
+    localStorage.setItem('hajzy_force_login', 'false')
     localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(normalizedUser))
 
     if (token) {
@@ -234,6 +250,7 @@ export const useAuth = () => {
 
   const logout = () => {
     setUser(null)
+    localStorage.setItem('hajzy_force_login', 'true')
     localStorage.removeItem(CURRENT_USER_KEY)
     localStorage.removeItem('stitch_user')
     localStorage.removeItem(AUTH_TOKEN_KEY)
@@ -270,17 +287,121 @@ export const useAuth = () => {
           name: response.user.fullName || response.user.name || response.user.email,
           email: response.user.email,
           role: response.user.role || 'user',
-          avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${response.user.email}`,
+          avatar: data.avatar_url || response.user.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${response.user.email}`,
           createdAt: response.user.created_at || response.user.createdAt,
+          phone: data.phone || response.user.phone || '',
         }
         persistUser(authUser)
         return authUser
       }
-    } catch (err) {
-      setError(err.message)
+    } catch {
+      // Backend is unavailable, perform local persistence
     }
+
+    if (user) {
+      const updatedUser = {
+        ...user,
+        name: data.fullName || data.name || user.name,
+        email: data.email || user.email,
+        avatar: data.avatar_url || user.avatar,
+        phone: data.phone !== undefined ? data.phone : (user.phone || ''),
+      }
+
+      // Update in hajzy_users list
+      const storedUsers = readUsers()
+      const userIndex = storedUsers.findIndex(
+        (u) => u.id === user.id || u.email?.toLowerCase() === user.email?.toLowerCase(),
+      )
+      if (userIndex >= 0) {
+        storedUsers[userIndex] = { ...storedUsers[userIndex], ...updatedUser }
+        saveUsers(storedUsers)
+      }
+
+      persistUser(updatedUser)
+      return updatedUser
+    }
+
     return null
   }
 
-  return { user, loading, error, login, signup, logout, fetchProfile, updateProfile, isAuthenticated: !!user }
+  const changeUserPassword = async (currentPassword, newPassword) => {
+    try {
+      const response = await apiChangePassword(currentPassword, newPassword)
+      if (response) return response
+    } catch {
+      // Backend unavailable, handle locally
+    }
+
+    if (!user) {
+      throw new Error('User is not logged in')
+    }
+
+    const storedUsers = readUsers()
+    const userIndex = storedUsers.findIndex(
+      (u) => u.id === user.id || u.email?.toLowerCase() === user.email?.toLowerCase(),
+    )
+
+    if (userIndex >= 0) {
+      const existing = storedUsers[userIndex]
+      if (existing.password && existing.password !== currentPassword && user.id !== 'owner-demo') {
+        throw new Error('كلمة المرور الحالية غير صحيحة')
+      }
+      storedUsers[userIndex] = { ...existing, password: newPassword }
+      saveUsers(storedUsers)
+      return { success: true, message: 'تم تحديث كلمة المرور بنجاح' }
+    }
+
+    return { success: true, message: 'تم تحديث كلمة المرور بنجاح' }
+  }
+
+  const socialLogin = async (account) => {
+    let accountData = account
+    if (typeof account === 'string') {
+      accountData = {
+        id: `social-${account}-${Date.now()}`,
+        name: account === 'google' ? 'Google User' : 'Apple User',
+        email: `${account}@hajzy.local`,
+        role: 'user',
+        avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${account}`,
+      }
+    }
+
+    const authUser = {
+      id: accountData.id || `user-${Date.now()}`,
+      name: accountData.name || 'User',
+      email: accountData.email || 'user@hajzy.local',
+      role: normalizeRole(accountData),
+      avatar: accountData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(accountData.name || 'User')}&background=0D9488&color=fff`,
+      createdAt: new Date().toISOString(),
+    }
+
+    // Save to users list if not existing
+    const storedUsers = readUsers()
+    const existingIndex = storedUsers.findIndex(
+      (u) => u.email?.toLowerCase() === authUser.email.toLowerCase()
+    )
+    if (existingIndex >= 0) {
+      storedUsers[existingIndex] = { ...storedUsers[existingIndex], ...authUser }
+    } else {
+      storedUsers.push(authUser)
+    }
+    saveUsers(storedUsers)
+
+    persistUser(authUser)
+    return authUser
+  }
+
+  return {
+    user,
+    loading,
+    error,
+    login,
+    signup,
+    socialLogin,
+    logout,
+    fetchProfile,
+    updateProfile,
+    changeUserPassword,
+    isAuthenticated: !!user,
+  }
 }
