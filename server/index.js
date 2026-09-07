@@ -19,7 +19,12 @@ import nodemailer from 'nodemailer'
 
 const app = express()
 const port = Number(process.env.PORT || 4000)
-const jwtSecret = process.env.JWT_SECRET || 'dev-secret-change-me'
+const isProduction = process.env.NODE_ENV === 'production'
+const jwtSecret = process.env.JWT_SECRET || (isProduction ? null : 'dev-secret-change-me')
+if (isProduction && (!jwtSecret || jwtSecret === 'dev-secret-change-me')) {
+  console.error('[SECURITY CRITICAL] In production mode, a strong random JWT_SECRET environment variable must be set!')
+  process.exit(1)
+}
 const appUrl = process.env.APP_URL || 'http://localhost:5173'
 const emailFrom = process.env.RESEND_FROM || 'no-reply@localhost'
 const allowUnverifiedLogin = process.env.ALLOW_UNVERIFIED_LOGIN === 'true'

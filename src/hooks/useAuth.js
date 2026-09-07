@@ -8,8 +8,8 @@ import {
 } from '../lib/authApi'
 
 const DEMO_OWNER = {
-  email: 'ziyademran3@gmail.com',
-  password: 'Ziad@17072005',
+  email: import.meta.env.VITE_DEMO_OWNER_EMAIL || 'owner@hajzy.com',
+  password: import.meta.env.VITE_DEMO_OWNER_PASSWORD || '',
   name: 'مالك العقارات',
   role: 'owner',
 }
@@ -20,7 +20,7 @@ const AUTH_TOKEN_KEY = 'hajzy_auth_token'
 
 const normalizeRole = (user) => {
   if (!user) return 'user'
-  if (user.role === 'owner' || user.id === 'owner-demo' || user.email?.toLowerCase() === DEMO_OWNER.email.toLowerCase()) {
+  if (user.role === 'owner' || user.id === 'owner-demo' || (DEMO_OWNER.email && user.email?.toLowerCase() === DEMO_OWNER.email.toLowerCase())) {
     return 'owner'
   }
   return 'user'
@@ -39,7 +39,6 @@ const readUsers = () => {
       id: 'owner-demo',
       name: DEMO_OWNER.name,
       email: DEMO_OWNER.email,
-      password: DEMO_OWNER.password,
       role: DEMO_OWNER.role,
       avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${DEMO_OWNER.email}`,
       createdAt: new Date().toISOString(),
@@ -68,7 +67,6 @@ const readUsers = () => {
       id: 'owner-demo',
       name: DEMO_OWNER.name,
       email: DEMO_OWNER.email,
-      password: DEMO_OWNER.password,
       role: DEMO_OWNER.role,
       avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${DEMO_OWNER.email}`,
       createdAt: new Date().toISOString(),
@@ -145,7 +143,9 @@ export const useAuth = () => {
       return null
     }
 
-    const demoMatch = normalizedEmail === DEMO_OWNER.email.toLowerCase() && normalizedPassword === DEMO_OWNER.password
+    const demoMatch = Boolean(DEMO_OWNER.password) &&
+      normalizedEmail === DEMO_OWNER.email.toLowerCase() &&
+      normalizedPassword === DEMO_OWNER.password
     if (demoMatch) {
       const authUser = safeUserRecord({
         ...readUsers().find((account) => account.email.toLowerCase() === normalizedEmail),
