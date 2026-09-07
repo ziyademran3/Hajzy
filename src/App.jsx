@@ -397,8 +397,10 @@ function App() {
   }, [])
 
   // Refresh function used by pull-to-refresh and manual refresh
-  const refreshData = async () => {
-    setIsLoadingData(true)
+  const refreshData = async (showSkeleton = false) => {
+    if (showSkeleton) {
+      setIsLoadingData(true)
+    }
     try {
       const [propertyList, bookingList] = await Promise.all([fetchProperties(), fetchBookings()])
       const safePropertyList = Array.isArray(propertyList) && propertyList.length ? propertyList : propertySeed
@@ -412,14 +414,16 @@ function App() {
     } catch (err) {
       console.error('Refresh failed', err)
     } finally {
-      setIsLoadingData(false)
+      if (showSkeleton) {
+        setIsLoadingData(false)
+      }
     }
   }
 
   // Pull-to-refresh binding: attach to main content
   const mainRef = useRef(null)
   const { pullDistance, refreshing } = usePullToRefresh(mainRef, async () => {
-    await refreshData()
+    await refreshData(false)
   })
 
   useEffect(() => {

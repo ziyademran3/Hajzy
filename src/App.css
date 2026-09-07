@@ -3409,6 +3409,55 @@ body::-webkit-scrollbar,
   box-shadow: 0 10px 20px rgba(0, 67, 63, 0.2);
 }
 
+/* ── Calendar Dark Mode ── */
+.app-shell[data-theme='dark'] .calendar-picker {
+  background: linear-gradient(135deg, rgba(17, 18, 21, 0.96), rgba(23, 25, 30, 0.96));
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.app-shell[data-theme='dark'] .calendar-header strong {
+  color: #f1f5f9;
+}
+
+.app-shell[data-theme='dark'] .calendar-arrow {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+}
+
+.app-shell[data-theme='dark'] .calendar-arrow:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.app-shell[data-theme='dark'] .calendar-weekdays span {
+  color: #94a3b8;
+}
+
+.app-shell[data-theme='dark'] .calendar-day {
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+}
+
+.app-shell[data-theme='dark'] .calendar-day:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.app-shell[data-theme='dark'] .calendar-day.muted {
+  color: #64748b;
+  opacity: 0.5;
+}
+
+.app-shell[data-theme='dark'] .calendar-day.in-range {
+  background: rgba(0, 120, 110, 0.2);
+  color: #5eead4;
+}
+
+.app-shell[data-theme='dark'] .calendar-day.selected {
+  background: linear-gradient(135deg, #00796b 0%, #009688 100%);
+  color: #fff;
+  box-shadow: 0 10px 20px rgba(0, 150, 136, 0.3);
+}
+
+
 .primary-button,
 .secondary-button,
 .nav-item,

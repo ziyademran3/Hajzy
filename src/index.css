@@ -20,12 +20,17 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  overflow-x: hidden;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
   background: linear-gradient(135deg, #f4f7f4 0%, #eef7f6 100%);
   color: #0f172a;
 }
