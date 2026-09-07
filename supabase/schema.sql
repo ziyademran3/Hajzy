@@ -1,5 +1,11 @@
+-- ====================================================================
+-- HAJZY FULL DATABASE SETUP & PRODUCTION RLS POLICIES
+-- إعداد قاعدة البيانات بالكامل وتطبيق سياسات الأمان الصارمة لتطبيق حجزي
+-- ====================================================================
+
 create extension if not exists pgcrypto;
 
+-- 1. إنشاء الجداول الأساسية إذا لم تكن موجودة (Create Tables)
 create table if not exists profiles (
   id text primary key,
   name text not null,
@@ -76,6 +82,7 @@ create table if not exists payment_attempts (
   updated_at timestamptz not null default now()
 );
 
+-- 2. دوال التحديث والمؤشرات (Triggers & Indexes)
 create or replace function set_updated_at()
 returns trigger as $$
 begin
@@ -89,25 +96,10 @@ drop trigger if exists properties_set_updated_at on properties;
 drop trigger if exists bookings_set_updated_at on bookings;
 drop trigger if exists payment_attempts_set_updated_at on payment_attempts;
 
-create trigger profiles_set_updated_at
-before update on profiles
-for each row
-execute function set_updated_at();
-
-create trigger properties_set_updated_at
-before update on properties
-for each row
-execute function set_updated_at();
-
-create trigger bookings_set_updated_at
-before update on bookings
-for each row
-execute function set_updated_at();
-
-create trigger payment_attempts_set_updated_at
-before update on payment_attempts
-for each row
-execute function set_updated_at();
+create trigger profiles_set_updated_at before update on profiles for each row execute function set_updated_at();
+create trigger properties_set_updated_at before update on properties for each row execute function set_updated_at();
+create trigger bookings_set_updated_at before update on bookings for each row execute function set_updated_at();
+create trigger payment_attempts_set_updated_at before update on payment_attempts for each row execute function set_updated_at();
 
 create index if not exists idx_properties_city on properties(city);
 create index if not exists idx_properties_owner on properties(ownerId);
@@ -115,6 +107,7 @@ create index if not exists idx_bookings_user on bookings(userId);
 create index if not exists idx_bookings_property on bookings(propertyId);
 create index if not exists idx_chat_property on chat_messages(propertyId);
 
+-- 3. تفعيل حماية RLS على جميع الجداول (Enable Row Level Security)
 alter table profiles enable row level security;
 alter table properties enable row level security;
 alter table bookings enable row level security;
@@ -122,135 +115,204 @@ alter table favorites enable row level security;
 alter table chat_messages enable row level security;
 alter table payment_attempts enable row level security;
 
--- Secure Production Policies
-create policy "profiles_select_public" on profiles for select using (true);
-create policy "profiles_insert_own" on profiles for insert with check (auth.uid() is not null and id = auth.uid()::text);
-create policy "profiles_update_own" on profiles for update using (auth.uid() is not null and id = auth.uid()::text) with check (auth.uid() is not null and id = auth.uid()::text);
+-- 4. إزالة السياسات القديمة إن وجدت (Clean up old policies)
+drop policy if exists "profiles_read_all" on profiles;
+drop policy if exists "profiles_write_all" on profiles;
+drop policy if exists "profiles_update_all" on profiles;
+drop policy if exists "profiles_select_public" on profiles;
+drop policy if exists "profiles_insert_own" on profiles;
+drop policy if exists "profiles_update_own" on profiles;
 
-create policy "properties_select_public" on properties for select using (true);
-create policy "properties_insert_owner" on properties for insert with check (auth.uid() is not null and (ownerId = auth.uid()::text or ownerId is null));
-create policy "properties_update_owner" on properties for update using (auth.uid() is not null and ownerId = auth.uid()::text) with check (auth.uid() is not null and ownerId = auth.uid()::text);
-create policy "properties_delete_owner" on properties for delete using (auth.uid() is not null and ownerId = auth.uid()::text);
+drop policy if exists "properties_read_all" on properties;
+drop policy if exists "properties_write_all" on properties;
+drop policy if exists "properties_update_all" on properties;
+drop policy if exists "properties_delete_all" on properties;
+drop policy if exists "properties_select_public" on properties;
+drop policy if exists "properties_insert_owner" on properties;
+drop policy if exists "properties_update_owner" on properties;
+drop policy if exists "properties_delete_owner" on properties;
 
-create policy "bookings_select_participant_only" on bookings for select using (
+drop policy if exists "bookings_read_all" on bookings;
+drop policy if exists "bookings_write_all" on bookings;
+drop policy if exists "bookings_update_all" on bookings;
+drop policy if exists "bookings_delete_all" on bookings;
+drop policy if exists "bookings_select_participant_only" on bookings;
+drop policy if exists "bookings_insert_own" on bookings;
+drop policy if exists "bookings_update_participant_only" on bookings;
+drop policy if exists "bookings_delete_own_or_owner" on bookings;
+
+drop policy if exists "favorites_read_all" on favorites;
+drop policy if exists "favorites_write_all" on favorites;
+drop policy if exists "favorites_delete_all" on favorites;
+drop policy if exists "favorites_select_own" on favorites;
+drop policy if exists "favorites_insert_own" on favorites;
+drop policy if exists "favorites_delete_own" on favorites;
+
+drop policy if exists "chat_read_all" on chat_messages;
+drop policy if exists "chat_insert_all" on chat_messages;
+drop policy if exists "chat_select_authenticated" on chat_messages;
+drop policy if exists "chat_insert_authenticated" on chat_messages;
+
+drop policy if exists "payments_read_all" on payment_attempts;
+drop policy if exists "payments_write_all" on payment_attempts;
+drop policy if exists "payments_update_all" on payment_attempts;
+drop policy if exists "payments_select_own" on payment_attempts;
+drop policy if exists "payments_insert_authenticated" on payment_attempts;
+
+-- 5. تطبيق السياسات الآمنة الصارمة (Apply Production Policies)
+
+-- أ. جدول العقارات (Properties): القراءة للجميع، والإضافة والتعديل والحذف مقيدة لصاحب العقار فقط
+create policy "properties_select_public"
+on properties for select
+using (true);
+
+create policy "properties_insert_owner"
+on properties for insert
+with check (
   auth.uid() is not null and (
-    userId = auth.uid()::text
-    or exists (select 1 from properties where properties.id = bookings.propertyId and properties.ownerId = auth.uid()::text)
+    ownerId = auth.uid()::text or ownerId is null
   )
 );
-create policy "bookings_insert_own" on bookings for insert with check (
-  auth.uid() is not null and (userId = auth.uid()::text or userId is null)
+
+create policy "properties_update_owner"
+on properties for update
+using (
+  auth.uid() is not null and ownerId = auth.uid()::text
+)
+with check (
+  auth.uid() is not null and ownerId = auth.uid()::text
 );
-create policy "bookings_update_participant_only" on bookings for update using (
-  auth.uid() is not null and (
-    userId = auth.uid()::text
-    or exists (select 1 from properties where properties.id = bookings.propertyId and properties.ownerId = auth.uid()::text)
-  )
-) with check (
-  auth.uid() is not null and (
-    userId = auth.uid()::text
-    or exists (select 1 from properties where properties.id = bookings.propertyId and properties.ownerId = auth.uid()::text)
-  )
+
+create policy "properties_delete_owner"
+on properties for delete
+using (
+  auth.uid() is not null and ownerId = auth.uid()::text
 );
-create policy "bookings_delete_own_or_owner" on bookings for delete using (
+
+-- ب. جدول الحجوزات (Bookings): لصاحب الحجز أو مالك العقار فقط
+create policy "bookings_select_participant_only"
+on bookings for select
+using (
   auth.uid() is not null and (
     userId = auth.uid()::text
-    or exists (select 1 from properties where properties.id = bookings.propertyId and properties.ownerId = auth.uid()::text)
+    or exists (
+      select 1 from properties 
+      where properties.id = bookings.propertyId 
+      and properties.ownerId = auth.uid()::text
+    )
   )
 );
 
-create policy "favorites_select_own" on favorites for select using (auth.uid() is not null and userId = auth.uid()::text);
-create policy "favorites_insert_own" on favorites for insert with check (auth.uid() is not null and userId = auth.uid()::text);
-create policy "favorites_delete_own" on favorites for delete using (auth.uid() is not null and userId = auth.uid()::text);
+create policy "bookings_insert_own"
+on bookings for insert
+with check (
+  auth.uid() is not null and (
+    userId = auth.uid()::text or userId is null
+  )
+);
 
-create policy "chat_select_authenticated" on chat_messages for select using (auth.uid() is not null);
-create policy "chat_insert_authenticated" on chat_messages for insert with check (auth.uid() is not null);
+create policy "bookings_update_participant_only"
+on bookings for update
+using (
+  auth.uid() is not null and (
+    userId = auth.uid()::text
+    or exists (
+      select 1 from properties 
+      where properties.id = bookings.propertyId 
+      and properties.ownerId = auth.uid()::text
+    )
+  )
+)
+with check (
+  auth.uid() is not null and (
+    userId = auth.uid()::text
+    or exists (
+      select 1 from properties 
+      where properties.id = bookings.propertyId 
+      and properties.ownerId = auth.uid()::text
+    )
+  )
+);
 
-create policy "payments_select_own" on payment_attempts for select using (
+create policy "bookings_delete_own_or_owner"
+on bookings for delete
+using (
+  auth.uid() is not null and (
+    userId = auth.uid()::text
+    or exists (
+      select 1 from properties 
+      where properties.id = bookings.propertyId 
+      and properties.ownerId = auth.uid()::text
+    )
+  )
+);
+
+-- ج. جدول الملفات الشخصية (Profiles)
+create policy "profiles_select_public"
+on profiles for select
+using (true);
+
+create policy "profiles_insert_own"
+on profiles for insert
+with check (
+  auth.uid() is not null and id = auth.uid()::text
+);
+
+create policy "profiles_update_own"
+on profiles for update
+using (
+  auth.uid() is not null and id = auth.uid()::text
+)
+with check (
+  auth.uid() is not null and id = auth.uid()::text
+);
+
+-- د. جدول المفضلة (Favorites)
+create policy "favorites_select_own"
+on favorites for select
+using (
+  auth.uid() is not null and userId = auth.uid()::text
+);
+
+create policy "favorites_insert_own"
+on favorites for insert
+with check (
+  auth.uid() is not null and userId = auth.uid()::text
+);
+
+create policy "favorites_delete_own"
+on favorites for delete
+using (
+  auth.uid() is not null and userId = auth.uid()::text
+);
+
+-- هـ. جدول المحادثات (Chat Messages)
+create policy "chat_select_authenticated"
+on chat_messages for select
+using (auth.uid() is not null);
+
+create policy "chat_insert_authenticated"
+on chat_messages for insert
+with check (auth.uid() is not null);
+
+-- و. جدول محاولات الدفع (Payment Attempts)
+create policy "payments_select_own"
+on payment_attempts for select
+using (
   auth.uid() is not null and exists (
-    select 1 from bookings where bookings.id = payment_attempts.bookingId and bookings.userId = auth.uid()::text
+    select 1 from bookings 
+    where bookings.id = payment_attempts.bookingId 
+    and bookings.userId = auth.uid()::text
   )
 );
-create policy "payments_insert_authenticated" on payment_attempts for insert with check (auth.uid() is not null);
 
+create policy "payments_insert_authenticated"
+on payment_attempts for insert
+with check (auth.uid() is not null);
+
+-- 6. بيانات تجريبية أولية (Seed Data)
 insert into profiles (id, name, email, role)
 values
-  ('owner-demo', 'مالك تجريبي', 'owner@stitch.com', 'owner'),
-  ('demo-user', 'مستخدم تجريبي', 'user@stitch.com', 'user')
+  ('owner-demo', 'مالك تجريبي', 'owner@hajzy.com', 'owner'),
+  ('demo-user', 'مستخدم تجريبي', 'user@hajzy.com', 'user')
 on conflict (id) do nothing;
-
-insert into properties (
-  id, title, location, city, priceValue, currency, rating, reviews, image, details, description, amenities, ownerId
-)
-values
-  (
-    'alex-vista',
-    'شقة فيستا الإسكندرية',
-    'المنتزه، الإسكندرية',
-    'الإسكندرية',
-    4200,
-    'EGP',
-    4.9,
-    142,
-    'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80',
-    '[]'::jsonb,
-    'شقة عصرية بجوار الساحل، مناسبة للعائلات والرحلات الطويلة في مدينة الإسكندرية.',
-    '[]'::jsonb,
-    'owner-demo'
-  ),
-  (
-    'cairo-lounge',
-    'جناح القاهرة الهادئ',
-    'مدينة نصر، القاهرة',
-    'القاهرة',
-    3600,
-    'EGP',
-    4.7,
-    98,
-    'https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80',
-    '[]'::jsonb,
-    'جناح فاخر في قلب القاهرة مع ديكور أنيق ومساحة واسعة للراحة والهدوء.',
-    '[]'::jsonb,
-    'owner-demo'
-  ),
-  (
-    'giza-sky',
-    'شقة جيزة سكاي',
-    'الشيخ زايد، الجيزة',
-    'الجيزة',
-    3900,
-    'EGP',
-    4.8,
-    120,
-    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80',
-    '[]'::jsonb,
-    'شقة أنيقة في الجيزة، مناسبة للرحلات العائلية أو الإقامات الطويلة.',
-    '[]'::jsonb,
-    'owner-demo'
-  )
-on conflict (id) do nothing;
-
-insert into bookings (
-  id, propertyId, userId, title, location, image, checkIn, checkOut, guests, total, currency, status, reference, paymentMethod
-)
-values (
-  'booking-1',
-  'alex-vista',
-  'demo-user',
-  'شقة فيستا الإسكندرية',
-  'المنتزه، الإسكندرية',
-  'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80',
-  '2026-10-15',
-  '2026-10-20',
-  2,
-  21000,
-  'EGP',
-  'confirmed',
-  '#REF-11001',
-  'card'
-)
-on conflict (id) do nothing;
-
--- Production note:
--- These policies are intentionally open for local/demo setup.
--- For a live app, tighten access by role and ownership before deployment.
