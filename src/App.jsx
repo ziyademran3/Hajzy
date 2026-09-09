@@ -164,7 +164,7 @@ const getDefaultBookingDates = () => {
 
 function App() {
   const { t, i18n } = useTranslation()
-  const { user, loading, login, signup, socialLogin, logout } = useAuth()
+  const { user, loading, login, signup, socialLogin, logout, updateProfile } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const [selectedInvoiceBooking, setSelectedInvoiceBooking] = useState(null)
   const [activePage, setActivePage] = useState('home')
@@ -3611,6 +3611,7 @@ function App() {
         user={user || effectiveUser}
         language={language}
         onEdit={() => navigate('profile-edit')}
+        onUpdateProfile={updateProfile}
         onToggleLanguage={handleLanguageToggle}
         onLogout={handleLogout}
       />

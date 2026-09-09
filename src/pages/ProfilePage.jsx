@@ -1,14 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 
 export default function ProfilePage({
   user: initialUser,
   language = 'ar',
   onEdit: _onEdit = () => {},
+  onUpdateProfile,
   onToggleLanguage = () => {},
   onLogout,
 }) {
-  const { updateProfile, changeUserPassword, logout } = useAuth()
+  const { updateProfile: fallbackUpdateProfile, changeUserPassword, logout } = useAuth()
+  const updateProfile = onUpdateProfile || fallbackUpdateProfile
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({
     name: initialUser?.name || initialUser?.fullName || '',
@@ -25,6 +27,10 @@ export default function ProfilePage({
   const [passwordError, setPasswordError] = useState('')
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
+
+  useEffect(() => {
+    setAvatarPreview(initialUser?.avatar || initialUser?.avatar_url || '')
+  }, [initialUser?.avatar, initialUser?.avatar_url])
 
   const text = language === 'en' ? {
     title: 'Profile',
