@@ -431,24 +431,6 @@ export const propertySeed = [
   }),
 ]
 
-const bookingSeed = [
-  {
-    id: 'booking-1',
-    propertyId: 'alex-vista',
-    title: 'شقة فيستا الإسكندرية',
-    location: 'المنتزه، الإسكندرية',
-    image:
-      'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80',
-    checkIn: '2026-10-15',
-    checkOut: '2026-10-20',
-    guests: 2,
-    total: 21000,
-    currency: 'EGP',
-    status: 'confirmed',
-    reference: '#REF-11001',
-  },
-]
-
 const readStorage = (key, fallback) => {
   try {
     let storedValue = localStorage.getItem(key)
@@ -461,10 +443,6 @@ const readStorage = (key, fallback) => {
     }
 
     const parsedValue = JSON.parse(storedValue)
-    if (Array.isArray(parsedValue) && parsedValue.length === 0) {
-      return fallback
-    }
-
     return parsedValue
   } catch {
     return fallback
@@ -640,7 +618,9 @@ export const fetchBookings = async () => {
     }
   }
 
-  const storedBookings = readStorage('hajzy_bookings', bookingSeed)
+  // A customer with no completed booking must see an empty history, never a
+  // demonstration booking shared by every new browser session.
+  const storedBookings = readStorage('hajzy_bookings', [])
   return storedBookings.map(normalizeBooking)
 }
 
@@ -654,7 +634,7 @@ export const addBooking = async (booking) => {
     }
   }
 
-  const savedBookings = readStorage('hajzy_bookings', bookingSeed)
+  const savedBookings = readStorage('hajzy_bookings', [])
   const updatedBookings = [normalizedBooking, ...savedBookings]
   writeStorage('hajzy_bookings', updatedBookings)
   return normalizedBooking
@@ -881,7 +861,7 @@ export const updateBooking = async (booking) => {
     }
   }
 
-  const savedBookings = readStorage('hajzy_bookings', bookingSeed)
+  const savedBookings = readStorage('hajzy_bookings', [])
   const updatedBookings = savedBookings.map((item) =>
     item.id === normalizedBooking.id ? normalizedBooking : item,
   )
@@ -897,7 +877,7 @@ export const deleteBooking = async (bookingId) => {
     }
   }
 
-  const savedBookings = readStorage('hajzy_bookings', bookingSeed)
+  const savedBookings = readStorage('hajzy_bookings', [])
   const filteredBookings = savedBookings.filter((booking) => booking.id !== bookingId)
   writeStorage('hajzy_bookings', filteredBookings)
   return true

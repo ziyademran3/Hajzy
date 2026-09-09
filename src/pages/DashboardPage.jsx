@@ -6,6 +6,7 @@ export default function DashboardPage({
   user,
   bookings = [],
   properties = [],
+  favorites = [],
   onNavigate,
   onLogout: _onLogout,
   language = 'ar',
@@ -194,7 +195,7 @@ export default function DashboardPage({
           </div>
           <div className="mt-4 flex items-baseline gap-2">
             <span className="text-3xl font-black text-slate-900 dark:text-white">
-              {Math.min(12, properties.length || 0)}
+              {favorites.length}
             </span>
             <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{isAr ? 'عقار محفوظ' : 'saved'}</span>
           </div>

@@ -188,10 +188,7 @@ function App() {
   const [currentAuthPage, setCurrentAuthPage] = useState('login')
   const [searchTerm, setSearchTerm] = useState('')
   const [activeFilter, setActiveFilter] = useState('all')
-  const [favorites, setFavorites] = useState(() => {
-    const savedFavorites = localStorage.getItem('hajzy_favorites') || localStorage.getItem('stitch_favorites')
-    return savedFavorites ? JSON.parse(savedFavorites) : []
-  })
+  const [favorites, setFavorites] = useState([])
   const [lastBooking, setLastBooking] = useState(null)
   const defaultBookingDates = getDefaultBookingDates()
 
@@ -427,8 +424,25 @@ function App() {
   })
 
   useEffect(() => {
-    localStorage.setItem('hajzy_favorites', JSON.stringify(favorites))
-  }, [favorites])
+    if (!user?.id && !user?.email) {
+      setFavorites([])
+      return
+    }
+
+    const accountKey = user.id || String(user.email).trim().toLowerCase()
+    try {
+      const savedFavorites = localStorage.getItem(`hajzy_favorites_${accountKey}`)
+      setFavorites(savedFavorites ? JSON.parse(savedFavorites) : [])
+    } catch {
+      setFavorites([])
+    }
+  }, [user?.id, user?.email])
+
+  useEffect(() => {
+    if (!user?.id && !user?.email) return
+    const accountKey = user.id || String(user.email).trim().toLowerCase()
+    localStorage.setItem(`hajzy_favorites_${accountKey}`, JSON.stringify(favorites))
+  }, [favorites, user?.id, user?.email])
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -3588,6 +3602,7 @@ function App() {
           user={user}
           bookings={bookings}
           properties={properties}
+          favorites={favorites}
           language={language}
           onNavigate={navigate}
           onLogout={handleLogout}
@@ -3920,4 +3935,3 @@ function App() {
 }
 
 export default App
-
