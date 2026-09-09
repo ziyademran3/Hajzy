@@ -6861,6 +6861,99 @@ body[data-theme='dark'] .app-shell {
   color: #94a3b8;
 }
 
+/* Keep a complete booking visible without turning the action list into a tall rail. */
+@media (max-width: 540px) {
+  .bookings-shell .booking-list {
+    gap: 14px;
+  }
+
+  .bookings-shell .booking-card {
+    grid-template-columns: minmax(118px, 38%) minmax(0, 1fr);
+    gap: 0;
+    align-items: stretch;
+  }
+
+  .bookings-shell .booking-image {
+    aspect-ratio: auto;
+    min-height: 100%;
+  }
+
+  .bookings-shell .booking-image img {
+    height: 100%;
+    min-height: 100%;
+  }
+
+  .bookings-shell .status {
+    inset-inline-start: 8px;
+    left: auto;
+    top: 8px;
+    padding: 5px 8px;
+    font-size: 0.64rem;
+  }
+
+  .bookings-shell .booking-body {
+    min-width: 0;
+    padding: 12px;
+  }
+
+  .bookings-shell .booking-head {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .bookings-shell .booking-head h3 {
+    font-size: 1.05rem;
+    line-height: 1.35;
+  }
+
+  .bookings-shell .booking-head p {
+    margin-top: 4px;
+    font-size: 0.78rem;
+  }
+
+  .bookings-shell .rating-chip.small {
+    flex: none;
+    padding: 4px 6px;
+  }
+
+  .bookings-shell .booking-footer {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 10px;
+  }
+
+  .bookings-shell .booking-details small {
+    font-size: 0.68rem;
+    line-height: 1.45;
+  }
+
+  .bookings-shell .booking-pricing {
+    gap: 6px;
+  }
+
+  .bookings-shell .booking-pricing .per-night,
+  .bookings-shell .booking-pricing .booking-total {
+    font-size: 0.86rem;
+  }
+
+  .bookings-shell .booking-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: 6px;
+  }
+
+  .bookings-shell .booking-actions .primary-button,
+  .bookings-shell .booking-actions .secondary-button {
+    min-width: 0;
+    min-height: 34px;
+    padding: 6px 4px;
+    font-size: 0.7rem;
+  }
+}
+
 .app-shell[data-theme='dark'] h1,
 .app-shell[data-theme='dark'] h2,
 .app-shell[data-theme='dark'] h3,

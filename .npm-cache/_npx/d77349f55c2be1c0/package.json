@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "wrangler": "^4.130.0"
+  },
+  "_npx": {
+    "packages": [
+      "wrangler@latest"
+    ]
+  }
+}

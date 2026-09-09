@@ -324,12 +324,20 @@ async function ensurePostgresConnection() {
   }
 
   try {
-    pgPool = new Pool({ connectionString: process.env.DATABASE_URL })
+    pgPool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      connectionTimeoutMillis: 3000,
+    })
     await pgPool.query('SELECT 1')
     usingMemoryStore = false
     console.log('PostgreSQL connection established.')
   } catch {
     console.warn('PostgreSQL is unavailable. Falling back to the in-memory auth store.')
+    try {
+      await pgPool?.end()
+    } catch {
+      // ignore shutdown errors from a failed pool
+    }
     pgPool = null
     usingMemoryStore = true
   }
@@ -415,37 +423,41 @@ async function initializeDatabase() {
   `)
 }
 
+const gmailUser = process.env.GMAIL_USER?.trim()
+const gmailAppPassword = process.env.GMAIL_APP_PASSWORD?.trim().replace(/\s+/g, '')
+
 const getGmailTransporter = () => {
-  const user = process.env.GMAIL_USER
-  const pass = process.env.GMAIL_APP_PASSWORD
-  if (user && pass) {
-    return nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user: user.trim(), pass: pass.trim().replace(/\s+/g, '') },
-    })
-  }
-  return null
+  if (!gmailUser || !gmailAppPassword) return null
+  return nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: { user: gmailUser, pass: gmailAppPassword },
+  })
 }
 
 async function sendEmail({ to, subject, html }) {
-  // 1. Try Gmail SMTP if GMAIL_USER and GMAIL_APP_PASSWORD are provided (allows sending to ANY email)
   const gmail = getGmailTransporter()
   if (gmail) {
     try {
       const info = await gmail.sendMail({
-        from: `"Hajzy" <${process.env.GMAIL_USER}>`,
+        from: `"Hajzy" <${gmailUser}>`,
         to,
         subject,
         html,
+        text: 'افتح هذا البريد لإعادة تعيين كلمة المرور على Hajzy.',
       })
       console.log('Email sent via Gmail SMTP:', info.messageId)
       return { ok: true, result: info }
     } catch (gmailErr) {
       console.error('Gmail SMTP error:', gmailErr.message || gmailErr)
+      return {
+        ok: false,
+        message: gmailErr.message || 'Failed to send email via Gmail SMTP.',
+      }
     }
   }
 
-  // 2. Try Resend if configured
   if (resend) {
     try {
       const { data, error } = await resend.emails.send({
@@ -490,7 +502,7 @@ app.get('/api/health', async (_req, res) => {
   res.json({
     ok: true,
     mode: usingMemoryStore ? 'memory' : 'postgres',
-    emailConfigured: Boolean(resend),
+    emailConfigured: Boolean(resend || (gmailUser && gmailAppPassword)),
     message: usingMemoryStore ? 'API is healthy (local memory store).' : 'API is healthy (PostgreSQL).',
   })
 })
@@ -812,13 +824,12 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     })
 
     if (!emailResult.ok) {
-      console.warn(`[Forgot Password] Note for ${normalizedEmail}: ${emailResult.message}`)
+      console.warn(`[Forgot Password] Email was not sent to ${normalizedEmail}: ${emailResult.message}`)
       return res.status(200).json({
         ok: true,
         emailSent: false,
-        message: 'تم تجهيز رابط استعادة كلمة المرور بنجاح.',
-        resetToken,
-        resetLink,
+        message: 'تعذر إرسال البريد حالياً، يمكنك استخدام رابط الاستعادة أدناه.',
+        resetLink: isProduction ? undefined : resetLink,
         note: emailResult.message,
       })
     }
@@ -827,8 +838,6 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       ok: true,
       emailSent: true,
       message: 'تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني بنجاح.',
-      resetToken,
-      resetLink,
     })
   } catch (error) {
     console.error('forgot password error:', error)

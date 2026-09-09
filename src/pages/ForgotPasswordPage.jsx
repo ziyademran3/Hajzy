@@ -60,7 +60,7 @@ export default function ForgotPasswordPage({ language = 'ar', onToggleLanguage, 
     try {
       const response = await forgotPassword(trimmed)
       setMessage(response?.message || text.success)
-      if (response?.resetLink) {
+      if (!response?.emailSent && response?.resetLink) {
         setResetLink(response.resetLink)
       }
     } catch (requestError) {
