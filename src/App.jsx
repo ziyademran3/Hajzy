@@ -1,9 +1,8 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import './App.css'
 import { useAuth } from './hooks/useAuth'
 import Skeleton from './components/Skeleton'
-import usePullToRefresh from './hooks/usePullToRefresh'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
@@ -393,35 +392,9 @@ function App() {
     }
   }, [])
 
-  // Refresh function used by pull-to-refresh and manual refresh
-  const refreshData = async (showSkeleton = false) => {
-    if (showSkeleton) {
-      setIsLoadingData(true)
-    }
-    try {
-      const [propertyList, bookingList] = await Promise.all([fetchProperties(), fetchBookings()])
-      const safePropertyList = Array.isArray(propertyList) && propertyList.length ? propertyList : propertySeed
-      const safeBookingList = Array.isArray(bookingList) && bookingList.length ? bookingList : []
-      if (!Array.isArray(propertyList) || !propertyList.length) {
-        localStorage.setItem('hajzy_properties', JSON.stringify(propertySeed))
-      }
-      setProperties(safePropertyList)
-      setBookings(safeBookingList)
-      setSelectedProperty((prev) => prev || safePropertyList[0])
-    } catch (err) {
-      console.error('Refresh failed', err)
-    } finally {
-      if (showSkeleton) {
-        setIsLoadingData(false)
-      }
-    }
-  }
-
-  // Pull-to-refresh binding: attach to main content
-  const mainRef = useRef(null)
-  const { pullDistance, refreshing } = usePullToRefresh(mainRef, async () => {
-    await refreshData(false)
-  })
+  // Pull-to-refresh is intentionally disabled. On some mobile browsers it
+  // misidentifies ordinary upward scrolling as a refresh gesture and snaps the
+  // customer back to the top of the page.
 
   useEffect(() => {
     if (!user?.id && !user?.email) {
@@ -3875,14 +3848,7 @@ function App() {
         </div>
       </header>
 
-      <main className="content-wrap" ref={mainRef}>
-        {/* Pull-to-refresh indicator hint */}
-        {(pullDistance > 8 || refreshing) && (
-          <div className="pull-indicator" aria-hidden="true">
-            <div className="dot" style={{ transform: `translateY(${Math.min(pullDistance, 40)}px)` }} />
-            <small>{refreshing ? (language === 'en' ? 'Refreshing...' : 'جارٍ التحديث...') : (language === 'en' ? 'Pull to refresh' : 'اسحب للتحديث')}</small>
-          </div>
-        )}
+      <main className="content-wrap">
 
         {isLoadingData ? (
           // Show page-level skeletons while loading
