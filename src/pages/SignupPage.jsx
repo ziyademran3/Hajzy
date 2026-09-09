@@ -36,7 +36,7 @@ export default function SignupPage({ language = 'ar', onToggleLanguage, onSignup
         create: 'Create account',
         login: 'Sign in',
         alreadyHave: 'Already have an account?',
-        google: 'Google',
+        google: 'Continue with Google',
         requiredName: 'Please enter your full name.',
         requiredEmail: 'Please enter your email.',
         invalidEmail: 'Please enter a valid email address.',
@@ -46,10 +46,6 @@ export default function SignupPage({ language = 'ar', onToggleLanguage, onSignup
         requiredAgreement: 'You must accept the terms and privacy policy.',
         togglePassword: 'Show password',
         hidePassword: 'Hide password',
-        passwordRequirements: 'Password requirements:',
-        req8Chars: '8 or more characters',
-        reqUppercase: 'At least one uppercase letter',
-        reqNumber: 'At least one number',
       }
     : {
         brand: 'Hajzy',
@@ -63,7 +59,7 @@ export default function SignupPage({ language = 'ar', onToggleLanguage, onSignup
         create: 'إنشاء الحساب',
         login: 'تسجيل الدخول',
         alreadyHave: 'لديك حساب بالفعل؟',
-        google: 'Google',
+        google: 'المتابعة باستخدام Google',
         requiredName: 'يرجى إدخال الاسم الكامل.',
         requiredEmail: 'يرجى إدخال البريد الإلكتروني.',
         invalidEmail: 'يرجى إدخال بريد إلكتروني صحيح.',
@@ -73,10 +69,6 @@ export default function SignupPage({ language = 'ar', onToggleLanguage, onSignup
         requiredAgreement: 'يجب الموافقة على الشروط وسياسة الخصوصية.',
         togglePassword: 'عرض كلمة المرور',
         hidePassword: 'إخفاء كلمة المرور',
-        passwordRequirements: 'متطلبات كلمة المرور:',
-        req8Chars: '8 أحرف على الأقل',
-        reqUppercase: 'حرف واحد على الأقل بحالة كبيرة',
-        reqNumber: 'رقم واحد على الأقل',
       }
 
   const handleChange = (event) => {
@@ -201,24 +193,6 @@ export default function SignupPage({ language = 'ar', onToggleLanguage, onSignup
   }
 
   const emailPlaceholder = language === 'en' ? 'your@email.com' : 'أدخل بريدك الإلكتروني'
-  const passwordStrength = (() => {
-    if (!form.password) return { label: language === 'en' ? 'No password' : 'لا توجد كلمة مرور', level: 0 }
-    let score = 0
-    if (form.password.length >= 8) score += 1
-    if (/[A-Z]/.test(form.password)) score += 1
-    if (/[0-9]/.test(form.password)) score += 1
-    if (/[^A-Za-z0-9]/.test(form.password)) score += 1
-    if (score <= 1) return { label: language === 'en' ? 'Weak' : 'ضعيفة', level: 1 }
-    if (score <= 2) return { label: language === 'en' ? 'Medium' : 'متوسطة', level: 2 }
-    return { label: language === 'en' ? 'Strong' : 'قوية', level: 3 }
-  })()
-
-  const passwordRequirements = {
-    has8Chars: form.password.length >= 8,
-    hasUppercase: /[A-Z]/.test(form.password),
-    hasNumber: /[0-9]/.test(form.password),
-  }
-
   return (
     <div
       className={`min-h-screen bg-[#f4faf7] dark:bg-[#090b0d] px-4 py-8 sm:px-6 lg:px-8 transition-colors duration-200 ${language === 'ar' ? 'rtl' : 'ltr'}`}
@@ -254,10 +228,11 @@ export default function SignupPage({ language = 'ar', onToggleLanguage, onSignup
               </div>
             </div>
 
-            <div className="mb-8">
+            <div className="mb-6">
               <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white sm:text-4xl">
                 {text.title}
               </h1>
+              <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">{text.subtitle}</p>
             </div>
 
             <div className="mb-5">
@@ -278,7 +253,7 @@ export default function SignupPage({ language = 'ar', onToggleLanguage, onSignup
               <div className="h-[1px] flex-1 bg-slate-200 dark:bg-slate-700" />
             </div>
 
-            <form className="space-y-5" onSubmit={handleSubmit} noValidate>
+            <form className="space-y-4" onSubmit={handleSubmit} noValidate>
               <div>
                 <label htmlFor="name" className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">
                   {text.fullName}
@@ -354,35 +329,9 @@ export default function SignupPage({ language = 'ar', onToggleLanguage, onSignup
                     className="w-full border-0 bg-transparent py-3.5 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
                   />
                 </div>
-                <div className="mt-2 flex items-center gap-2">
-                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-                   <span className={`block h-full rounded-full ${passwordStrength.level === 0 ? 'w-0' : passwordStrength.level === 1 ? 'w-1/3 bg-red-400' : passwordStrength.level === 2 ? 'w-2/3 bg-amber-400' : 'w-full bg-emerald-500'}`} />
-                  </div>
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{passwordStrength.label}</span>
-                </div>
-                <div className="mt-3 space-y-2">
-                  <div className="text-xs font-medium text-slate-500 dark:text-slate-400">{text.passwordRequirements}</div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center justify-center w-4 h-4 rounded text-xs font-bold ${passwordRequirements.has8Chars ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
-                        {passwordRequirements.has8Chars ? '✓' : '○'}
-                      </span>
-                      <span className={`text-xs ${passwordRequirements.has8Chars ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-slate-500 dark:text-slate-400'}`}>{text.req8Chars}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center justify-center w-4 h-4 rounded text-xs font-bold ${passwordRequirements.hasUppercase ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
-                        {passwordRequirements.hasUppercase ? '✓' : '○'}
-                      </span>
-                      <span className={`text-xs ${passwordRequirements.hasUppercase ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-slate-500 dark:text-slate-400'}`}>{text.reqUppercase}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center justify-center w-4 h-4 rounded text-xs font-bold ${passwordRequirements.hasNumber ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
-                        {passwordRequirements.hasNumber ? '✓' : '○'}
-                      </span>
-                      <span className={`text-xs ${passwordRequirements.hasNumber ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-slate-500 dark:text-slate-400'}`}>{text.reqNumber}</span>
-                    </div>
-                  </div>
-                </div>
+                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                  {language === 'en' ? 'Use at least 8 characters.' : 'استخدم 8 أحرف على الأقل.'}
+                </p>
                 {errors.password && <p id="password-error" className="mt-2 text-sm font-medium text-red-600 dark:text-red-400">{errors.password}</p>}
               </div>
 
