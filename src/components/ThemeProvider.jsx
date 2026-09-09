@@ -10,10 +10,12 @@ export function useTheme() {
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
     try {
-      const stored = window.localStorage.getItem('hajzy-theme') || window.localStorage.getItem('theme')
-      if (stored) return stored
-      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-      return prefersDark ? 'dark' : 'light'
+      // Start in light mode for every visitor. The previous implementation
+      // inherited the phone's dark-mode setting, which made the site appear
+      // dark without the customer choosing it. A versioned key also resets
+      // that old automatic preference once, while preserving future choices.
+      const stored = window.localStorage.getItem('hajzy-theme-v2')
+      return stored === 'dark' ? 'dark' : 'light'
     } catch {
       return 'light'
     }
@@ -21,8 +23,7 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     try {
-      window.localStorage.setItem('hajzy-theme', theme)
-      window.localStorage.setItem('theme', theme)
+      window.localStorage.setItem('hajzy-theme-v2', theme)
     } catch {
       // ignore
     }
