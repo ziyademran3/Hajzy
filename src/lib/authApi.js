@@ -1,23 +1,50 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
+const LOCAL_API_BASE = 'http://localhost:4000/api'
+const configuredApiBase = String(import.meta.env.VITE_API_URL || '').trim().replace(/\/$/, '')
+
+// Local Vite talks to Express. Production on Pages uses same-origin /api Functions.
+const API_BASE = import.meta.env.DEV
+  ? (configuredApiBase && !configuredApiBase.startsWith('/') ? configuredApiBase : LOCAL_API_BASE)
+  : (configuredApiBase || '/api')
 
 async function requestJson(path, options = {}) {
   const token =
     typeof window !== 'undefined'
       ? localStorage.getItem('hajzy_auth_token') || localStorage.getItem('stitch_auth_token')
       : null
-  const response = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {}),
-    },
-    ...options,
-  })
 
-  const payload = await response.json().catch(() => ({}))
+  let response
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.headers || {}),
+      },
+      ...options,
+    })
+  } catch {
+    throw new Error('Failed to fetch')
+  }
+
+  const contentType = response.headers.get('content-type') || ''
+  // A missing/crashed Pages Function often returns HTML. Preserve the HTTP
+  // status so it is not mistaken for a Gmail delivery failure.
+  const body = await response.text().catch(() => '')
+  let payload = {}
+  if (contentType.includes('application/json') && body) {
+    try {
+      payload = JSON.parse(body)
+    } catch {
+      payload = {}
+    }
+  }
 
   if (!response.ok) {
-    throw new Error(payload.message || 'The request failed.')
+    throw new Error(payload.message || `تعذر الاتصال بخدمة الحسابات (رمز الخطأ ${response.status}).`)
+  }
+
+  if (!contentType.includes('application/json')) {
+    throw new Error('استجابة غير صالحة من خدمة الحسابات. تأكد من نشر دوال API على الخادم.')
   }
 
   return payload
