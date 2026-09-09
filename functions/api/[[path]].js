@@ -169,7 +169,10 @@ async function readSmtp(reader, decoder, leftover) {
 }
 
 async function sendViaGmailSmtp({ user, pass, to, subject, html }) {
-  const socket = connect({ hostname: 'smtp.gmail.com', port: 465, secureTransport: 'on' })
+  const socket = connect(
+    { hostname: 'smtp.gmail.com', port: 465 },
+    { secureTransport: 'on' },
+  )
   const writer = socket.writable.getWriter()
   const reader = socket.readable.getReader()
   const encoder = new TextEncoder()
