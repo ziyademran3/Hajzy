@@ -286,10 +286,14 @@ export async function onRequest(context) {
   const { request, env } = context
   if (request.method === 'OPTIONS') return json({ ok: true })
 
-  const path = new URL(request.url).pathname.replace(/\/+$/, '') || '/'
+  const requestUrl = new URL(request.url)
+  const path = requestUrl.pathname.replace(/\/+$/, '') || '/'
   const db = authStore(env)
   const jwtSecret = env.JWT_SECRET || 'dev-secret-change-me'
-  const appUrl = env.APP_URL || 'https://hajzy.pages.dev'
+  // Always use the deployed Pages hostname unless a custom canonical URL is set.
+  // The former fallback pointed to another Pages project, so verification links
+  // opened the UI but sent their API request to the wrong backend.
+  const appUrl = (env.APP_URL || requestUrl.origin).replace(/\/$/, '')
 
   try {
     if (path === '/api/health' && request.method === 'GET') {
