@@ -266,7 +266,7 @@ export const useAuth = () => {
           name: profile.user.fullName || profile.user.name || profile.user.email,
           email: profile.user.email,
           role: profile.user.role || 'user',
-          avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${profile.user.email}`,
+          avatar: profile.user.avatar_url || profile.user.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${profile.user.email}`,
           createdAt: profile.user.created_at || profile.user.createdAt,
         }
         persistUser(authUser)
@@ -287,7 +287,7 @@ export const useAuth = () => {
           name: response.user.fullName || response.user.name || response.user.email,
           email: response.user.email,
           role: response.user.role || 'user',
-          avatar: data.avatar_url || response.user.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${response.user.email}`,
+          avatar: data.avatar_url || response.user.avatar_url || response.user.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${response.user.email}`,
           createdAt: response.user.created_at || response.user.createdAt,
           phone: data.phone || response.user.phone || '',
         }

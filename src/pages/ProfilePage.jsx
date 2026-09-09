@@ -86,9 +86,31 @@ export default function ProfilePage({
 
   const handleAvatarFile = (file) => {
     if (!file) return
+    if (!file.type.startsWith('image/')) {
+      setError(language === 'en' ? 'Please choose an image file.' : 'يرجى اختيار ملف صورة.')
+      return
+    }
+
     const reader = new FileReader()
-    reader.onload = () => {
-      setAvatarPreview(reader.result)
+    reader.onload = async () => {
+      const avatarUrl = String(reader.result || '')
+      if (!avatarUrl) return
+
+      setAvatarPreview(avatarUrl)
+      setLoading(true)
+      setError('')
+      setMessage('')
+
+      try {
+        const updated = await updateProfile({ avatar_url: avatarUrl })
+        if (updated) {
+          setMessage(language === 'en' ? 'Profile photo updated successfully.' : 'تم تحديث صورة الملف الشخصي بنجاح.')
+        }
+      } catch (err) {
+        setError(err.message || (language === 'en' ? 'Unable to update profile photo.' : 'تعذر تحديث صورة الملف الشخصي.'))
+      } finally {
+        setLoading(false)
+      }
     }
     reader.readAsDataURL(file)
   }
@@ -154,6 +176,7 @@ export default function ProfilePage({
 
   const displayName = initialUser?.name || initialUser?.fullName || initialUser?.email || ''
   const initials = (displayName || 'U').split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase() || '').join('') || 'U'
+  const avatarSrc = avatarPreview || initialUser?.avatar || initialUser?.avatar_url || ''
 
   const emptyPlaceholderFor = (field) => {
     if (language === 'en') {
@@ -166,8 +189,8 @@ export default function ProfilePage({
     <div className="page-shell profile-shell">
       <div className="profile-hero">
         <div className="profile-avatar">
-          {initialUser?.avatar ? (
-            <img src={initialUser.avatar} alt="avatar" />
+          {avatarSrc ? (
+            <img src={avatarSrc} alt="avatar" />
           ) : (
             <div className="avatar-initials" aria-label="avatar initials">{initials}</div>
           )}
