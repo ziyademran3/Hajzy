@@ -349,17 +349,13 @@ export async function onRequest(context) {
       const { email } = await readBody(request)
       if (!email || !isValidEmail(email)) return json({ message: 'Please provide a valid email address.' }, 400)
       const normalizedEmail = email.trim().toLowerCase()
-      let user = await db.getByEmail(normalizedEmail)
+      const user = await db.getByEmail(normalizedEmail)
       if (!user) {
-        user = {
-          id: crypto.randomUUID(),
-          fullName: normalizedEmail.split('@')[0],
-          email: normalizedEmail,
-          passwordHash: await hashPassword(crypto.randomUUID()),
-          emailVerified: true,
-          createdAt: new Date().toISOString(),
-        }
-        await db.save(user)
+        return json({
+          ok: false,
+          emailSent: false,
+          message: 'هذا البريد الإلكتروني غير مسجل. أنشئ حسابًا جديدًا أو استخدم بريدًا مسجلاً.',
+        }, 404)
       }
       const resetToken = [...crypto.getRandomValues(new Uint8Array(32))].map((b) => b.toString(16).padStart(2, '0')).join('')
       const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString()
