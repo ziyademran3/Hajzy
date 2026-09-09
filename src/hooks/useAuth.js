@@ -218,7 +218,10 @@ export const useAuth = () => {
         setError(null)
         return persistUser(authUser)
       }
-    } catch {
+    } catch (error) {
+      if (String(error?.message || '').toLowerCase().includes('already exists')) {
+        throw new Error('هذا البريد مستخدم بالفعل. سجّل الدخول عبر Google أو استخدم بريدًا إلكترونيًا آخر.')
+      }
       // Continue to the local demo fallback if the backend is not running.
     }
 
@@ -227,7 +230,7 @@ export const useAuth = () => {
 
     if (existingUser) {
       setError('هذا البريد مستخدم بالفعل')
-      return null
+      throw new Error('هذا البريد مستخدم بالفعل. سجّل الدخول عبر Google أو استخدم بريدًا إلكترونيًا آخر.')
     }
 
     const userData = {

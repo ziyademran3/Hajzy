@@ -1,3 +1,6 @@
+import { Capacitor } from '@capacitor/core'
+import { SocialLogin } from '@capgo/capacitor-social-login'
+
 /**
  * Google Identity Services (GIS) integration for real device Google account chooser.
  */
@@ -55,6 +58,37 @@ export const triggerGoogleLogin = async (clientIdOverride = null) => {
 
   if (!clientId) {
     throw new Error('MISSING_CLIENT_ID')
+  }
+
+  // A Capacitor Android app is served from capacitor://localhost, which Google
+  // web OAuth cannot authorize. Use Android Credential Manager instead.
+  if (Capacitor.getPlatform() === 'android') {
+    await SocialLogin.initialize({
+      google: {
+        // This must remain the Web OAuth client ID. The Android client ID is
+        // registered in Google Cloud Console with the package name and SHA-1.
+        webClientId: clientId,
+        mode: 'online',
+      },
+    })
+
+    const login = await SocialLogin.login({
+      provider: 'google',
+    })
+    const profile = login.result?.profile
+
+    if (!profile?.email || !profile?.id) {
+      throw new Error('Google did not return the account profile.')
+    }
+
+    return {
+      id: profile.id,
+      name: profile.name || profile.email.split('@')[0],
+      email: profile.email,
+      avatar: profile.imageUrl || '',
+      role: 'user',
+      provider: 'google',
+    }
   }
 
   await loadGoogleGsiScript()

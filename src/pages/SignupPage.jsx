@@ -133,6 +133,11 @@ export default function SignupPage({ language = 'ar', onToggleLanguage, onSignup
           form: language === 'en' ? 'Unable to create the account right now.' : 'تعذر إنشاء الحساب في الوقت الحالي.',
         }))
       }
+    } catch (error) {
+      setErrors((current) => ({
+        ...current,
+        form: error?.message || (language === 'en' ? 'Unable to create the account right now.' : 'تعذر إنشاء الحساب في الوقت الحالي.'),
+      }))
     } finally {
       setLoading(false)
     }
@@ -388,7 +393,7 @@ export default function SignupPage({ language = 'ar', onToggleLanguage, onSignup
               {errors.agree && <p className="-mt-2 text-sm font-medium text-red-500 dark:text-red-400">{errors.agree}</p>}
 
               {errors.form && (
-                <div className="rounded-xl border border-red-500/40 bg-red-950/30 px-3 py-2 text-sm font-medium text-red-200" role="alert">
+                <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 dark:border-red-500/40 dark:bg-red-950/30 dark:text-red-200" role="alert">
                   {errors.form}
                 </div>
               )}
