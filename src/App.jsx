@@ -474,6 +474,15 @@ function App() {
       setSelectedProperty(property)
     }
     setActivePage(page)
+
+    // Pages share the document scroll container in the mobile WebView. Reset it
+    // after rendering so a newly opened checkout never inherits the previous
+    // page's position near the bottom.
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+      document.documentElement.scrollTop = 0
+      document.body.scrollTop = 0
+    })
   }
 
   const openAuthScreen = (page = 'login') => {
