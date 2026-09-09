@@ -154,6 +154,39 @@ function resetEmailHtml(resetLink) {
 </html>`
 }
 
+function verificationEmailHtml(name, verificationLink) {
+  const safeName = String(name || 'ضيفنا العزيز').replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[character])
+
+  return `<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#1e293b;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:40px 15px;background:#f1f5f9;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:520px;background:#fff;border-radius:24px;overflow:hidden;border:1px solid #e2e8f0;box-shadow:0 12px 36px rgba(15,23,42,.08);">
+        <tr><td align="center" style="background:linear-gradient(135deg,#064e3b,#0d9488);padding:34px 20px;">
+          <div style="width:54px;height:54px;line-height:54px;border-radius:16px;background:#fff;color:#0d9488;font-size:27px;font-weight:900;margin:0 auto 12px;">H</div>
+          <h1 style="margin:0;color:#fff;font-size:24px;font-weight:800;">Hajzy | حجزي</h1>
+          <p style="margin:7px 0 0;color:#a7f3d0;font-size:13px;">أهلًا بك في مجتمع حجزي</p>
+        </td></tr>
+        <tr><td style="padding:36px 30px;text-align:right;direction:rtl;">
+          <h2 style="margin:0 0 14px;font-size:22px;color:#0f172a;">تأكيد البريد الإلكتروني</h2>
+          <p style="margin:0 0 14px;font-size:15px;line-height:1.8;color:#475569;">مرحبًا ${safeName}،</p>
+          <p style="margin:0;font-size:15px;line-height:1.8;color:#475569;">شكرًا لانضمامك إلى Hajzy. أكّد بريدك الإلكتروني لتفعيل حسابك والاستفادة من جميع خدماتنا.</p>
+          <div style="text-align:center;margin:32px 0 24px;">
+            <a href="${verificationLink}" style="display:inline-block;background:linear-gradient(135deg,#0d9488,#059669);color:#fff;text-decoration:none;font-size:15px;font-weight:700;padding:14px 34px;border-radius:14px;box-shadow:0 8px 20px rgba(13,148,136,.28);">تأكيد البريد الإلكتروني</a>
+          </div>
+          <div style="padding:14px 16px;border-radius:12px;background:#f0fdfa;color:#0f766e;font-size:13px;line-height:1.7;">إذا لم تنشئ هذا الحساب، يمكنك تجاهل هذه الرسالة بأمان.</div>
+          <p style="margin:22px 0 0;font-size:11px;line-height:1.6;color:#94a3b8;word-break:break-all;direction:ltr;text-align:left;">إذا لم يعمل الزر، انسخ الرابط التالي وافتحه في المتصفح:<br>${verificationLink}</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`
+}
+
 async function readSmtp(reader, decoder, leftover) {
   let buffer = leftover
   while (true) {
@@ -329,8 +362,8 @@ export async function onRequest(context) {
       await db.setVerificationToken(user.id, verificationToken)
       await sendEmail(env, {
         to: normalizedEmail,
-        subject: 'Verify your Hajzy account',
-        html: `<p>Hello ${user.fullName},</p><p><a href="${appUrl}/verify-email?token=${verificationToken}">Verify email</a></p>`,
+        subject: 'تأكيد بريدك الإلكتروني | Hajzy',
+        html: verificationEmailHtml(user.fullName, `${appUrl}/verify-email?token=${verificationToken}`),
       })
       return json({ message: 'User registered successfully. Please verify your email address.', user: publicUser(user) }, 201)
     }
