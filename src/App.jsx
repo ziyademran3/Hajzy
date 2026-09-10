@@ -610,6 +610,24 @@ function App() {
     setOwnerNotice(message)
   }
 
+  useEffect(() => {
+    const handlePaymentReturn = (event) => {
+      const returnedUrl = event?.detail?.url
+      if (!returnedUrl?.startsWith('com.hajzy.app://payment-result')) return
+
+      // Do not trust the redirect as payment confirmation. Paymob's signed
+      // webhook is what confirms the transaction on the server.
+      setActivePage('bookings')
+      window.requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }))
+      setToast(language === 'en'
+        ? 'You are back in Hajzy. We are verifying your payment.'
+        : 'تم الرجوع إلى حجزي. جارٍ التحقق من الدفع.')
+    }
+
+    window.addEventListener('hajzyPaymentReturn', handlePaymentReturn)
+    return () => window.removeEventListener('hajzyPaymentReturn', handlePaymentReturn)
+  }, [language])
+
   const isFavorite = (propertyId) => favorites.some((id) => String(id) === String(propertyId))
 
   const toggleFavorite = (event, propertyId) => {

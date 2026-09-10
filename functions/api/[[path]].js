@@ -375,7 +375,7 @@ async function paymobRequest(path, body, secretKey) {
   }
 }
 
-async function createPaymobCheckout(env, { amount, currency, title, user }) {
+async function createPaymobCheckout(env, { amount, currency, title, user, callbackBaseUrl }) {
   const secretKey = env.PAYMOB_SECRET_KEY?.trim()
   const publicKey = env.PAYMOB_PUBLIC_KEY?.trim()
   const integrationId = env.PAYMOB_INTEGRATION_ID?.trim()
@@ -397,6 +397,11 @@ async function createPaymobCheckout(env, { amount, currency, title, user }) {
     items: [{ name: title || 'Hajzy booking', amount: amountCents, description: title || 'Hajzy booking', quantity: 1 }],
     special_reference: reference,
     expiration: 3600,
+    // The browser closes back into the installed Android app. This return is
+    // only for navigation; the signed webhook below remains the source of
+    // truth for marking a payment as successful.
+    redirection_url: env.PAYMOB_RETURN_URL?.trim() || 'com.hajzy.app://payment-result',
+    notification_url: `${callbackBaseUrl}/api/payments/paymob/webhook`,
     billing_data: {
       apartment: 'NA', email: user.email, floor: 'NA', first_name: firstName || 'Customer',
       street: 'NA', building: 'NA', phone_number: user.phone || '+201000000000',
@@ -587,6 +592,7 @@ export async function onRequest(context) {
           currency: 'EGP',
           title: String(propertyTitle || 'Hajzy booking').slice(0, 120),
           user,
+          callbackBaseUrl: appUrl,
         })
         return json(session, 201)
       } catch (error) {
