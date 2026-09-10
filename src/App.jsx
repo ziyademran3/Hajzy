@@ -1110,6 +1110,15 @@ function App() {
       return
     }
 
+    if (paymentMethod === 'card' && !localStorage.getItem('hajzy_auth_token')) {
+      showToast(
+        language === 'en'
+          ? 'For secure card payments, sign out and sign in with your registered email and password.'
+          : 'لإتمام الدفع بالبطاقة، سجّل الخروج ثم سجّل الدخول بالبريد الإلكتروني وكلمة المرور المسجلين.'
+      )
+      return
+    }
+
     setIsProcessingPayment(true)
 
     try {

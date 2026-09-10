@@ -207,16 +207,21 @@ export const useAuth = () => {
       })
 
       if (response?.user) {
-        const authUser = {
-          id: response.user.id,
-          name: trimmedName,
-          email: normalizedEmail,
-          role: 'user',
-        avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${normalizedEmail}`,
-          emailVerified: response.user.emailVerified,
+        // Registration itself does not issue a token. Sign in immediately so
+        // payment uses a server-issued JWT rather than a local-only session.
+        const loginResponse = await loginUser({ email: normalizedEmail, password: normalizedPassword })
+        if (loginResponse?.token && loginResponse?.user) {
+          const authUser = {
+            ...loginResponse.user,
+            id: loginResponse.user.id,
+            name: loginResponse.user.fullName || trimmedName,
+            role: normalizeRole(loginResponse.user),
+            avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${normalizedEmail}`,
+          }
+          setError(null)
+          return persistUser(authUser, loginResponse.token)
         }
-        setError(null)
-        return persistUser(authUser)
+        throw new Error('Unable to create a secure sign-in session.')
       }
     } catch (error) {
       if (String(error?.message || '').toLowerCase().includes('already exists')) {
