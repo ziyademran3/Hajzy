@@ -306,19 +306,29 @@ async function sendEmail(env, { to, subject, html }) {
 }
 
 async function paymobRequest(path, body, secretKey) {
-  const response = await fetch(`https://accept.paymob.com${path}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(secretKey ? { Authorization: `Token ${secretKey}` } : {}),
-    },
-    body: JSON.stringify(body),
-  })
-  const payload = await response.json().catch(() => ({}))
-  if (!response.ok) {
-    throw new Error(payload.message || payload.detail || `Paymob returned ${response.status}`)
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 20000)
+  try {
+    const response = await fetch(`https://accept.paymob.com${path}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(secretKey ? { Authorization: `Token ${secretKey}` } : {}),
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    })
+    const payload = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      throw new Error(payload.message || payload.detail || `Paymob returned ${response.status}`)
+    }
+    return payload
+  } catch (error) {
+    if (error?.name === 'AbortError') throw new Error('Timed out while contacting Paymob.')
+    throw error
+  } finally {
+    clearTimeout(timeout)
   }
-  return payload
 }
 
 async function createPaymobCheckout(env, { amount, currency, title, user }) {

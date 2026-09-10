@@ -12,6 +12,8 @@ async function requestJson(path, options = {}) {
       ? localStorage.getItem('hajzy_auth_token') || localStorage.getItem('stitch_auth_token')
       : null
 
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), options.timeoutMs || 30000)
   let response
   try {
     response = await fetch(`${API_BASE}${path}`, {
@@ -21,9 +23,15 @@ async function requestJson(path, options = {}) {
         ...(options.headers || {}),
       },
       ...options,
+      signal: controller.signal,
     })
-  } catch {
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw new Error('انتهت مهلة تجهيز الدفع. تحقق من نشر إعدادات Paymob ثم أعد المحاولة.')
+    }
     throw new Error('Failed to fetch')
+  } finally {
+    clearTimeout(timeout)
   }
 
   const contentType = response.headers.get('content-type') || ''
@@ -109,6 +117,7 @@ export function changePassword(currentPassword, newPassword) {
 export function createPaymobPaymentSession({ amount, currency, propertyTitle, paymentMethod }) {
   return requestJson('/payments/paymob/session', {
     method: 'POST',
+    timeoutMs: 35000,
     body: JSON.stringify({ amount, currency, propertyTitle, paymentMethod }),
   })
 }
