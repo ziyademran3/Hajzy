@@ -103,3 +103,12 @@ export function changePassword(currentPassword, newPassword) {
     body: JSON.stringify({ currentPassword, newPassword }),
   })
 }
+
+// Paymob credentials and payment-key generation intentionally live on the
+// server. Never create a checkout URL or expose a Paymob API key in Vite.
+export function createPaymobPaymentSession({ amount, currency, propertyTitle, paymentMethod }) {
+  return requestJson('/payments/paymob/session', {
+    method: 'POST',
+    body: JSON.stringify({ amount, currency, propertyTitle, paymentMethod }),
+  })
+}

@@ -816,36 +816,6 @@ export const addChatMessage = async (message) => {
   return normalizedMessage
 }
 
-export const createPaymentSession = async ({ amount, currency, propertyTitle, paymentMethod }) => {
-  const provider = import.meta.env.VITE_PAYMENT_PROVIDER || 'demo'
-  const reference = `#REF-${Math.floor(10000 + Math.random() * 90000)}`
-
-  if (provider === 'stripe') {
-    return {
-      provider,
-      status: 'ready',
-      reference,
-      redirectUrl: `https://checkout.stripe.com/pay?amount=${Math.round(amount * 100)}&currency=${currency}&title=${encodeURIComponent(propertyTitle || 'Stay')}&method=${encodeURIComponent(paymentMethod)}`,
-    }
-  }
-
-  if (provider === 'paymob') {
-    return {
-      provider,
-      status: 'ready',
-      reference,
-      redirectUrl: `https://accept.paymob.com/checkout?amount=${amount}&currency=${currency}&method=${encodeURIComponent(paymentMethod)}&title=${encodeURIComponent(propertyTitle || 'Stay')}`,
-    }
-  }
-
-  return {
-    provider: 'demo',
-    status: 'demo',
-    reference,
-    message: 'بيانات الدفع قيد المحاكاة المحلية حتى يتم ربط بوابة دفع حقيقية.',
-  }
-}
-
 export const updateBooking = async (booking) => {
   const normalizedBooking = normalizeBooking(booking)
 

@@ -20,12 +20,12 @@ import NeighborhoodExplorer from './components/NeighborhoodExplorer'
 import HostCalendar from './components/HostCalendar'
 import { useTheme } from './components/ThemeProvider'
 import { formatCurrency, formatDate } from './lib/formatters'
+import { createPaymobPaymentSession } from './lib/authApi'
 import {
   addBooking,
   addChatMessage,
   addProperty,
   CITY_PHOTOS,
-  createPaymentSession,
   deleteBooking,
   deleteProperty,
   FALLBACK_STAY_PHOTO,
@@ -1125,13 +1125,15 @@ function App() {
         guests: Number(bookingDates.guests),
         total: grandTotal,
         currency: selectedProperty.currency,
-        status: 'confirmed',
+        // A booking must not be shown as paid/confirmed before Paymob returns
+        // a successful transaction callback.
+        status: paymentMethod === 'card' ? 'pending_payment' : 'pending',
         reference,
         paymentMethod,
       }
 
       const savedBooking = await addBooking(newBooking)
-      const paymentSession = await createPaymentSession({
+      const paymentSession = await createPaymobPaymentSession({
         amount: grandTotal,
         currency: selectedProperty.currency,
         propertyTitle: selectedProperty.title,

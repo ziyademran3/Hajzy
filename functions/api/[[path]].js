@@ -305,6 +305,62 @@ async function sendEmail(env, { to, subject, html }) {
   return { ok: false, message: 'Email service is not configured. Set GMAIL_USER and GMAIL_APP_PASSWORD, or configure Resend.' }
 }
 
+async function paymobRequest(path, body, secretKey) {
+  const response = await fetch(`https://accept.paymob.com${path}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(secretKey ? { Authorization: `Token ${secretKey}` } : {}),
+    },
+    body: JSON.stringify(body),
+  })
+  const payload = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    throw new Error(payload.message || payload.detail || `Paymob returned ${response.status}`)
+  }
+  return payload
+}
+
+async function createPaymobCheckout(env, { amount, currency, title, user }) {
+  const secretKey = env.PAYMOB_SECRET_KEY?.trim()
+  const publicKey = env.PAYMOB_PUBLIC_KEY?.trim()
+  const integrationId = env.PAYMOB_INTEGRATION_ID?.trim()
+  if (!secretKey || !publicKey || !integrationId) {
+    throw new Error('Paymob is not configured. Set PAYMOB_SECRET_KEY, PAYMOB_PUBLIC_KEY, and PAYMOB_INTEGRATION_ID.')
+  }
+
+  const amountCents = Math.round(Number(amount) * 100)
+  if (!Number.isSafeInteger(amountCents) || amountCents < 100) {
+    throw new Error('Payment amount must be at least 1 EGP.')
+  }
+
+  const reference = `hajzy-${crypto.randomUUID()}`
+  const [firstName, ...rest] = String(user.fullName || 'Hajzy Customer').trim().split(/\s+/)
+  const intention = await paymobRequest('/v1/intention/', {
+    amount: amountCents,
+    currency: currency || 'EGP',
+    payment_methods: [Number(integrationId)],
+    items: [{ name: title || 'Hajzy booking', amount: amountCents, description: title || 'Hajzy booking', quantity: 1 }],
+    special_reference: reference,
+    expiration: 3600,
+    billing_data: {
+      apartment: 'NA', email: user.email, floor: 'NA', first_name: firstName || 'Customer',
+      street: 'NA', building: 'NA', phone_number: user.phone || '+201000000000',
+      shipping_method: 'NA', postal_code: 'NA', city: 'Cairo', country: 'EG',
+      last_name: rest.join(' ') || 'Customer', state: 'Cairo',
+    },
+  }, secretKey)
+  if (!intention.client_secret) throw new Error('Paymob did not return a checkout client secret.')
+
+  return {
+    provider: 'paymob',
+    reference,
+    orderId: intention.intention_order_id || intention.id,
+    redirectUrl: `https://accept.paymob.com/unifiedcheckout/?publicKey=${encodeURIComponent(publicKey)}&clientSecret=${encodeURIComponent(intention.client_secret)}`,
+    title,
+  }
+}
+
 function publicUser(user) {
   return {
     id: user.id,
@@ -439,6 +495,37 @@ export async function onRequest(context) {
       await db.save(user)
       await db.clearVerificationToken(token)
       return json({ message: 'Email verified successfully.' })
+    }
+
+    if (path === '/api/payments/paymob/session' && request.method === 'POST') {
+      let payload
+      try {
+        payload = await verifyJwt(bearer(request), jwtSecret)
+      } catch {
+        return json({ message: 'Please sign in before starting a payment.' }, 401)
+      }
+      const user = await db.getById(payload.userId)
+      if (!user) return json({ message: 'User not found.' }, 404)
+
+      const { amount, currency, propertyTitle, paymentMethod } = await readBody(request)
+      if (String(currency || 'EGP').toUpperCase() !== 'EGP') {
+        return json({ message: 'Paymob checkout currently supports EGP only.' }, 400)
+      }
+      if (paymentMethod && paymentMethod !== 'card') {
+        return json({ message: 'This Paymob integration is configured for card payments only.' }, 400)
+      }
+      try {
+        const session = await createPaymobCheckout(env, {
+          amount,
+          currency: 'EGP',
+          title: String(propertyTitle || 'Hajzy booking').slice(0, 120),
+          user,
+        })
+        return json(session, 201)
+      } catch (error) {
+        console.error('Paymob session creation failed:', error.message || String(error))
+        return json({ message: 'تعذر تجهيز جلسة الدفع. تحقق من إعدادات Paymob ثم أعد المحاولة.' }, 502)
+      }
     }
 
     const needsAuth = path === '/api/auth/me' || path === '/api/auth/change-password'
