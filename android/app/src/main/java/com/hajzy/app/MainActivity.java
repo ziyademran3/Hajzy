@@ -26,7 +26,15 @@ public class MainActivity extends BridgeActivity {
 
     private void capturePaymentReturn(Intent intent) {
         Uri url = intent == null ? null : intent.getData();
-        if (url != null && "com.hajzy.app".equals(url.getScheme()) && "payment-result".equals(url.getHost())) {
+        boolean isCustomPaymentReturn = url != null
+            && "com.hajzy.app".equals(url.getScheme())
+            && "payment-result".equals(url.getHost());
+        boolean isVerifiedPaymentReturn = url != null
+            && "https".equals(url.getScheme())
+            && "hajzy-83y.pages.dev".equals(url.getHost())
+            && url.getPath() != null
+            && url.getPath().startsWith("/payment-result");
+        if (isCustomPaymentReturn || isVerifiedPaymentReturn) {
             pendingPaymentReturnUrl = url.toString();
             // On a cold launch React needs a moment to register its listener.
             getWindow().getDecorView().postDelayed(this::deliverPaymentReturn, 750);

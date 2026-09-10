@@ -400,7 +400,7 @@ async function createPaymobCheckout(env, { amount, currency, title, user, callba
     // The browser closes back into the installed Android app. This return is
     // only for navigation; the signed webhook below remains the source of
     // truth for marking a payment as successful.
-    redirection_url: env.PAYMOB_RETURN_URL?.trim() || 'com.hajzy.app://payment-result',
+    redirection_url: env.PAYMOB_RETURN_URL?.trim() || `${callbackBaseUrl}/payment-result`,
     notification_url: `${callbackBaseUrl}/api/payments/paymob/webhook`,
     billing_data: {
       apartment: 'NA', email: user.email, floor: 'NA', first_name: firstName || 'Customer',

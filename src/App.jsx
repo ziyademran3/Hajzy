@@ -613,7 +613,9 @@ function App() {
   useEffect(() => {
     const handlePaymentReturn = (event) => {
       const returnedUrl = event?.detail?.url
-      if (!returnedUrl?.startsWith('com.hajzy.app://payment-result')) return
+      const isPaymentReturn = returnedUrl?.startsWith('com.hajzy.app://payment-result') ||
+        returnedUrl?.startsWith('https://hajzy-83y.pages.dev/payment-result')
+      if (!isPaymentReturn) return
 
       // Do not trust the redirect as payment confirmation. Paymob's signed
       // webhook is what confirms the transaction on the server.

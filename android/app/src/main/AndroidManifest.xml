@@ -32,6 +32,18 @@
                     android:host="payment-result" />
             </intent-filter>
 
+            <!-- Verified HTTPS link: Chrome can open this without asking the
+                 user to confirm the custom Hajzy URL after Paymob payment. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="hajzy-83y.pages.dev"
+                    android:pathPrefix="/payment-result" />
+            </intent-filter>
+
         </activity>
 
         <provider

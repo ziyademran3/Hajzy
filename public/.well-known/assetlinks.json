@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.hajzy.app",
+      "sha256_cert_fingerprints": [
+        "BD:4F:7F:D8:A1:CD:54:60:9F:4C:2A:F6:8D:EE:29:13:B2:2F:24:CC:64:2C:A8:28:9A:8E:21:27:D2:FF:D7:0F"
+      ]
+    }
+  }
+]
