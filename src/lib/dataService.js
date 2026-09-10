@@ -508,6 +508,7 @@ const normalizeBooking = (booking) => {
     status: booking.status || 'confirmed',
     reference: booking.reference || '#REF-00000',
     paymentMethod: booking.paymentMethod || 'card',
+    userId: booking.userId || null,
   }
 }
 
@@ -611,21 +612,36 @@ export const fetchPropertiesByOwner = async (ownerId) => {
 }
 
 export const fetchBookings = async () => {
+  const storedBookings = readStorage('hajzy_bookings', [])
+
   if (supabase) {
     const { data, error } = await supabase.from('bookings').select('*').order('created_at', { ascending: false })
-    if (!error && data) {
-      return data.map(normalizeBooking)
+    if (!error && data?.length) {
+      const remoteBookings = data.map(normalizeBooking)
+      const remoteIds = new Set(remoteBookings.map((booking) => String(booking.id)))
+      // Keep locally saved pending payments visible if a Supabase policy or
+      // transient network error prevented their remote insert.
+      return [...remoteBookings, ...storedBookings.map(normalizeBooking).filter((booking) => !remoteIds.has(String(booking.id)))]
     }
   }
 
   // A customer with no completed booking must see an empty history, never a
   // demonstration booking shared by every new browser session.
-  const storedBookings = readStorage('hajzy_bookings', [])
   return storedBookings.map(normalizeBooking)
 }
 
 export const addBooking = async (booking) => {
   const normalizedBooking = normalizeBooking(booking)
+
+  // Store a durable on-device copy first. The app is backgrounded as soon as
+  // checkout opens, so this is the only write we can guarantee completes
+  // before the customer leaves for the payment provider.
+  const savedBookings = readStorage('hajzy_bookings', [])
+  const updatedBookings = [
+    normalizedBooking,
+    ...savedBookings.filter((item) => String(item?.id) !== String(normalizedBooking.id)),
+  ]
+  writeStorage('hajzy_bookings', updatedBookings)
 
   if (supabase) {
     const { data, error } = await supabase.from('bookings').insert([normalizedBooking]).select()
@@ -634,9 +650,6 @@ export const addBooking = async (booking) => {
     }
   }
 
-  const savedBookings = readStorage('hajzy_bookings', [])
-  const updatedBookings = [normalizedBooking, ...savedBookings]
-  writeStorage('hajzy_bookings', updatedBookings)
   return normalizedBooking
 }
 

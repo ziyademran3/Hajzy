@@ -620,6 +620,12 @@ function App() {
       // Do not trust the redirect as payment confirmation. Paymob's signed
       // webhook is what confirms the transaction on the server.
       setActivePage('bookings')
+      // The app may have been suspended while Paymob was open. Reload the
+      // saved pending booking before showing the history rather than relying
+      // on the state that was in memory before the browser was opened.
+      fetchBookings()
+        .then((savedBookings) => setBookings(Array.isArray(savedBookings) ? savedBookings : []))
+        .catch((error) => console.warn('Could not refresh bookings after payment return:', error))
       window.requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }))
       setToast(language === 'en'
         ? 'You are back in Hajzy. We are verifying your payment.'
@@ -1159,6 +1165,7 @@ function App() {
         status: paymentMethod === 'card' ? 'pending_payment' : 'pending',
         reference,
         paymentMethod,
+        userId: user?.id || null,
       }
 
       const paymentSession = await createPaymobPaymentSession({
@@ -1169,10 +1176,11 @@ function App() {
       })
 
       if (paymentSession.redirectUrl && typeof window !== 'undefined') {
-        // Do not wait for an optional client-side database write before
-        // opening checkout. A stalled Supabase request previously left this
-        // button spinning forever and never contacted Paymob.
-        addBooking(newBooking).catch((error) => console.warn('Could not save pending booking locally:', error))
+        // This write must finish before leaving the app. Previously it ran in
+        // the background and Android stopped it when the checkout browser
+        // opened, so a successful Paymob payment returned to an empty list.
+        const savedBooking = await addBooking(newBooking)
+        setBookings((currentBookings) => [{ ...savedBooking, paymentMethod }, ...currentBookings])
         window.location.href = paymentSession.redirectUrl
         return
       }
