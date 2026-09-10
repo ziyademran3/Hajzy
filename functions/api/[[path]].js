@@ -25,6 +25,50 @@ const fromBase64Url = (value) => {
 
 const utf8 = (text) => new TextEncoder().encode(text)
 
+const paymobText = (value) => {
+  if (value === null || value === undefined) return ''
+  if (typeof value === 'boolean') return value ? 'true' : 'false'
+  return String(value)
+}
+
+const paymobTransactionHmacFields = (transaction) => [
+  transaction.amount_cents,
+  transaction.created_at,
+  transaction.currency,
+  transaction.error_occured,
+  transaction.has_parent_transaction,
+  transaction.id,
+  transaction.integration_id,
+  transaction.is_3d_secure,
+  transaction.is_auth,
+  transaction.is_capture,
+  transaction.is_refunded,
+  transaction.is_standalone_payment,
+  transaction.is_voided,
+  transaction.order?.id,
+  transaction.owner,
+  transaction.pending,
+  transaction.source_data?.pan,
+  transaction.source_data?.sub_type,
+  transaction.source_data?.type,
+  transaction.success,
+]
+
+async function paymobHmacIsValid(transaction, receivedHmac, secret) {
+  if (!secret || !receivedHmac) return false
+  const key = await crypto.subtle.importKey('raw', utf8(secret), { name: 'HMAC', hash: 'SHA-512' }, false, ['sign'])
+  const signature = await crypto.subtle.sign(
+    'HMAC',
+    key,
+    utf8(paymobTransactionHmacFields(transaction).map(paymobText).join('')),
+  )
+  const expected = Array.from(new Uint8Array(signature)).map((byte) => byte.toString(16).padStart(2, '0')).join('')
+  if (expected.length !== receivedHmac.length) return false
+  let different = 0
+  for (let index = 0; index < expected.length; index += 1) different |= expected.charCodeAt(index) ^ receivedHmac.charCodeAt(index)
+  return different === 0
+}
+
 async function hashPassword(password) {
   const salt = crypto.getRandomValues(new Uint8Array(16))
   const key = await crypto.subtle.importKey('raw', utf8(password), 'PBKDF2', false, ['deriveBits'])
@@ -362,6 +406,19 @@ async function createPaymobCheckout(env, { amount, currency, title, user }) {
   }, secretKey)
   if (!intention.client_secret) throw new Error('Paymob did not return a checkout client secret.')
 
+  // Keep an immutable server-side link between the Paymob order and the user.
+  // It is used only after the signed callback arrives.
+  if (env.HAJZY_AUTH && (intention.intention_order_id || intention.id)) {
+    await env.HAJZY_AUTH.put(`payment:${intention.intention_order_id || intention.id}`, JSON.stringify({
+      userId: user.id,
+      reference,
+      amountCents,
+      currency: currency || 'EGP',
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    }), { expirationTtl: 60 * 60 * 24 * 30 })
+  }
+
   return {
     provider: 'paymob',
     reference,
@@ -536,6 +593,28 @@ export async function onRequest(context) {
         console.error('Paymob session creation failed:', error.message || String(error))
         return json({ message: 'تعذر تجهيز جلسة الدفع. تحقق من إعدادات Paymob ثم أعد المحاولة.' }, 502)
       }
+    }
+
+    if (path === '/api/payments/paymob/webhook' && request.method === 'POST') {
+      const callback = await readBody(request)
+      const transaction = callback?.obj || callback
+      const receivedHmac = requestUrl.searchParams.get('hmac') || callback?.hmac || ''
+      const valid = await paymobHmacIsValid(transaction, receivedHmac, env.PAYMOB_HMAC_SECRET?.trim())
+      if (!valid) return json({ message: 'Invalid Paymob callback signature.' }, 401)
+
+      const orderId = transaction?.order?.id || transaction?.order_id
+      const paymentKey = orderId ? `payment:${orderId}` : null
+      const rawPayment = paymentKey && env.HAJZY_AUTH ? await env.HAJZY_AUTH.get(paymentKey) : null
+      if (rawPayment && paymentKey) {
+        const payment = JSON.parse(rawPayment)
+        payment.status = transaction.success && !transaction.pending && !transaction.is_refunded && !transaction.is_voided
+          ? 'paid'
+          : 'failed'
+        payment.transactionId = transaction.id
+        payment.paidAt = transaction.success ? new Date().toISOString() : null
+        await env.HAJZY_AUTH.put(paymentKey, JSON.stringify(payment), { expirationTtl: 60 * 60 * 24 * 30 })
+      }
+      return json({ received: true })
     }
 
     const needsAuth = path === '/api/auth/me' || path === '/api/auth/change-password'
