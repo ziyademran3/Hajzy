@@ -375,7 +375,7 @@ async function paymobRequest(path, body, secretKey) {
   }
 }
 
-async function createPaymobCheckout(env, { amount, currency, title, user, callbackBaseUrl }) {
+async function createPaymobCheckout(env, { amount, currency, title, user, callbackBaseUrl, returnUrl }) {
   const secretKey = env.PAYMOB_SECRET_KEY?.trim()
   const publicKey = env.PAYMOB_PUBLIC_KEY?.trim()
   const integrationId = env.PAYMOB_INTEGRATION_ID?.trim()
@@ -390,6 +390,13 @@ async function createPaymobCheckout(env, { amount, currency, title, user, callba
 
   const reference = `hajzy-${crypto.randomUUID()}`
   const [firstName, ...rest] = String(user.fullName || 'Hajzy Customer').trim().split(/\s+/)
+  // Only an exact native URL may be supplied by the client. This avoids an
+  // open redirect while allowing Android checkout to return to the installed
+  // app instead of reopening the Pages login screen in Chrome.
+  const redirectionUrl = returnUrl === 'com.hajzy.app://payment-result'
+    ? returnUrl
+    : env.PAYMOB_RETURN_URL?.trim() || `${callbackBaseUrl}/payment-result`
+
   const intention = await paymobRequest('/v1/intention/', {
     amount: amountCents,
     currency: currency || 'EGP',
@@ -400,7 +407,7 @@ async function createPaymobCheckout(env, { amount, currency, title, user, callba
     // The browser closes back into the installed Android app. This return is
     // only for navigation; the signed webhook below remains the source of
     // truth for marking a payment as successful.
-    redirection_url: env.PAYMOB_RETURN_URL?.trim() || `${callbackBaseUrl}/payment-result`,
+    redirection_url: redirectionUrl,
     notification_url: `${callbackBaseUrl}/api/payments/paymob/webhook`,
     billing_data: {
       apartment: 'NA', email: user.email, floor: 'NA', first_name: firstName || 'Customer',
@@ -579,7 +586,7 @@ export async function onRequest(context) {
       const user = await db.getById(payload.userId)
       if (!user) return json({ message: 'User not found.' }, 404)
 
-      const { amount, currency, propertyTitle, paymentMethod } = await readBody(request)
+      const { amount, currency, propertyTitle, paymentMethod, returnUrl } = await readBody(request)
       if (String(currency || 'EGP').toUpperCase() !== 'EGP') {
         return json({ message: 'Paymob checkout currently supports EGP only.' }, 400)
       }
@@ -593,6 +600,7 @@ export async function onRequest(context) {
           title: String(propertyTitle || 'Hajzy booking').slice(0, 120),
           user,
           callbackBaseUrl: appUrl,
+          returnUrl,
         })
         return json(session, 201)
       } catch (error) {

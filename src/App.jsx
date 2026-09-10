@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Capacitor } from '@capacitor/core'
 import './App.css'
 import { useAuth } from './hooks/useAuth'
 import Skeleton from './components/Skeleton'
@@ -1173,6 +1174,11 @@ function App() {
         currency: selectedProperty.currency,
         propertyTitle: selectedProperty.title,
         paymentMethod,
+        // A hosted Paymob checkout must return to the Android intent, not the
+        // Pages SPA. The latter opens Chrome and therefore has no app session.
+        returnUrl: Capacitor.getPlatform() === 'android'
+          ? 'com.hajzy.app://payment-result'
+          : undefined,
       })
 
       if (paymentSession.redirectUrl && typeof window !== 'undefined') {

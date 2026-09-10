@@ -17,6 +17,11 @@
 
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="android:background">@drawable/splash</item>
+        <!-- A solid navy native launch screen prevents the white flash seen
+             before the WebView loads. The icon contains no text. -->
+        <item name="android:background">@drawable/splash_screen</item>
+        <item name="windowSplashScreenBackground">@color/splash_navy</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_logo</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>

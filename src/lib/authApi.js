@@ -114,10 +114,10 @@ export function changePassword(currentPassword, newPassword) {
 
 // Paymob credentials and payment-key generation intentionally live on the
 // server. Never create a checkout URL or expose a Paymob API key in Vite.
-export function createPaymobPaymentSession({ amount, currency, propertyTitle, paymentMethod }) {
+export function createPaymobPaymentSession({ amount, currency, propertyTitle, paymentMethod, returnUrl }) {
   return requestJson('/payments/paymob/session', {
     method: 'POST',
     timeoutMs: 35000,
-    body: JSON.stringify({ amount, currency, propertyTitle, paymentMethod }),
+    body: JSON.stringify({ amount, currency, propertyTitle, paymentMethod, returnUrl }),
   })
 }

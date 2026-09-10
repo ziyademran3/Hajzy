@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="144dp"
+    android:height="144dp"
+    android:viewportWidth="144"
+    android:viewportHeight="144">
+
+    <!-- Navy roundel, with the reference home's gold roof and windows. -->
+    <path
+        android:fillColor="#112B45"
+        android:pathData="M72,4a68,68 0,1 0,0 136a68,68 0,1 0,0 -136" />
+    <path
+        android:fillColor="#D9A94A"
+        android:pathData="M30,104L30,46L43,46L43,68L72,47L101,68L101,46L114,46L114,104L101,104L101,85L72,64L43,85L43,104Z" />
+    <path
+        android:fillColor="#F6D78B"
+        android:pathData="M72,52L37,78L37,91L72,66L107,91L107,78Z" />
+    <path
+        android:fillColor="#F6D78B"
+        android:pathData="M57,91L67,91L67,101L57,101ZM77,91L87,91L87,101L77,101ZM57,108L67,108L67,118L57,118ZM77,108L87,108L87,118L77,118Z" />
+</vector>
