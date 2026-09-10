@@ -1132,7 +1132,6 @@ function App() {
         paymentMethod,
       }
 
-      const savedBooking = await addBooking(newBooking)
       const paymentSession = await createPaymobPaymentSession({
         amount: grandTotal,
         currency: selectedProperty.currency,
@@ -1141,10 +1140,15 @@ function App() {
       })
 
       if (paymentSession.redirectUrl && typeof window !== 'undefined') {
+        // Do not wait for an optional client-side database write before
+        // opening checkout. A stalled Supabase request previously left this
+        // button spinning forever and never contacted Paymob.
+        addBooking(newBooking).catch((error) => console.warn('Could not save pending booking locally:', error))
         window.location.href = paymentSession.redirectUrl
         return
       }
 
+      const savedBooking = await addBooking(newBooking)
       setLastBooking({ ...savedBooking, paymentMethod })
       setBookings((currentBookings) => [{ ...savedBooking, paymentMethod }, ...currentBookings])
       addNotification(
