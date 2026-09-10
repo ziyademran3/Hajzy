@@ -1160,6 +1160,11 @@ function App() {
         'success'
       )
       navigate('success')
+    } catch (error) {
+      const fallback = language === 'en'
+        ? 'Unable to start the payment. Please try again.'
+        : 'تعذر بدء عملية الدفع. يرجى المحاولة مرة أخرى.'
+      showToast(error?.message || fallback)
     } finally {
       setIsProcessingPayment(false)
     }
