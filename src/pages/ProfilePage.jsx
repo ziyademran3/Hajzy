@@ -221,7 +221,18 @@ export default function ProfilePage({
 
   const displayName = initialUser?.name || initialUser?.fullName || initialUser?.email || ''
   const initials = (displayName || 'U').split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase() || '').join('') || 'U'
-  const avatarSrc = avatarPreview || initialUser?.avatar || initialUser?.avatar_url || ''
+
+  // Only show real user photos (Google profile pics, uploaded photos, data URIs).
+  // Exclude auto-generated placeholder services (dicebear, ui-avatars, placeholder.com).
+  const rawAvatar = avatarPreview || initialUser?.avatar || initialUser?.avatar_url || ''
+  const isPlaceholderUrl = rawAvatar && (
+    rawAvatar.includes('dicebear.com') ||
+    rawAvatar.includes('ui-avatars.com') ||
+    rawAvatar.includes('placeholder.com') ||
+    rawAvatar.includes('via.placeholder')
+  )
+  const [avatarBroken, setAvatarBroken] = useState(false)
+  const avatarSrc = (!isPlaceholderUrl && !avatarBroken) ? rawAvatar : ''
 
   const emptyPlaceholderFor = (field) => {
     if (language === 'en') {
@@ -239,11 +250,13 @@ export default function ProfilePage({
         </div>
         <div className="px-6 pb-6 pt-0 -mt-12 flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4">
           <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-start">
-            <div className="h-24 w-24 rounded-full ring-4 ring-white dark:ring-slate-900 overflow-hidden bg-slate-100 dark:bg-slate-800 shadow-md shrink-0 flex items-center justify-center">
+            <div className="h-24 w-24 rounded-full ring-4 ring-white dark:ring-slate-900 overflow-hidden shadow-md shrink-0 flex items-center justify-center"
+              style={!avatarSrc ? { background: 'linear-gradient(135deg, #0d9488 0%, #065f46 100%)' } : { backgroundColor: '#f1f5f9' }}
+            >
               {avatarSrc ? (
-                <img src={avatarSrc} alt="avatar" className="h-full w-full object-cover" />
+                <img src={avatarSrc} alt="avatar" className="h-full w-full object-cover" onError={() => setAvatarBroken(true)} />
               ) : (
-                <div className="text-2xl font-black text-slate-700 dark:text-slate-200">{initials}</div>
+                <div className="text-3xl font-black text-white tracking-wide" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>{initials}</div>
               )}
             </div>
             <div className="space-y-1">
