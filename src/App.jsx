@@ -2333,11 +2333,16 @@ function App() {
           </div>
         </div>
 
-        <div className="filter-chips">
+        <div className="filter-chips flex gap-3 overflow-x-auto py-2 my-3" role="tablist" aria-label={language === 'en' ? 'Filter properties by destination' : 'تصفية الإقامات حسب الوجهة'}>
           {filterOptions.map((option) => (
             <button
               key={option.id}
-              className={activeFilter === option.id ? 'chip active' : 'chip'}
+              type="button"
+              role="tab"
+              aria-selected={activeFilter === option.id}
+              className={`chip shrink-0 px-5 py-2.5 rounded-full font-bold text-sm whitespace-nowrap transition-all ${
+                activeFilter === option.id ? 'active' : ''
+              }`}
               onClick={() => {
                 setHomeQuickSearch((current) => ({
                   ...current,
