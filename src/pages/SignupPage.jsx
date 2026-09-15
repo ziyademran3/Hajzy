@@ -91,11 +91,13 @@ export default function SignupPage({
         requiredAgreement: 'You must accept the terms and privacy policy.',
         togglePassword: 'Show password',
         hidePassword: 'Hide password',
-        showcaseTitle: 'Your Key to Exceptional Egyptian Stays',
-        showcaseSubtitle: 'Enjoy verified hosts, premium amenities, and transparent booking with zero hidden surprises.',
-        statStays: '5,000+ Verified Stays',
+        showcaseTitle: 'Handpicked Luxury Stays & Escapes in Egypt',
+        showcaseSubtitle: 'From private beachfront villas in El Gouna and the Red Sea to tranquil retreats in Siwa and Aswan.',
+        statStays: '+5,000 Verified Stays',
         statRating: '4.92/5 Guest Score',
         statInstant: '100% Instant Booking',
+        quote: '"The most refined booking experience for private coastal villas in Egypt."',
+        quoteAuthor: 'Verified Guest • Cairo',
       }
     : {
         brand: 'حجزي',
@@ -125,11 +127,13 @@ export default function SignupPage({
         requiredAgreement: 'يجب الموافقة على الشروط وسياسة الخصوصية.',
         togglePassword: 'عرض كلمة المرور',
         hidePassword: 'إخفاء كلمة المرور',
-        showcaseTitle: 'بوابتك الحصرية لأفخم الإقامات في مصر',
-        showcaseSubtitle: 'إقامات موثقة بالكامل، مضيفون معتمدون، وتأكيد حجز فوري بدون رسوم مفاجئة.',
+        showcaseTitle: 'نخبة الإقامات والمنتجعات الفاخرة في مصر',
+        showcaseSubtitle: 'من الفلل الشاطئية الخاصة في الجونة والبحر الأحمر إلى الواحات الهادئة في سيوة وأسوان.',
         statStays: '+5,000 إقامة موثقة',
         statRating: '4.92/5 تقييم الضيوف',
         statInstant: 'حجز فوري مؤكد 100%',
+        quote: '“أرقى تجربة حجز للإقامات والفلل الساحلية في مصر بأعلى معايير المصداقية.”',
+        quoteAuthor: 'ضيف موثق • القاهرة',
       }
 
   const handleChange = (event) => {
@@ -320,7 +324,7 @@ export default function SignupPage({
         <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           
           {/* Visual Showcase Panel (Desktop Editorial Display) */}
-          <div className="hidden lg:flex lg:col-span-6 xl:col-span-7 flex-col justify-between self-stretch relative overflow-hidden rounded-[32px] border border-slate-200/80 dark:border-white/10 shadow-2xl bg-[#00433f] text-white min-h-[720px]">
+          <div className="hidden lg:flex lg:col-span-6 xl:col-span-7 order-2 lg:order-2 flex-col justify-between self-stretch relative overflow-hidden rounded-[32px] border border-slate-200/80 dark:border-white/10 shadow-2xl bg-[#00433f] text-white min-h-[660px]">
             <img
               src="/auth-luxury-stay.jpg"
               alt="Luxury Resort Egypt"
@@ -328,9 +332,11 @@ export default function SignupPage({
               loading="eager"
             />
             
-            <div className="absolute inset-0 bg-gradient-to-t from-[#002826] via-[#00433f]/40 to-black/30" />
-            <div className="absolute inset-0 bg-radial from-transparent via-[#00433f]/20 to-[#00201e]/80" />
+            {/* Ambient Multi-layer Gradient Scrim (subtle top & bottom for high image clarity) */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#001817]/90 via-black/20 to-black/15" />
+            <div className="absolute inset-0 bg-radial from-transparent via-transparent to-[#001211]/50" />
 
+            {/* Top Bar inside showcase */}
             <div className="relative z-10 p-8 flex items-center justify-between">
               <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/15 px-3.5 py-1.5 text-xs font-bold backdrop-blur-md">
                 <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -341,6 +347,7 @@ export default function SignupPage({
               </span>
             </div>
 
+            {/* Bottom Content & Testimonial inside showcase */}
             <div className="relative z-10 p-8 sm:p-10 space-y-6">
               <div className="space-y-2 max-w-lg">
                 <h2 className="text-2xl xl:text-3xl font-black tracking-tight text-white leading-snug">
@@ -351,17 +358,28 @@ export default function SignupPage({
                 </p>
               </div>
 
+              {/* Guest Quote Card */}
+              <div className="rounded-2xl border border-white/15 bg-black/35 backdrop-blur-xl p-4 sm:p-5 shadow-lg max-w-md">
+                <p className="text-xs sm:text-sm font-medium italic text-white/95 leading-relaxed">
+                  {text.quote}
+                </p>
+                <div className="mt-3 flex items-center justify-between">
+                  <span className="text-xs font-bold text-amber-300">★★★★★</span>
+                  <span className="text-[11px] font-semibold text-emerald-200/90">{text.quoteAuthor}</span>
+                </div>
+              </div>
+
               {/* Verified Features Row */}
-              <div className="grid grid-cols-3 gap-3 pt-4 text-center border-t border-white/15">
-                <div className="p-2">
+              <div className="grid grid-cols-3 gap-3 pt-2 text-center border-t border-white/15">
+                <div className="p-1">
                   <div className="text-base font-black text-white tabular-nums">+5,000</div>
                   <div className="text-[11px] text-emerald-200/80">{language === 'ar' ? 'إقامة موثقة' : 'Verified Stays'}</div>
                 </div>
-                <div className="p-2 border-x border-white/15">
+                <div className="p-1 border-x border-white/15">
                   <div className="text-base font-black text-white tabular-nums">100%</div>
                   <div className="text-[11px] text-emerald-200/80">{language === 'ar' ? 'ضمان الضيافة' : 'Hospitality Guarantee'}</div>
                 </div>
-                <div className="p-2">
+                <div className="p-1">
                   <div className="text-base font-black text-amber-300 tabular-nums">4.92★</div>
                   <div className="text-[11px] text-emerald-200/80">{language === 'ar' ? 'رضا النزلاء' : 'Guest Score'}</div>
                 </div>
@@ -370,7 +388,7 @@ export default function SignupPage({
           </div>
 
           {/* Interactive Authentication Panel */}
-          <div className="w-full lg:col-span-6 xl:col-span-5 max-w-md mx-auto">
+          <div className="w-full lg:col-span-6 xl:col-span-5 order-1 lg:order-1 max-w-md mx-auto">
             <div className="overflow-hidden rounded-[28px] border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#101418] shadow-[0_20px_60px_rgba(0,67,63,0.08)] dark:shadow-[0_25px_70px_rgba(0,0,0,0.5)] p-6 sm:p-8 transition-all">
               
               {/* Card Switcher Pills: Sign In vs Sign Up */}
