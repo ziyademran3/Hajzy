@@ -55,8 +55,120 @@ svg {
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  text-wrap: balance;
+  letter-spacing: -0.015em;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+.tabular-nums,
+[data-tabular-nums],
+.price-box,
+.price-row strong,
+.booking-price-row,
+.hero-mini-stat strong,
+.rating-badge {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Micro-interactions: Native-feeling click & touch feedback */
+button,
+[role="button"],
+.primary-button,
+.secondary-button,
+.chip,
+.collection-item,
+.destination-card,
+.city-card {
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.18s ease,
+              border-color 0.18s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:active:not(:disabled),
+[role="button"]:active:not(:disabled),
+.primary-button:active:not(:disabled),
+.secondary-button:active:not(:disabled) {
+  transform: scale(0.972);
+}
+
+/* Accessibility: clean modern focus ring */
+:focus-visible {
+  outline: 2px solid #14b8a6;
+  outline-offset: 2px;
+}
+
+/* Touch targets standard (WCAG & Impeccable: 44px floor) */
+button,
+[role="button"],
+.nav-item,
+.chip,
+.icon-button {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Accessibility: Respect motion sensitivity */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.08s !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 21st.dev Style Dialog Backdrop & Modern Modals */
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dialog-modal {
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  animation: popIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 #root {
@@ -68,4 +180,5 @@ input {
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   line-height: 1;
 }
+
 

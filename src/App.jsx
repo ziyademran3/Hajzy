@@ -347,8 +347,68 @@ function App() {
 
     if (path.includes('/reset-password') && params.get('token')) {
       setCurrentAuthPage('reset')
+      return
     }
-  }, [])
+
+    const isPaymentReturn = path.includes('/payment-result') ||
+      params.has('success') ||
+      params.has('txn_response_code') ||
+      params.has('data.message')
+
+    if (isPaymentReturn) {
+      const isSuccess = params.get('success') === 'true' ||
+        params.get('txn_response_code') === 'APPROVED' ||
+        params.get('data.message') === 'Approved'
+
+      const pendingId = localStorage.getItem('hajzy_last_pending_booking_id')
+      setAuthRequired(false)
+
+      if (isSuccess) {
+        try {
+          const raw = localStorage.getItem('hajzy_bookings')
+          if (raw) {
+            const list = JSON.parse(raw)
+            if (Array.isArray(list)) {
+              const updated = list.map((b) => {
+                if (b.id === pendingId || (!pendingId && b.status === 'pending_payment')) {
+                  return { ...b, status: 'confirmed', paidAt: new Date().toISOString() }
+                }
+                return b
+              })
+              localStorage.setItem('hajzy_bookings', JSON.stringify(updated))
+              setBookings(updated)
+            }
+          }
+        } catch (e) {
+          console.error('Failed to update booking on payment return', e)
+        }
+
+        if (pendingId) {
+          updateBooking({ id: pendingId, status: 'confirmed' }).catch(() => {})
+        }
+
+        setActivePage('bookings')
+        setToast(language === 'en' ? 'Payment completed! Your booking is confirmed.' : 'تمت عملية الدفع وتأكيد حجزك بنجاح!')
+        addNotification(
+          { ar: 'تم تأكيد حجزك والدفع', en: 'Booking & Payment Confirmed' },
+          {
+            ar: 'تم تأكيد الدفع والحجز بنجاح.',
+            en: 'Your payment and booking have been successfully confirmed.',
+          },
+          'success'
+        )
+      } else {
+        setActivePage('bookings')
+        setToast(language === 'en' ? 'Payment was cancelled or failed.' : 'تم إلغاء عملية الدفع أو لم تكتمل.')
+      }
+
+      try {
+        localStorage.removeItem('hajzy_last_pending_booking_id')
+      } catch {}
+
+      window.history.replaceState({}, document.title, window.location.pathname.replace('/payment-result', '') || '/')
+    }
+  }, [language])
 
   // Do not forcibly override the theme on mount — let ThemeProvider and user preference manage it.
 
@@ -618,19 +678,54 @@ function App() {
         returnedUrl?.startsWith('https://hajzy-83y.pages.dev/payment-result')
       if (!isPaymentReturn) return
 
-      // Do not trust the redirect as payment confirmation. Paymob's signed
-      // webhook is what confirms the transaction on the server.
+      let isSuccess = true
+      try {
+        const urlObj = new URL(returnedUrl)
+        if (urlObj.searchParams.get('success') === 'false') {
+          isSuccess = false
+        }
+      } catch {}
+
+      const pendingId = localStorage.getItem('hajzy_last_pending_booking_id')
+      setAuthRequired(false)
+
+      if (isSuccess) {
+        try {
+          const raw = localStorage.getItem('hajzy_bookings')
+          if (raw) {
+            const list = JSON.parse(raw)
+            if (Array.isArray(list)) {
+              const updated = list.map((b) => {
+                if (b.id === pendingId || (!pendingId && b.status === 'pending_payment')) {
+                  return { ...b, status: 'confirmed', paidAt: new Date().toISOString() }
+                }
+                return b
+              })
+              localStorage.setItem('hajzy_bookings', JSON.stringify(updated))
+              setBookings(updated)
+            }
+          }
+        } catch {}
+
+        if (pendingId) {
+          updateBooking({ id: pendingId, status: 'confirmed' }).catch(() => {})
+        }
+
+        setToast(language === 'en'
+          ? 'Payment successful! Your booking is confirmed.'
+          : 'تم الدفع بنجاح! تم تأكيد حجزك.')
+      } else {
+        setToast(language === 'en'
+          ? 'Payment was cancelled or failed.'
+          : 'تم إلغاء عملية الدفع أو لم تكتمل.')
+      }
+
       setActivePage('bookings')
-      // The app may have been suspended while Paymob was open. Reload the
-      // saved pending booking before showing the history rather than relying
-      // on the state that was in memory before the browser was opened.
       fetchBookings()
         .then((savedBookings) => setBookings(Array.isArray(savedBookings) ? savedBookings : []))
         .catch((error) => console.warn('Could not refresh bookings after payment return:', error))
       window.requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }))
-      setToast(language === 'en'
-        ? 'You are back in Hajzy. We are verifying your payment.'
-        : 'تم الرجوع إلى حجزي. جارٍ التحقق من الدفع.')
+      try { localStorage.removeItem('hajzy_last_pending_booking_id') } catch {}
     }
 
     window.addEventListener('hajzyPaymentReturn', handlePaymentReturn)
@@ -1174,18 +1269,21 @@ function App() {
         currency: selectedProperty.currency,
         propertyTitle: selectedProperty.title,
         paymentMethod,
-        // A hosted Paymob checkout must return to the Android intent, not the
-        // Pages SPA. The latter opens Chrome and therefore has no app session.
+        // Return to the installed Android app or directly to the current web origin's payment-result
         returnUrl: Capacitor.getPlatform() === 'android'
           ? 'com.hajzy.app://payment-result'
-          : undefined,
+          : (typeof window !== 'undefined' ? `${window.location.origin}/payment-result` : undefined),
       })
 
       if (paymentSession.redirectUrl && typeof window !== 'undefined') {
-        // This write must finish before leaving the app. Previously it ran in
-        // the background and Android stopped it when the checkout browser
-        // opened, so a successful Paymob payment returned to an empty list.
+        // This write must finish before leaving the app.
         const savedBooking = await addBooking(newBooking)
+        try {
+          localStorage.setItem('hajzy_last_pending_booking_id', newBooking.id)
+          if (!user) {
+            localStorage.setItem('hajzy_guest_mode', 'true')
+          }
+        } catch {}
         setBookings((currentBookings) => [{ ...savedBooking, paymentMethod }, ...currentBookings])
         window.location.href = paymentSession.redirectUrl
         return

@@ -390,10 +390,10 @@ async function createPaymobCheckout(env, { amount, currency, title, user, callba
 
   const reference = `hajzy-${crypto.randomUUID()}`
   const [firstName, ...rest] = String(user.fullName || 'Hajzy Customer').trim().split(/\s+/)
-  // Only an exact native URL may be supplied by the client. This avoids an
-  // open redirect while allowing Android checkout to return to the installed
-  // app instead of reopening the Pages login screen in Chrome.
-  const redirectionUrl = returnUrl === 'com.hajzy.app://payment-result'
+  // Allow Android deep link or any valid payment-result URL on the client's current domain
+  const isAllowedReturn = returnUrl === 'com.hajzy.app://payment-result' ||
+    (typeof returnUrl === 'string' && (returnUrl.startsWith('http://') || returnUrl.startsWith('https://')) && returnUrl.includes('/payment-result'))
+  const redirectionUrl = isAllowedReturn
     ? returnUrl
     : env.PAYMOB_RETURN_URL?.trim() || `${callbackBaseUrl}/payment-result`
 

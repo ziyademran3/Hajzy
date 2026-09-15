@@ -60,3 +60,9 @@ Thumbs.db
 .env.example
 dist
 node_modules
+.wrangler/
+test-results/
+.agents/
+.claude/
+agent/
+skills-lock.json
