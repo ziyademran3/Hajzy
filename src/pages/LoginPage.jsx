@@ -276,6 +276,17 @@ export default function LoginPage({
       }`}
       dir={language === 'ar' ? 'rtl' : 'ltr'}
     >
+      {/* Mobile Subtle Ambient Luxury Background (< lg) */}
+      <div className="lg:hidden fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
+        <img
+          src="/auth-luxury-stay.jpg"
+          alt=""
+          className="h-full w-full object-cover object-center scale-110 filter blur-[16px] opacity-30 dark:opacity-20 transition-opacity duration-700"
+        />
+        {/* Soft gradient scrim to ensure supreme legibility and contrast */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#f8faf9]/85 via-[#f8faf9]/70 to-[#f8faf9]/90 dark:from-[#07090b]/85 dark:via-[#07090b]/75 dark:to-[#07090b]/90" />
+      </div>
+
       {/* Top Utility Navigation */}
       <header className="sticky top-0 z-30 w-full border-b border-slate-200/70 dark:border-white/5 bg-white/80 dark:bg-[#07090b]/85 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -394,8 +405,8 @@ export default function LoginPage({
           </div>
 
           {/* Interactive Authentication Panel */}
-          <div className="w-full lg:col-span-6 xl:col-span-5 order-1 lg:order-1 max-w-md mx-auto">
-            <div className="overflow-hidden rounded-[28px] border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#101418] shadow-[0_20px_60px_rgba(0,67,63,0.08)] dark:shadow-[0_25px_70px_rgba(0,0,0,0.5)] p-6 sm:p-8 transition-all">
+          <div className="w-full lg:col-span-6 xl:col-span-5 order-1 lg:order-1 max-w-md mx-auto relative z-10">
+            <div className="overflow-hidden rounded-[28px] border border-slate-200/80 dark:border-white/10 bg-white/95 dark:bg-[#101418]/92 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,67,63,0.08)] dark:shadow-[0_25px_70px_rgba(0,0,0,0.5)] p-6 sm:p-8 transition-all">
               
               {/* Card Switcher Pills: Sign In vs Sign Up */}
               <div className="mb-6 flex rounded-2xl bg-slate-100/90 dark:bg-white/5 p-1 border border-slate-200/60 dark:border-white/5">
