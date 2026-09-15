@@ -3496,12 +3496,6 @@ function App() {
   }
 
   const renderBookingsPage = () => {
-    const bookingTabs = [
-      { id: 'upcoming', label: language === 'en' ? 'Upcoming' : 'القادمة' },
-      { id: 'past', label: language === 'en' ? 'Past' : 'السابقة' },
-      { id: 'cancelled', label: language === 'en' ? 'Cancelled' : 'الملغاة' },
-    ]
-
     const normalizeBookingStatus = (status) => {
       const nextStatus = String(status || '').trim().toLowerCase()
       if (nextStatus === 'confirmed') return 'confirmed'
@@ -3546,54 +3540,73 @@ function App() {
 
     return (
       <div className="page-shell bookings-shell">
-        <div className="segmented-control">
-          {bookingTabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              className={bookingFilter === tab.id ? 'is-active' : ''}
-              onClick={() => {
-                haptics.trigger('light')
-                setBookingFilter(tab.id)
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Quick Stats Summary Bar */}
-        <div className="grid grid-cols-3 gap-2.5 my-3">
-          <div
+        {/* Interactive Filter Cards */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-5" role="tablist" aria-label={language === 'en' ? 'Filter bookings' : 'تصفية الحجوزات'}>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={bookingFilter === 'upcoming'}
             onClick={() => {
               haptics.trigger('light')
               setBookingFilter('upcoming')
             }}
-            className={`cursor-pointer rounded-2xl p-3 text-center border transition ${bookingFilter === 'upcoming' ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/40 shadow-sm' : 'border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900/60'}`}
+            className={`rounded-2xl p-3 sm:p-4 text-center transition-all cursor-pointer ${
+              bookingFilter === 'upcoming'
+                ? 'border-2 border-emerald-600 bg-emerald-50/80 dark:bg-emerald-950/50 dark:border-emerald-500 shadow-sm'
+                : 'border border-slate-200/90 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:bg-slate-800/60 opacity-80 hover:opacity-100'
+            }`}
           >
-            <div className="text-base sm:text-xl font-black text-slate-900 dark:text-white">{activeCount}</div>
-            <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">{language === 'en' ? 'Active Stays' : 'حجوزات نشطة'}</div>
-          </div>
-          <div
+            <div className={`text-lg sm:text-2xl font-black ${bookingFilter === 'upcoming' ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-100'}`}>
+              {activeCount}
+            </div>
+            <div className={`text-xs sm:text-sm font-bold mt-0.5 ${bookingFilter === 'upcoming' ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-500 dark:text-slate-400'}`}>
+              {language === 'en' ? 'Upcoming' : 'القادمة'}
+            </div>
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            aria-selected={bookingFilter === 'past'}
             onClick={() => {
               haptics.trigger('light')
               setBookingFilter('past')
             }}
-            className={`cursor-pointer rounded-2xl p-3 text-center border transition ${bookingFilter === 'past' ? 'border-teal-500 bg-teal-50/50 dark:bg-teal-950/40 shadow-sm' : 'border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900/60'}`}
+            className={`rounded-2xl p-3 sm:p-4 text-center transition-all cursor-pointer ${
+              bookingFilter === 'past'
+                ? 'border-2 border-teal-600 bg-teal-50/80 dark:bg-teal-950/50 dark:border-teal-500 shadow-sm'
+                : 'border border-slate-200/90 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:bg-slate-800/60 opacity-80 hover:opacity-100'
+            }`}
           >
-            <div className="text-base sm:text-xl font-black text-slate-900 dark:text-white">{pastCount}</div>
-            <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">{language === 'en' ? 'Completed' : 'إقامات مكتملة'}</div>
-          </div>
-          <div
+            <div className={`text-lg sm:text-2xl font-black ${bookingFilter === 'past' ? 'text-teal-700 dark:text-teal-400' : 'text-slate-800 dark:text-slate-100'}`}>
+              {pastCount}
+            </div>
+            <div className={`text-xs sm:text-sm font-bold mt-0.5 ${bookingFilter === 'past' ? 'text-teal-700 dark:text-teal-300' : 'text-slate-500 dark:text-slate-400'}`}>
+              {language === 'en' ? 'Past Stays' : 'السابقة'}
+            </div>
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            aria-selected={bookingFilter === 'cancelled'}
             onClick={() => {
               haptics.trigger('light')
               setBookingFilter('cancelled')
             }}
-            className={`cursor-pointer rounded-2xl p-3 text-center border transition ${bookingFilter === 'cancelled' ? 'border-rose-500 bg-rose-50/50 dark:bg-rose-950/40 shadow-sm' : 'border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900/60'}`}
+            className={`rounded-2xl p-3 sm:p-4 text-center transition-all cursor-pointer ${
+              bookingFilter === 'cancelled'
+                ? 'border-2 border-rose-500 bg-rose-50/80 dark:bg-rose-950/50 dark:border-rose-500 shadow-sm'
+                : 'border border-slate-200/90 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:bg-slate-800/60 opacity-80 hover:opacity-100'
+            }`}
           >
-            <div className="text-base sm:text-xl font-black text-slate-900 dark:text-white">{cancelledCount}</div>
-            <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">{language === 'en' ? 'Cancelled' : 'ملغاة'}</div>
-          </div>
+            <div className={`text-lg sm:text-2xl font-black ${bookingFilter === 'cancelled' ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-100'}`}>
+              {cancelledCount}
+            </div>
+            <div className={`text-xs sm:text-sm font-bold mt-0.5 ${bookingFilter === 'cancelled' ? 'text-rose-600 dark:text-rose-300' : 'text-slate-500 dark:text-slate-400'}`}>
+              {language === 'en' ? 'Cancelled' : 'الملغاة'}
+            </div>
+          </button>
         </div>
 
         {isOffline && (
