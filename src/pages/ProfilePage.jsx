@@ -245,18 +245,18 @@ export default function ProfilePage({
     <div className="page-shell profile-shell">
       {/* Luxury Cover Header */}
       <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900/90 shadow-sm mb-6">
-        <div className="h-28 w-full bg-gradient-to-r from-emerald-600 via-teal-600 to-slate-900 opacity-90 relative">
+        <div className="h-20 sm:h-24 w-full bg-gradient-to-r from-emerald-600 via-teal-600 to-slate-900 opacity-90 relative">
           <div className="absolute inset-0 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px] opacity-20" />
         </div>
-        <div className="px-6 pb-6 pt-0 -mt-12 flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4">
+        <div className="p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-start">
-            <div className="h-24 w-24 rounded-full ring-4 ring-white dark:ring-slate-900 overflow-hidden shadow-md shrink-0 flex items-center justify-center"
+            <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full border-2 border-emerald-500/20 overflow-hidden shadow-sm shrink-0 flex items-center justify-center"
               style={!avatarSrc ? { background: 'linear-gradient(135deg, #0d9488 0%, #065f46 100%)' } : { backgroundColor: '#f1f5f9' }}
             >
               {avatarSrc ? (
                 <img src={avatarSrc} alt="avatar" className="h-full w-full object-cover" onError={() => setAvatarBroken(true)} />
               ) : (
-                <div className="text-3xl font-black text-white tracking-wide" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>{initials}</div>
+                <div className="text-2xl sm:text-3xl font-black text-white tracking-wide" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>{initials}</div>
               )}
             </div>
             <div className="space-y-1">
