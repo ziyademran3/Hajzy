@@ -7,7 +7,7 @@
   line-height: 1.5;
   font-weight: 400;
   color: #0f172a;
-  background: #f1f5f9;
+  background: #fbf9f5;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -28,6 +28,22 @@ html[data-theme='dark'] ::selection,
 
 input, textarea {
   caret-color: #0f766e;
+}
+
+/* LTR Direction Handling for Email & Password inputs */
+input[type="email"],
+input[type="password"],
+input[name="password"],
+input[name="confirmPassword"],
+input[name="newPassword"] {
+  direction: ltr !important;
+  text-align: left !important;
+}
+
+input[type="email"]::placeholder,
+input[type="password"]::placeholder {
+  text-align: right;
+  direction: rtl;
 }
 
 /* Custom Themed Scrollbar */
@@ -63,7 +79,7 @@ body {
   overflow-x: hidden;
   max-width: 100%;
   -webkit-overflow-scrolling: touch;
-  background: linear-gradient(135deg, #f4f7f4 0%, #eef7f6 100%);
+  background-color: #fbf9f5;
   color: #0f172a;
 }
 

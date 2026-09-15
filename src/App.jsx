@@ -80,7 +80,7 @@ const handleStayImageError = (event) => {
 
 const pageTitlesByLanguage = {
   ar: {
-    dashboard: 'لوحة التحكم',
+    dashboard: 'حسابي',
     home: 'Hajzy',
     details: 'تفاصيل الشقة',
     checkout: 'تأكيد الحجز',
@@ -204,6 +204,7 @@ function App() {
   const { offlineBooking, isOffline, cacheBooking } = useOfflineBooking()
   const { shareProperty, shareBooking } = useNativeShare()
   const [selectedInvoiceBooking, setSelectedInvoiceBooking] = useState(null)
+  const [activeBookingMenuId, setActiveBookingMenuId] = useState(null)
   const [activePage, setActivePage] = useState('home')
   const [authRequired, setAuthRequired] = useState(() => {
     try {
@@ -3787,12 +3788,12 @@ function App() {
                         </div>
                       </div>
 
-                      <div className="booking-actions">
+                      <div className="booking-actions relative flex items-center gap-2">
                         <button
                           className="primary-button small-button booking-cta"
                           onClick={() => navigate('details', property ?? selectedProperty)}
                         >
-                          {language === 'en' ? 'Details' : 'تفاصيل'}
+                          {language === 'en' ? 'Details' : 'التفاصيل'}
                         </button>
 
                         <button
@@ -3804,39 +3805,87 @@ function App() {
                           {language === 'en' ? 'Invoice' : 'الفاتورة'}
                         </button>
 
-                        <button
-                          type="button"
-                          className="secondary-button small-button flex items-center gap-1"
-                          onClick={async () => {
-                            haptics.trigger('light')
-                            await shareBooking({
-                              reference: booking.reference || `#HB-${booking.id}`,
-                              propertyTitle: getPropertyTitle(property) || booking.title,
-                              propertyTitleEn: property?.titleEn || booking.title,
-                              checkIn: booking.checkIn,
-                              checkOut: booking.checkOut,
-                              total: booking.total,
-                              currency: booking.currency || 'EGP',
-                              language,
-                            })
-                          }}
-                          title={language === 'en' ? 'Share booking' : 'مشاركة الحجز'}
-                        >
-                          <span className="material-symbols-outlined text-xs">share</span>
-                          <span>{language === 'en' ? 'Share' : 'مشاركة'}</span>
-                        </button>
+                        {/* 3-Dots Dropdown Trigger for secondary actions */}
+                        <div className="relative">
+                          <button
+                            type="button"
+                            className="secondary-button small-button px-2.5 flex items-center justify-center text-slate-600 dark:text-slate-300"
+                            onClick={() => setActiveBookingMenuId(activeBookingMenuId === (booking.id || index) ? null : (booking.id || index))}
+                            aria-label={language === 'en' ? 'More actions' : 'خيارات إضافية'}
+                            title={language === 'en' ? 'More actions' : 'خيارات إضافية'}
+                          >
+                            <span className="material-symbols-outlined text-lg leading-none">more_vert</span>
+                          </button>
 
-                        {normalizedStatus !== 'cancelled' && (
-                          <>
-                            <button className="secondary-button small-button booking-edit" onClick={() => { setSelectedProperty(property); setBookingDates({ checkIn: booking.checkIn || '', checkOut: booking.checkOut || '', guests: booking.guests || 1 }); navigate('checkout'); }}>
-                              {language === 'en' ? 'Edit' : 'تعديل'}
-                            </button>
+                          {activeBookingMenuId === (booking.id || index) && (
+                            <>
+                              <div
+                                className="fixed inset-0 z-40"
+                                onClick={() => setActiveBookingMenuId(null)}
+                              />
+                              <div className="absolute end-0 top-full mt-1.5 z-50 min-w-[170px] rounded-2xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900 p-1.5 shadow-xl">
+                                {normalizedStatus !== 'cancelled' && (
+                                  <button
+                                    type="button"
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                                    onClick={() => {
+                                      setActiveBookingMenuId(null)
+                                      setSelectedProperty(property)
+                                      setBookingDates({
+                                        checkIn: booking.checkIn || '',
+                                        checkOut: booking.checkOut || '',
+                                        guests: booking.guests || 1,
+                                      })
+                                      navigate('checkout')
+                                    }}
+                                  >
+                                    <span className="material-symbols-outlined text-sm text-slate-500">edit_calendar</span>
+                                    <span>{language === 'en' ? 'Edit dates' : 'تعديل الحجز'}</span>
+                                  </button>
+                                )}
 
-                            <button className="secondary-button small-button booking-cancel" onClick={() => handleCancelBooking(booking.id)}>
-                              {language === 'en' ? 'Cancel' : 'إلغاء'}
-                            </button>
-                          </>
-                        )}
+                                <button
+                                  type="button"
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                                  onClick={async () => {
+                                    setActiveBookingMenuId(null)
+                                    haptics.trigger('light')
+                                    await shareBooking({
+                                      reference: booking.reference || `#HB-${booking.id}`,
+                                      propertyTitle: getPropertyTitle(property) || booking.title,
+                                      propertyTitleEn: property?.titleEn || booking.title,
+                                      checkIn: booking.checkIn,
+                                      checkOut: booking.checkOut,
+                                      total: booking.total,
+                                      currency: booking.currency || 'EGP',
+                                      language,
+                                    })
+                                  }}
+                                >
+                                  <span className="material-symbols-outlined text-sm text-slate-500">share</span>
+                                  <span>{language === 'en' ? 'Share booking' : 'مشاركة الحجز'}</span>
+                                </button>
+
+                                {normalizedStatus !== 'cancelled' && (
+                                  <>
+                                    <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                                    <button
+                                      type="button"
+                                      className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                                      onClick={() => {
+                                        setActiveBookingMenuId(null)
+                                        handleCancelBooking(booking.id)
+                                      }}
+                                    >
+                                      <span className="material-symbols-outlined text-sm text-rose-500">cancel</span>
+                                      <span>{language === 'en' ? 'Cancel booking' : 'إلغاء الحجز'}</span>
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -4104,6 +4153,7 @@ function App() {
     if (activePage === 'profile') return (
       <ProfilePage
         user={user || effectiveUser}
+        bookings={bookings}
         language={language}
         onEdit={() => navigate('profile-edit')}
         onUpdateProfile={updateProfile}
@@ -4120,8 +4170,8 @@ function App() {
   const bottomNavItems = [
     {
       key: dashboardPageKey,
-      label: language === 'en' ? 'Dashboard' : 'لوحة التحكم',
-      icon: 'dashboard',
+      label: language === 'en' ? (isOwner ? 'Dashboard' : 'My Account') : (isOwner ? 'لوحة التحكم' : 'حسابي'),
+      icon: isOwner ? 'dashboard' : 'account_circle',
     },
     {
       key: 'home',

@@ -51,16 +51,17 @@ export default function DashboardPage({
   const pendingBookings = bookings.filter((b) => b.status === 'pending')
 
   // Loyalty Points & Club Tier
+  // 1 point per 100 EGP spent — starts from 0
   const loyaltyPoints = useMemo(() => {
-    const base = Math.floor(totalSpend / 100)
-    return base > 0 ? base + 150 : 250
+    return Math.floor(totalSpend / 100)
   }, [totalSpend])
 
   const loyaltyTier = useMemo(() => {
-    if (totalSpend > 25000) return { name: isAr ? 'بلاتينيوم VIP' : 'Platinum VIP', color: 'from-indigo-500 to-purple-600', badge: 'VIP' }
-    if (totalSpend > 8000) return { name: isAr ? 'ذهبي' : 'Gold Tier', color: 'from-amber-400 to-amber-600', badge: 'GOLD' }
-    return { name: isAr ? 'فضي' : 'Silver Member', color: 'from-emerald-500 to-teal-600', badge: 'SILVER' }
-  }, [totalSpend, isAr])
+    if (loyaltyPoints >= 250) return { name: isAr ? 'بلاتينيوم' : 'Platinum', color: 'from-indigo-500 to-purple-600', badge: '💎 VIP', next: null, pointsToNext: 0 }
+    if (loyaltyPoints >= 80) return { name: isAr ? 'ذهبي' : 'Gold', color: 'from-amber-400 to-amber-600', badge: '🥇', next: isAr ? 'بلاتينيوم' : 'Platinum', pointsToNext: 250 - loyaltyPoints }
+    if (loyaltyPoints >= 20) return { name: isAr ? 'فضي' : 'Silver', color: 'from-slate-400 to-slate-500', badge: '🥈', next: isAr ? 'ذهبي' : 'Gold', pointsToNext: 80 - loyaltyPoints }
+    return { name: isAr ? 'عضو جديد' : 'New Member', color: 'from-emerald-500 to-teal-600', badge: '🌱', next: isAr ? 'فضي' : 'Silver', pointsToNext: 20 - loyaltyPoints }
+  }, [loyaltyPoints, isAr])
 
   // Next upcoming stay
   const upcomingStay = bookings[0]
@@ -105,7 +106,7 @@ export default function DashboardPage({
     {
       key: 'explore',
       icon: 'travel_explore',
-      label: isAr ? 'استكشاف الوجهات' : 'Explore Stays',
+      label: isAr ? 'استكشف الإقامات' : 'Explore Stays',
       desc: isAr ? 'فيلات وشاليهات فاخرة' : 'Browse luxury homes',
       color: 'from-emerald-500 to-teal-600',
       action: () => onNavigate('home'),
@@ -168,7 +169,7 @@ export default function DashboardPage({
             <span className={`material-symbols-outlined text-2xl ${greetingData.iconColor}`}>
               {greetingData.icon}
             </span>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white sm:text-3xl">
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
               {greetingData.text}
             </h1>
           </div>
@@ -184,7 +185,7 @@ export default function DashboardPage({
             className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition"
           >
             <span className="material-symbols-outlined text-base">travel_explore</span>
-            <span>{isAr ? 'استكشاف إقامة جديدة' : 'Explore New Stays'}</span>
+            <span>{isAr ? 'استكشف الإقامات' : 'Explore Stays'}</span>
           </button>
         </div>
       </div>
@@ -279,8 +280,17 @@ export default function DashboardPage({
             <span className="text-[11px] text-slate-300 font-bold">{isAr ? 'نقطة' : 'pts'}</span>
           </div>
           <div className="mt-2 flex items-center justify-between text-[11px] text-slate-300">
-            <span className="font-semibold text-white">{loyaltyTier.name}</span>
-            <span className="text-amber-400 font-bold text-[10px]">✨ VIP</span>
+            <span className="font-semibold text-white">{loyaltyTier.name} {loyaltyTier.badge}</span>
+          </div>
+          {loyaltyTier.next && (
+            <div className="mt-2 text-[10px] text-slate-400">
+              {isAr
+                ? `${loyaltyTier.pointsToNext} نقطة للوصول لمستوى ${loyaltyTier.next}`
+                : `${loyaltyTier.pointsToNext} pts to reach ${loyaltyTier.next}`}
+            </div>
+          )}
+          <div className="mt-2 text-[9px] text-slate-500">
+            {isAr ? 'اكسب نقطة لكل 100 ج.م تحجز بيها' : 'Earn 1 pt per 100 EGP spent'}
           </div>
         </div>
       </section>

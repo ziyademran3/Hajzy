@@ -13,7 +13,8 @@ export default function PasswordInput({ value, onChange, placeholder = 'أدخل
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className={`w-full p-3 pr-10 rounded-lg border border-gray-200 dark:border-hajzy-border bg-white dark:bg-hajzy-card text-gray-900 dark:text-hajzy-text placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-hajzy-primary`}
+        dir="ltr"
+        className={`w-full p-3 pr-10 text-left rounded-lg border border-gray-200 dark:border-hajzy-border bg-white dark:bg-hajzy-card text-gray-900 dark:text-hajzy-text placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-hajzy-primary`}
         aria-invalid={!!error}
       />
 

@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth'
 
 export default function ProfilePage({
   user: initialUser,
+  bookings = [],
   language = 'ar',
   onEdit: _onEdit = () => {},
   onUpdateProfile,
@@ -245,8 +246,8 @@ export default function ProfilePage({
     <div className="page-shell profile-shell">
       {/* Luxury Cover Header */}
       <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900/90 shadow-sm mb-6">
-        <div className="h-20 sm:h-24 w-full bg-gradient-to-r from-emerald-600 via-teal-600 to-slate-900 opacity-90 relative">
-          <div className="absolute inset-0 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px] opacity-20" />
+        <div className="h-20 sm:h-24 w-full bg-gradient-to-r from-[#112423] via-[#163331] to-[#0d1e1d] opacity-90 relative">
+          <div className="absolute inset-0 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px] opacity-15" />
         </div>
         <div className="p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-start">
@@ -307,7 +308,7 @@ export default function ProfilePage({
           </div>
           <div>
             <div className="text-xs font-bold text-slate-400">{language === 'en' ? 'Club Points' : 'نقاط الولاء'}</div>
-            <div className="text-sm font-black text-amber-500 mt-0.5">250 ⭐</div>
+            <div className="text-sm font-black text-amber-500 mt-0.5">{Math.floor(bookings.reduce((sum, b) => sum + Number(b.total || 0), 0) / 100)} ⭐</div>
           </div>
         </div>
       </div>

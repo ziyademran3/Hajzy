@@ -1,6 +1,6 @@
 .app-shell {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f7faf5 0%, #f0f5f2 100%);
+  background-color: #fbf9f5;
   color: var(--text);
   direction: inherit;
   font-family: 'Inter', sans-serif;
@@ -64,7 +64,7 @@ html[dir='ltr'] .nav-label {
 }
 
 .app-shell {
-  background: linear-gradient(135deg, #f7faf5 0%, #f0f5f2 100%);
+  background-color: #fbf9f5;
   color: var(--text);
 }
 
@@ -678,8 +678,8 @@ body::-webkit-scrollbar,
   color: var(--text);
   font-size: clamp(1.7rem, 5vw, 2.5rem);
   line-height: 1.12;
-  letter-spacing: -0.05em;
-  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-weight: 600;
 }
 
 .home-header p {
@@ -703,17 +703,18 @@ body::-webkit-scrollbar,
   bottom: 104px;
   transform: translateX(-50%);
   max-width: min(90vw, 340px);
-  background: rgba(8, 30, 28, 0.94);
-  color: #f8faf9;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.24);
+  background: linear-gradient(135deg, rgba(15, 118, 110, 0.96), rgba(13, 148, 136, 0.96));
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 12px 32px rgba(15, 118, 110, 0.35), 0 4px 12px rgba(0, 0, 0, 0.08);
   border-radius: 999px;
-  padding: 11px 18px;
-  font-size: 0.74rem;
+  padding: 11px 20px;
+  font-size: 0.78rem;
   font-weight: 700;
   text-align: center;
   z-index: 80;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
+  letter-spacing: -0.01em;
 }
 
 .home-shell {
@@ -1177,7 +1178,7 @@ body::-webkit-scrollbar,
 .section-title {
   margin: 0;
   font-size: 2rem;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text);
   letter-spacing: -0.5px;
 }
@@ -1502,7 +1503,7 @@ body::-webkit-scrollbar,
 .mini-city-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 16px;
   margin-bottom: 0;
 }
 
@@ -1713,7 +1714,7 @@ body::-webkit-scrollbar,
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.08), rgba(15, 23, 42, 0.78));
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.35) 55%, transparent 100%);
 }
 
 .mini-city-card .city-card-copy {
@@ -1734,6 +1735,7 @@ body::-webkit-scrollbar,
   position: relative;
   z-index: 2;
   display: block;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
 .mini-city-card span {
@@ -1743,7 +1745,7 @@ body::-webkit-scrollbar,
 }
 
 .mini-city-card small {
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(255, 255, 255, 0.88);
   font-size: 0.68rem;
 }
 
@@ -1933,6 +1935,17 @@ body::-webkit-scrollbar,
   text-align: right;
 }
 
+/* Fix date input truncation so full 4-digit year (2026) displays cleanly without :026 cutoff */
+.search-panel input[type="date"],
+.input-with-icon input[type="date"] {
+  padding: 10px 38px 10px 6px;
+  font-size: 0.8rem;
+  direction: ltr;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+}
+
 .search-panel input:focus,
 .search-panel select:focus {
   border-color: var(--primary-strong);
@@ -1959,6 +1972,7 @@ body::-webkit-scrollbar,
   min-height: 48px;
   border-radius: 14px;
   font-weight: 800;
+  box-shadow: 0 4px 14px -2px rgba(0, 67, 63, 0.22), 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 .search-panel-row.compact {

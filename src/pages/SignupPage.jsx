@@ -498,7 +498,8 @@ export default function SignupPage({
                       disabled={loading}
                       aria-invalid={Boolean(errors.email)}
                       aria-describedby={errors.email ? 'email-error' : undefined}
-                      className="w-full min-h-[44px] border-0 bg-transparent py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
+                      dir="ltr"
+                      className="w-full min-h-[44px] border-0 bg-transparent py-2 text-sm text-left text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
                     />
                   </div>
                   {errors.email && <p id="email-error" className="mt-1 text-xs font-semibold text-red-600 dark:text-red-400">{errors.email}</p>}
@@ -538,7 +539,8 @@ export default function SignupPage({
                           ? 'signup-capslock-warning'
                           : undefined
                       }
-                      className="w-full min-h-[44px] border-0 bg-transparent py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
+                      dir="ltr"
+                      className="w-full min-h-[44px] border-0 bg-transparent py-2 text-sm text-left text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
                     />
                     <button
                       type="button"
@@ -618,7 +620,8 @@ export default function SignupPage({
                       disabled={loading}
                       aria-invalid={Boolean(errors.confirmPassword)}
                       aria-describedby={errors.confirmPassword ? 'confirm-password-error' : undefined}
-                      className="w-full min-h-[44px] border-0 bg-transparent py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
+                      dir="ltr"
+                      className="w-full min-h-[44px] border-0 bg-transparent py-2 text-sm text-left text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
                     />
                     <button
                       type="button"

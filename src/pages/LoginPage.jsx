@@ -485,8 +485,8 @@ export default function LoginPage({
                       placeholder={emailPlaceholder}
                       disabled={loading}
                       aria-invalid={Boolean(errors.email)}
-                      aria-describedby={errors.email ? 'email-error' : undefined}
-                      className="w-full min-h-[46px] border-0 bg-transparent py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
+                      dir="ltr"
+                      className="w-full min-h-[46px] border-0 bg-transparent py-2.5 text-sm text-left text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
                     />
                   </div>
                   {errors.email && (
@@ -543,7 +543,8 @@ export default function LoginPage({
                           ? 'capslock-warning'
                           : undefined
                       }
-                      className="w-full min-h-[46px] border-0 bg-transparent py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
+                      dir="ltr"
+                      className="w-full min-h-[46px] border-0 bg-transparent py-2.5 text-sm text-left text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
                     />
                     <button
                       type="button"

@@ -11,7 +11,7 @@ import '../styles/safe-area.css'
 const ITEMS = [
   { id: 'home', label: 'الرئيسية', labelEn: 'Home', icon: AiOutlineHome },
   { id: 'bookings', label: 'حجوزاتي', labelEn: 'Bookings', icon: AiOutlineCalendar },
-  { id: 'dashboard', label: 'لوحة التحكم', labelEn: 'Dashboard', icon: FiGrid },
+  { id: 'dashboard', label: 'حسابي', labelEn: 'My Account', icon: FiGrid },
   { id: 'profile', label: 'الملف الشخصي', labelEn: 'Profile', icon: FiUser },
 ]
 
