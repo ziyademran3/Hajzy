@@ -3883,7 +3883,6 @@ function App() {
         onSwitchToSignup={() => setCurrentAuthPage('signup')}
         onSwitchToForgotPassword={() => setCurrentAuthPage('forgot')}
         onSocialLogin={handleSocialLogin}
-        onBrowseGuest={handleMarketingBrowseGuest}
       />
     )
   }

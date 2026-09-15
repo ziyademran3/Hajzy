@@ -22,7 +22,6 @@ export default function LoginPage({
   onSwitchToSignup,
   onSwitchToForgotPassword,
   onSocialLogin = () => {},
-  onBrowseGuest,
 }) {
   const { theme, toggleTheme } = useTheme()
   const isDark = theme === 'dark'
@@ -288,19 +287,6 @@ export default function LoginPage({
           </div>
 
           <div className="flex items-center gap-2.5">
-            {/* Quick Guest Navigation Button */}
-            {typeof onBrowseGuest === 'function' && (
-              <button
-                type="button"
-                onClick={onBrowseGuest}
-                className="hidden sm:inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold text-emerald-950 dark:text-emerald-100 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition active:scale-95"
-                title={text.guestSubtitle}
-              >
-                <span className="material-symbols-outlined text-[18px] text-emerald-700 dark:text-emerald-400">explore</span>
-                <span>{text.browseAsGuest}</span>
-              </button>
-            )}
-
             {/* Dark / Light Mode Toggle */}
             <button
               type="button"
@@ -638,22 +624,6 @@ export default function LoginPage({
                   )}
                 </button>
 
-                {/* Explore as Guest Secondary CTA with Trust Micro-copy */}
-                {typeof onBrowseGuest === 'function' && (
-                  <div className="space-y-1.5 pt-1">
-                    <button
-                      type="button"
-                      onClick={onBrowseGuest}
-                      className="flex w-full min-h-[46px] items-center justify-center gap-2 rounded-2xl border border-emerald-600/30 dark:border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/20 py-3 text-xs sm:text-sm font-bold text-emerald-900 dark:text-emerald-200 transition-all hover:bg-emerald-100/60 dark:hover:bg-emerald-950/40 active:scale-[0.98]"
-                    >
-                      <span className="material-symbols-outlined text-[18px] text-emerald-600 dark:text-emerald-400">explore</span>
-                      <span>{text.browseAsGuest}</span>
-                    </button>
-                    <p className="text-[11px] text-center text-slate-400 dark:text-slate-500">
-                      {text.noCardNeeded}
-                    </p>
-                  </div>
-                )}
               </form>
 
               {/* Switch to Signup footer note */}
