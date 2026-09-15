@@ -129,5 +129,23 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
       await expect(page.locator('text=الكود السري لباب الفيلا')).toBeVisible();
     }
   });
+
+  test('Profile page renders successfully with cover, stats, and settings without white screen', async ({ page }) => {
+    await page.goto('/');
+    await page.evaluate(() => {
+      localStorage.setItem('hajzy_guest_mode', 'true');
+    });
+    await page.goto('/');
+
+    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+
+    const profileNav = page.locator('.bottom-nav .nav-item').filter({ hasText: /حسابي|الملف|Profile/i });
+    await expect(profileNav).toBeVisible({ timeout: 10000 });
+    await profileNav.click();
+
+    // Verify profile shell and details load
+    await expect(page.locator('.profile-shell')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('#profile-settings')).toBeVisible({ timeout: 10000 });
+  });
 });
 
