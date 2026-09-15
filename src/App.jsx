@@ -1884,6 +1884,8 @@ function App() {
       label: language === 'en' ? 'Sea breeze' : 'نسيم البحر',
       price: language === 'en' ? 'From 3,100 EGP' : 'من 3,100 ج.م',
       image: CITY_PHOTOS['الإسكندرية'],
+      staysCount: 42,
+      badge: language === 'en' ? 'Trending' : 'الأكثر طلباً',
     },
     {
       cityKey: 'القاهرة',
@@ -1891,6 +1893,8 @@ function App() {
       label: language === 'en' ? 'Nile & city' : 'النيل والمدينة',
       price: language === 'en' ? 'From 3,600 EGP' : 'من 3,600 ج.م',
       image: CITY_PHOTOS['القاهرة'],
+      staysCount: 68,
+      badge: language === 'en' ? 'Popular' : 'شائع',
     },
     {
       cityKey: 'الجيزة',
@@ -1898,6 +1902,7 @@ function App() {
       label: language === 'en' ? 'Pyramids view' : 'إطلالة الأهرامات',
       price: language === 'en' ? 'From 2,950 EGP' : 'من 2,950 ج.م',
       image: CITY_PHOTOS['الجيزة'],
+      staysCount: 29,
     },
     {
       cityKey: 'الغردقة',
@@ -1905,6 +1910,8 @@ function App() {
       label: language === 'en' ? 'Red Sea luxury' : 'فخامة البحر الأحمر',
       price: language === 'en' ? 'From 3,400 EGP' : 'من 3,400 ج.م',
       image: CITY_PHOTOS['الغردقة'],
+      staysCount: 35,
+      badge: language === 'en' ? 'Beach' : 'شاطئ',
     },
     {
       cityKey: 'شرم الشيخ',
@@ -1912,6 +1919,7 @@ function App() {
       label: language === 'en' ? 'Bay & reefs' : 'الخلجان والشعاب',
       price: language === 'en' ? 'From 3,900 EGP' : 'من 3,900 ج.م',
       image: CITY_PHOTOS['شرم الشيخ'],
+      staysCount: 31,
     },
   ]
 
@@ -1989,6 +1997,32 @@ function App() {
             <span>{language === 'en' ? 'Guest Rating' : 'تقييم النزلاء'}</span>
             <small className="hero-stat-badge">{language === 'en' ? 'Top Rated' : 'الأعلى تقييماً'}</small>
           </div>
+        </div>
+
+        {/* Exclusive Promotional Offer */}
+        <div className="exclusive-deal-banner rounded-3xl border border-emerald-200/80 bg-gradient-to-r from-emerald-600 via-teal-600 to-teal-700 p-5 text-white shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-bold text-white backdrop-blur-sm">
+              <span>🔥</span>
+              <span>{language === 'en' ? 'Limited Time Offer' : 'عرض حصري لفترة محدودة'}</span>
+            </div>
+            <h4 className="text-lg font-black tracking-tight">
+              {language === 'en' ? 'Save up to 20% on luxury coastal stays' : 'وفر حتى 20% على أفخم الفيلات والشاليهات الساحلية'}
+            </h4>
+            <p className="text-xs text-white/85">
+              {language === 'en' ? 'Instant confirmation with free cancellation options' : 'تأكيد فوري مع خيارات إلغاء مرنة وضمان أفضل سعر'}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="shrink-0 rounded-2xl bg-white px-5 py-2.5 text-xs font-extrabold text-emerald-800 shadow-md hover:bg-emerald-50 transition"
+            onClick={() => {
+              setActiveFilter('الإسكندرية')
+              setHomeQuickSearch((current) => ({ ...current, destination: 'الإسكندرية' }))
+            }}
+          >
+            {language === 'en' ? 'Explore Deals' : 'استفد من العرض'}
+          </button>
         </div>
 
         <div className="home-compact-search">
@@ -2196,8 +2230,15 @@ function App() {
             >
               <img src={item.image} alt={item.city} onError={handleStayImageError} />
               <div className="city-card-copy">
-                <span>{item.city}</span>
-                <small>{item.label}</small>
+                <div className="flex items-center justify-between gap-1">
+                  <span>{item.city}</span>
+                  {item.badge && (
+                    <span className="rounded-full bg-emerald-600/90 text-white text-[9px] font-black px-2 py-0.5">
+                      {item.badge}
+                    </span>
+                  )}
+                </div>
+                <small>{item.label} • {item.staysCount} {language === 'en' ? 'stays' : 'إقامة'}</small>
                 <strong>{item.price}</strong>
               </div>
             </button>
@@ -2410,7 +2451,14 @@ function App() {
           <span className="material-symbols-outlined">payments</span>
           <div>
             <strong>{language === 'en' ? 'Safe payment' : 'دفع آمن'}</strong>
-            <small>{language === 'en' ? 'Protected checkout' : 'دفع محمي'}</small>
+            <small>{language === 'en' ? 'Protected checkout' : 'دفع محمي ومتعدد'}</small>
+          </div>
+        </div>
+        <div className="value-card">
+          <span className="material-symbols-outlined">support_agent</span>
+          <div>
+            <strong>{language === 'en' ? '24/7 Concierge' : 'كونسيرج 24/7'}</strong>
+            <small>{language === 'en' ? 'VIP guest support' : 'خدمة ضيوف فورية'}</small>
           </div>
         </div>
         <div className="value-card">
@@ -3484,6 +3532,18 @@ function App() {
       return true
     })
 
+    const activeCount = safeBookings.filter((b) => {
+      const s = normalizeBookingStatus(b?.status)
+      const co = new Date(b?.checkOut || b?.checkIn || Date.now())
+      return s !== 'cancelled' && !Number.isNaN(co.getTime()) && co >= new Date()
+    }).length
+    const pastCount = safeBookings.filter((b) => {
+      const s = normalizeBookingStatus(b?.status)
+      const co = new Date(b?.checkOut || b?.checkIn || Date.now())
+      return s !== 'cancelled' && !Number.isNaN(co.getTime()) && co < new Date()
+    }).length
+    const cancelledCount = safeBookings.filter((b) => normalizeBookingStatus(b?.status) === 'cancelled').length
+
     return (
       <div className="page-shell bookings-shell">
         <div className="segmented-control">
@@ -3500,6 +3560,40 @@ function App() {
               {tab.label}
             </button>
           ))}
+        </div>
+
+        {/* Quick Stats Summary Bar */}
+        <div className="grid grid-cols-3 gap-2.5 my-3">
+          <div
+            onClick={() => {
+              haptics.trigger('light')
+              setBookingFilter('upcoming')
+            }}
+            className={`cursor-pointer rounded-2xl p-3 text-center border transition ${bookingFilter === 'upcoming' ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/40 shadow-sm' : 'border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900/60'}`}
+          >
+            <div className="text-base sm:text-xl font-black text-slate-900 dark:text-white">{activeCount}</div>
+            <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">{language === 'en' ? 'Active Stays' : 'حجوزات نشطة'}</div>
+          </div>
+          <div
+            onClick={() => {
+              haptics.trigger('light')
+              setBookingFilter('past')
+            }}
+            className={`cursor-pointer rounded-2xl p-3 text-center border transition ${bookingFilter === 'past' ? 'border-teal-500 bg-teal-50/50 dark:bg-teal-950/40 shadow-sm' : 'border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900/60'}`}
+          >
+            <div className="text-base sm:text-xl font-black text-slate-900 dark:text-white">{pastCount}</div>
+            <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">{language === 'en' ? 'Completed' : 'إقامات مكتملة'}</div>
+          </div>
+          <div
+            onClick={() => {
+              haptics.trigger('light')
+              setBookingFilter('cancelled')
+            }}
+            className={`cursor-pointer rounded-2xl p-3 text-center border transition ${bookingFilter === 'cancelled' ? 'border-rose-500 bg-rose-50/50 dark:bg-rose-950/40 shadow-sm' : 'border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900/60'}`}
+          >
+            <div className="text-base sm:text-xl font-black text-slate-900 dark:text-white">{cancelledCount}</div>
+            <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">{language === 'en' ? 'Cancelled' : 'ملغاة'}</div>
+          </div>
         </div>
 
         {isOffline && (
@@ -3627,6 +3721,19 @@ function App() {
                       </div>
                     </div>
 
+                    {/* Visual Status Progress Tracker */}
+                    <div className="booking-progress-track my-2.5 px-1">
+                      <div className="flex items-center justify-between text-[10px] text-slate-500 font-bold mb-1">
+                        <span className="text-emerald-600 dark:text-emerald-400">{language === 'en' ? 'Booked' : 'محجوز'}</span>
+                        <span className={normalizedStatus === 'confirmed' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}>{language === 'en' ? 'Confirmed' : 'مؤكد'}</span>
+                        <span className="text-slate-400">{language === 'en' ? 'Check-in' : 'الوصول'}</span>
+                        <span className="text-slate-400">{language === 'en' ? 'Check-out' : 'المغادرة'}</span>
+                      </div>
+                      <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden flex">
+                        <div className={`h-full ${normalizedStatus === 'cancelled' ? 'w-full bg-rose-500' : normalizedStatus === 'confirmed' ? 'w-2/3 bg-emerald-500' : 'w-1/3 bg-amber-500'}`} />
+                      </div>
+                    </div>
+
                     <div className="booking-footer">
                       <div className="booking-details">
                         <small>
@@ -3653,6 +3760,28 @@ function App() {
                           title={language === 'en' ? 'View Invoice' : 'عرض الفاتورة'}
                         >
                           {language === 'en' ? 'Invoice' : 'الفاتورة'}
+                        </button>
+
+                        <button
+                          type="button"
+                          className="secondary-button small-button flex items-center gap-1"
+                          onClick={async () => {
+                            haptics.trigger('light')
+                            await shareBooking({
+                              reference: booking.reference || `#HB-${booking.id}`,
+                              propertyTitle: getPropertyTitle(property) || booking.title,
+                              propertyTitleEn: property?.titleEn || booking.title,
+                              checkIn: booking.checkIn,
+                              checkOut: booking.checkOut,
+                              total: booking.total,
+                              currency: booking.currency || 'EGP',
+                              language,
+                            })
+                          }}
+                          title={language === 'en' ? 'Share booking' : 'مشاركة الحجز'}
+                        >
+                          <span className="material-symbols-outlined text-xs">share</span>
+                          <span>{language === 'en' ? 'Share' : 'مشاركة'}</span>
                         </button>
 
                         {normalizedStatus !== 'cancelled' && (

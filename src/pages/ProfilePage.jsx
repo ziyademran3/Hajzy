@@ -27,6 +27,45 @@ export default function ProfilePage({
   const [passwordError, setPasswordError] = useState('')
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
+  const [copiedShare, setCopiedShare] = useState(false)
+
+  // Password strength meter
+  const passwordStrength = useMemo(() => {
+    const pw = passwordForm.newPassword
+    if (!pw) return 0
+    let score = 0
+    if (pw.length >= 8) score++
+    if (/[A-Z]/.test(pw)) score++
+    if (/[0-9]/.test(pw)) score++
+    if (/[^A-Za-z0-9]/.test(pw)) score++
+    return score
+  }, [passwordForm.newPassword])
+
+  const passwordStrengthLabel = useMemo(() => {
+    if (passwordStrength <= 1) return { text: language === 'en' ? 'Weak' : 'ضعيفة', color: 'bg-rose-500', width: 'w-1/4' }
+    if (passwordStrength === 2) return { text: language === 'en' ? 'Fair' : 'متوسطة', color: 'bg-amber-500', width: 'w-2/4' }
+    if (passwordStrength === 3) return { text: language === 'en' ? 'Good' : 'جيدة', color: 'bg-teal-500', width: 'w-3/4' }
+    return { text: language === 'en' ? 'Strong' : 'قوية جداً', color: 'bg-emerald-500', width: 'w-full' }
+  }, [passwordStrength, language])
+
+  const handleShareApp = async () => {
+    const shareData = {
+      title: 'Hajzy - إقامات وشاليهات فاخرة في مصر',
+      text: 'احجز أفضل الفيلات والشاليهات في مصر عبر تطبيق Hajzy!',
+      url: window.location.origin,
+    }
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData)
+      } catch (err) {
+        // user cancelled
+      }
+    } else {
+      navigator.clipboard?.writeText(window.location.origin)
+      setCopiedShare(true)
+      setTimeout(() => setCopiedShare(false), 2500)
+    }
+  }
 
   useEffect(() => {
     setAvatarPreview(initialUser?.avatar || initialUser?.avatar_url || '')
@@ -193,25 +232,70 @@ export default function ProfilePage({
 
   return (
     <div className="page-shell profile-shell">
-      <div className="profile-hero">
-        <div className="profile-avatar">
-          {avatarSrc ? (
-            <img src={avatarSrc} alt="avatar" />
-          ) : (
-            <div className="avatar-initials" aria-label="avatar initials">{initials}</div>
-          )}
+      {/* Luxury Cover Header */}
+      <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900/90 shadow-sm mb-6">
+        <div className="h-28 w-full bg-gradient-to-r from-emerald-600 via-teal-600 to-slate-900 opacity-90 relative">
+          <div className="absolute inset-0 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px] opacity-20" />
         </div>
-        <div className="profile-info">
-          <div className="profile-name-row">
-            <h2>{displayName || (language === 'en' ? 'Welcome' : 'أهلاً بيك')}</h2>
-            {!editing && (
-              <button type="button" className="icon-button profile-edit-button" onClick={() => setEditing(true)} aria-label={text.edit}>
-                <span className="material-symbols-outlined">edit</span>
-              </button>
-            )}
+        <div className="px-6 pb-6 pt-0 -mt-12 flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-start">
+            <div className="h-24 w-24 rounded-full ring-4 ring-white dark:ring-slate-900 overflow-hidden bg-slate-100 dark:bg-slate-800 shadow-md shrink-0 flex items-center justify-center">
+              {avatarSrc ? (
+                <img src={avatarSrc} alt="avatar" className="h-full w-full object-cover" />
+              ) : (
+                <div className="text-2xl font-black text-slate-700 dark:text-slate-200">{initials}</div>
+              )}
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center justify-center sm:justify-start gap-2">
+                <h2 className="text-xl font-black text-slate-900 dark:text-white">
+                  {displayName || (language === 'en' ? 'Welcome' : 'أهلاً بيك')}
+                </h2>
+                <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 text-[10px] font-bold px-2 py-0.5">
+                  <span className="material-symbols-outlined text-xs">verified</span>
+                  <span>{language === 'en' ? 'Verified' : 'موثق'}</span>
+                </span>
+                {!editing && (
+                  <button type="button" className="text-slate-500 hover:text-emerald-600 transition" onClick={() => setEditing(true)} aria-label={text.edit}>
+                    <span className="material-symbols-outlined text-lg">edit</span>
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {text.email}: {initialUser?.email ? initialUser.email : <span className="empty-field">{emptyPlaceholderFor('email')}</span>}
+              </p>
+              <p className="text-[11px] text-slate-400">
+                {text.joined}: {initialUser?.createdAt ? new Date(initialUser.createdAt).toLocaleDateString() : (language === 'en' ? 'Active Member' : 'عضو نشط')}
+              </p>
+            </div>
           </div>
-          <p className="muted">{text.email}: {initialUser?.email ? initialUser.email : <span className="empty-field">{emptyPlaceholderFor('email')}</span>}</p>
-          <p className="muted">{text.joined}: {initialUser?.createdAt ? new Date(initialUser.createdAt).toLocaleDateString() : <span className="empty-field">{language === 'en' ? 'Not joined yet' : 'لم يضف بعد'}</span>}</p>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleShareApp}
+              className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 transition"
+            >
+              <span className="material-symbols-outlined text-sm">share</span>
+              <span>{copiedShare ? (language === 'en' ? 'Copied!' : 'تم النسخ!') : (language === 'en' ? 'Share App' : 'مشاركة التطبيق')}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Account Quick Stats Strip */}
+        <div className="grid grid-cols-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30 divide-x divide-slate-100 dark:divide-slate-800 text-center py-3">
+          <div>
+            <div className="text-xs font-bold text-slate-400">{language === 'en' ? 'Status' : 'الحالة'}</div>
+            <div className="text-sm font-black text-emerald-600 dark:text-emerald-400 mt-0.5">{language === 'en' ? 'Active VIP' : 'عضو نشط'}</div>
+          </div>
+          <div>
+            <div className="text-xs font-bold text-slate-400">{language === 'en' ? 'Security' : 'الأمان'}</div>
+            <div className="text-sm font-black text-teal-600 dark:text-teal-400 mt-0.5">{language === 'en' ? 'Protected' : 'محمي'} 🛡️</div>
+          </div>
+          <div>
+            <div className="text-xs font-bold text-slate-400">{language === 'en' ? 'Club Points' : 'نقاط الولاء'}</div>
+            <div className="text-sm font-black text-amber-500 mt-0.5">250 ⭐</div>
+          </div>
         </div>
       </div>
 
@@ -339,6 +423,17 @@ export default function ProfilePage({
                 <span className="material-symbols-outlined">{showNewPassword ? 'visibility_off' : 'visibility'}</span>
               </button>
             </div>
+            {passwordForm.newPassword && (
+              <div className="mt-2 space-y-1">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-400">{language === 'en' ? 'Password strength:' : 'قوة كلمة المرور:'}</span>
+                  <span className="font-bold text-slate-700 dark:text-slate-200">{passwordStrengthLabel.text}</span>
+                </div>
+                <div className="h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                  <div className={`h-full ${passwordStrengthLabel.width} ${passwordStrengthLabel.color} transition-all duration-300`} />
+                </div>
+              </div>
+            )}
           </div>
           <div className="detail-item">
             <label>{language === 'en' ? 'Confirm new password' : 'تأكيد كلمة المرور الجديدة'}</label>

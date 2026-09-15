@@ -18,14 +18,64 @@ export default function DashboardPage({
 
   const welcomeName = user?.name || user?.fullName || (isAr ? 'زياد' : 'Guest')
 
+  // Dynamic time-based greeting
+  const greetingData = useMemo(() => {
+    const hour = new Date().getHours()
+    if (hour >= 5 && hour < 12) {
+      return {
+        text: isAr ? `صباح الخير، ${welcomeName}` : `Good morning, ${welcomeName}`,
+        sub: isAr ? 'يوم مميز للتخطيط لعطلتك القادمة على سواحل مصر' : 'A wonderful day to plan your next coastal getaway',
+        icon: 'sunny',
+        iconColor: 'text-amber-500',
+      }
+    }
+    if (hour >= 12 && hour < 18) {
+      return {
+        text: isAr ? `مساء الخير، ${welcomeName}` : `Good afternoon, ${welcomeName}`,
+        sub: isAr ? 'متابعة شاملة لحجوزاتك، إقاماتك القادمة، ومصروفاتك مع Hajzy' : 'Overview of your bookings, upcoming stays, and total spend with Hajzy',
+        icon: 'wb_twilight',
+        iconColor: 'text-orange-500',
+      }
+    }
+    return {
+      text: isAr ? `أهلاً بعودتك، ${welcomeName}` : `Welcome back, ${welcomeName}`,
+      sub: isAr ? 'ليلة هادئة — استعرض أفضل العروض والإقامات الفاخرة' : 'Peaceful evening — explore exclusive retreats and stays',
+      icon: 'bedtime',
+      iconColor: 'text-indigo-400',
+    }
+  }, [isAr, welcomeName])
+
   // Financial calculations
   const totalSpend = bookings.reduce((sum, booking) => sum + Number(booking.total || 0), 0)
   const confirmedBookings = bookings.filter((b) => b.status === 'confirmed')
   const pendingBookings = bookings.filter((b) => b.status === 'pending')
 
+  // Loyalty Points & Club Tier
+  const loyaltyPoints = useMemo(() => {
+    const base = Math.floor(totalSpend / 100)
+    return base > 0 ? base + 150 : 250
+  }, [totalSpend])
+
+  const loyaltyTier = useMemo(() => {
+    if (totalSpend > 25000) return { name: isAr ? 'بلاتينيوم VIP' : 'Platinum VIP', color: 'from-indigo-500 to-purple-600', badge: 'VIP' }
+    if (totalSpend > 8000) return { name: isAr ? 'ذهبي' : 'Gold Tier', color: 'from-amber-400 to-amber-600', badge: 'GOLD' }
+    return { name: isAr ? 'فضي' : 'Silver Member', color: 'from-emerald-500 to-teal-600', badge: 'SILVER' }
+  }, [totalSpend, isAr])
+
   // Next upcoming stay
   const upcomingStay = bookings[0]
   const upcomingProperty = properties.find((item) => item.id === upcomingStay?.propertyId) || properties[0]
+
+  // Countdown to next stay
+  const countdownDays = useMemo(() => {
+    if (!upcomingStay?.checkIn) return null
+    const checkInDate = new Date(upcomingStay.checkIn)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    checkInDate.setHours(0, 0, 0, 0)
+    const diffTime = checkInDate.getTime() - today.getTime()
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  }, [upcomingStay])
 
   // Filtered recent activity
   const filteredBookings = useMemo(() => {
@@ -56,7 +106,7 @@ export default function DashboardPage({
       key: 'explore',
       icon: 'travel_explore',
       label: isAr ? 'استكشاف الوجهات' : 'Explore Stays',
-      desc: isAr ? 'تصفح الفيلات والشاليهات' : 'Browse luxury homes',
+      desc: isAr ? 'فيلات وشاليهات فاخرة' : 'Browse luxury homes',
       color: 'from-emerald-500 to-teal-600',
       action: () => onNavigate('home'),
     },
@@ -71,8 +121,8 @@ export default function DashboardPage({
     {
       key: 'support',
       icon: 'support_agent',
-      label: isAr ? 'كونسيرج ودعم 24/7' : '24/7 Concierge',
-      desc: isAr ? 'فريق خدمة الضيوف الفوري' : 'Direct VIP assistance',
+      label: isAr ? 'كونسيرج 24/7' : '24/7 Concierge',
+      desc: isAr ? 'خدمة الضيوف الفورية' : 'Direct VIP assistance',
       color: 'from-cyan-600 to-blue-600',
       action: () => {
         if (typeof onSupportRequest === 'function') {
@@ -90,7 +140,7 @@ export default function DashboardPage({
       key: 'profile',
       icon: 'manage_accounts',
       label: isAr ? 'الملف الشخصي' : 'Profile & Security',
-      desc: isAr ? 'إدارة بياناتك والمحفظة' : 'Manage account & wallet',
+      desc: isAr ? 'المحفظة والأمان' : 'Account & wallet',
       color: 'from-slate-700 to-slate-800',
       action: () => onNavigate('profile'),
     },
@@ -99,8 +149,8 @@ export default function DashboardPage({
           {
             key: 'owner',
             icon: 'add_home_work',
-            label: isAr ? 'لوحة تحكم المالك' : 'Owner Dashboard',
-            desc: isAr ? 'إدارة العقارات والحجوزات' : 'Manage properties & stays',
+            label: isAr ? 'لوحة المالك' : 'Owner Dashboard',
+            desc: isAr ? 'إدارة العقارات' : 'Manage stays',
             color: 'from-amber-500 to-orange-600',
             action: () => onNavigate('owner'),
           },
@@ -111,118 +161,160 @@ export default function DashboardPage({
   return (
     <div className={`mx-auto max-w-6xl space-y-7 px-4 py-6 sm:px-6 lg:px-8 transition-colors duration-200 ${isAr ? 'rtl' : 'ltr'}`} dir={isAr ? 'rtl' : 'ltr'}>
       
-      {/* 1. CLEAN MINIMAL HEADER */}
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200/60 pb-5 dark:border-slate-800">
+      {/* 1. DYNAMIC HEADER WITH TIME GREETING */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200/60 pb-5 dark:border-slate-800">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white sm:text-3xl">
-            {isAr ? `أهلاً بعودتك، ${welcomeName}` : `Welcome back, ${welcomeName}`}
-          </h1>
+          <div className="flex items-center gap-2">
+            <span className={`material-symbols-outlined text-2xl ${greetingData.iconColor}`}>
+              {greetingData.icon}
+            </span>
+            <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white sm:text-3xl">
+              {greetingData.text}
+            </h1>
+          </div>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            {isAr
-              ? 'متابعة شاملة لحجوزاتك، إقاماتك القادمة، ومصروفاتك مع Hajzy'
-              : 'Overview of your bookings, upcoming stays, and total spend with Hajzy'}
+            {greetingData.sub}
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => onNavigate('home')}
-          className="inline-flex items-center gap-2 self-start sm:self-auto rounded-2xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition"
-        >
-          <span className="material-symbols-outlined text-base">travel_explore</span>
-          <span>{isAr ? 'استكشاف إقامة جديدة' : 'Explore New Stays'}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onNavigate('home')}
+            className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition"
+          >
+            <span className="material-symbols-outlined text-base">travel_explore</span>
+            <span>{isAr ? 'استكشاف إقامة جديدة' : 'Explore New Stays'}</span>
+          </button>
+        </div>
       </div>
 
-      {/* 2. THREE CLEAN KPI STATS CARDS (No dummy reward card) */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5">
+      {/* 2. FOUR LUXURY KPI STATS CARDS (Including Hajzy Club Loyalty) */}
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
         {/* Active Bookings */}
         <div
           onClick={() => onNavigate('bookings')}
-          className="group relative cursor-pointer overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_8px_30px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:border-emerald-300 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900/90"
+          className="group relative cursor-pointer overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:border-emerald-300 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900/90"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               {isAr ? 'الحجوزات النشطة' : 'Active Stays'}
             </span>
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 group-hover:scale-110 transition dark:bg-emerald-950/60 dark:text-emerald-400">
-              <span className="material-symbols-outlined text-2xl">calendar_month</span>
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 group-hover:scale-110 transition dark:bg-emerald-950/60 dark:text-emerald-400">
+              <span className="material-symbols-outlined text-xl">calendar_month</span>
             </div>
           </div>
-          <div className="mt-4 flex items-baseline gap-2.5">
-            <span className="text-3xl font-black text-slate-900 dark:text-white">{bookings.length}</span>
-            <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
-              {confirmedBookings.length} {isAr ? 'مؤكد' : 'confirmed'}
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{bookings.length}</span>
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+              {confirmedBookings.length} {isAr ? 'مؤكد' : 'ok'}
             </span>
           </div>
-          <p className="mt-2.5 text-xs text-slate-500 dark:text-slate-400">
-            {isAr ? 'اضغط لعرض وإدارة تذاكر الحجز' : 'Click to manage tickets'}
+          <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400 truncate">
+            {isAr ? 'عرض تذاكر الحجز' : 'Manage tickets'}
           </p>
         </div>
 
-        {/* Total Spend */}
-        <div className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_8px_30px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:border-teal-300 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900/90">
+        {/* Total Spend + Mini Sparkline */}
+        <div className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:border-teal-300 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900/90">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               {isAr ? 'إجمالي المدفوعات' : 'Total Spend'}
             </span>
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-teal-50 text-teal-600 group-hover:scale-110 transition dark:bg-teal-950/60 dark:text-teal-400">
-              <span className="material-symbols-outlined text-2xl">payments</span>
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-teal-50 text-teal-600 group-hover:scale-110 transition dark:bg-teal-950/60 dark:text-teal-400">
+              <span className="material-symbols-outlined text-xl">payments</span>
             </div>
           </div>
-          <div className="mt-4">
-            <span className="text-2xl font-black text-slate-900 dark:text-white sm:text-3xl">
+          <div className="mt-3">
+            <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
               {currencyFormatter.format(totalSpend || 0)}
             </span>
           </div>
-          <p className="mt-2.5 text-xs text-slate-500 dark:text-slate-400">
-            {isAr ? 'سجل مدفوعاتك المؤكدة في التطبيق' : 'Total verified bookings'}
-          </p>
+          {/* Mini CSS Bar Chart representation */}
+          <div className="mt-2 flex items-end gap-1 h-3" title={isAr ? 'نشاط الإنفاق' : 'Spend activity'}>
+            <div className="w-1.5 h-1.5 rounded-full bg-teal-200 dark:bg-teal-900" />
+            <div className="w-1.5 h-2.5 rounded-full bg-teal-300 dark:bg-teal-800" />
+            <div className="w-1.5 h-2 rounded-full bg-teal-400 dark:bg-teal-700" />
+            <div className="w-1.5 h-3 rounded-full bg-teal-500" />
+            <span className="text-[10px] text-slate-400 font-mono ms-1">{bookings.length ? (isAr ? 'نشط' : 'active') : '0'}</span>
+          </div>
         </div>
 
         {/* Saved Favorites */}
         <div
           onClick={() => onNavigate('home')}
-          className="group relative cursor-pointer overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_8px_30px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:border-rose-300 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900/90"
+          className="group relative cursor-pointer overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:border-rose-300 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900/90"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              {isAr ? 'المفضلة وقائمتي' : 'Saved Escapes'}
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              {isAr ? 'المفضلة' : 'Saved Escapes'}
             </span>
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 group-hover:scale-110 transition dark:bg-rose-950/60 dark:text-rose-400">
-              <span className="material-symbols-outlined text-2xl">favorite</span>
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 group-hover:scale-110 transition dark:bg-rose-950/60 dark:text-rose-400">
+              <span className="material-symbols-outlined text-xl">favorite</span>
             </div>
           </div>
-          <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-black text-slate-900 dark:text-white">
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
               {favorites.length}
             </span>
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{isAr ? 'عقار محفوظ' : 'saved'}</span>
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{isAr ? 'مكان' : 'saved'}</span>
           </div>
-          <p className="mt-2.5 text-xs text-slate-500 dark:text-slate-400">
-            {isAr ? 'أماكن تتابعها لرحلتك القادمة' : 'Curated wish list'}
+          <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400 truncate">
+            {isAr ? 'أماكن تتابعها' : 'Curated wish list'}
           </p>
+        </div>
+
+        {/* Hajzy Club / Loyalty Points */}
+        <div className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-slate-900 to-slate-800 p-5 text-white shadow-[0_8px_30px_rgba(15,23,42,0.08)] transition hover:-translate-y-1 hover:shadow-xl dark:border-slate-700">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300">
+              {isAr ? 'نادي Hajzy' : 'Hajzy Club'}
+            </span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-400/20 text-amber-400">
+              <span className="material-symbols-outlined text-lg">workspace_premium</span>
+            </div>
+          </div>
+          <div className="mt-3 flex items-baseline gap-1.5">
+            <span className="text-2xl sm:text-3xl font-black text-amber-300">{loyaltyPoints}</span>
+            <span className="text-[11px] text-slate-300 font-bold">{isAr ? 'نقطة' : 'pts'}</span>
+          </div>
+          <div className="mt-2 flex items-center justify-between text-[11px] text-slate-300">
+            <span className="font-semibold text-white">{loyaltyTier.name}</span>
+            <span className="text-amber-400 font-bold text-[10px]">✨ VIP</span>
+          </div>
         </div>
       </section>
 
-      {/* 3. UPCOMING STAY SPOTLIGHT (Full Width, No Golden Guarantee Card) */}
+      {/* 3. UPCOMING STAY SPOTLIGHT WITH COUNTDOWN */}
       <section className="w-full">
         <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_8px_30px_rgba(15,23,42,0.04)] dark:border-slate-800 dark:bg-slate-900/90 sm:p-7">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4 dark:border-slate-800">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400">luggage</span>
               <h2 className="text-lg font-black text-slate-900 dark:text-white">
                 {isAr ? 'إقامتك القادمة المميزة' : 'Your Upcoming Stay'}
               </h2>
             </div>
-            {upcomingStay && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                {upcomingStay.status === 'confirmed'
-                  ? (isAr ? 'مؤكدة وجاهزة' : 'Confirmed')
-                  : (isAr ? 'قيد المراجعة' : 'Pending')}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {countdownDays !== null && countdownDays >= 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60">
+                  <span className="material-symbols-outlined text-sm">schedule</span>
+                  <span>
+                    {countdownDays === 0
+                      ? (isAr ? 'موعد الوصول اليوم!' : 'Check-in today!')
+                      : (isAr ? `متبقي ${countdownDays} ${countdownDays === 1 ? 'يوم' : countdownDays === 2 ? 'يومان' : 'أيام'}` : `${countdownDays} days to go`)}
+                  </span>
+                </span>
+              )}
+              {upcomingStay && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  {upcomingStay.status === 'confirmed'
+                    ? (isAr ? 'مؤكدة وجاهزة' : 'Confirmed')
+                    : (isAr ? 'قيد المراجعة' : 'Pending')}
+                </span>
+              )}
+            </div>
           </div>
 
           {upcomingStay ? (
