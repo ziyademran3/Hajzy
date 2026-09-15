@@ -1,22 +1,29 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState, lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Capacitor } from '@capacitor/core'
 import './App.css'
 import { useAuth } from './hooks/useAuth'
+import { useHaptics } from './hooks/useHaptics'
+import { useOfflineBooking } from './hooks/useOfflineBooking'
+import { useNativeShare } from './hooks/useNativeShare'
 import Skeleton from './components/Skeleton'
+import LuxuryPageSkeleton from './components/LuxuryPageSkeleton'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import VerifyEmailPage from './pages/VerifyEmailPage'
-import MarketingPage from './pages/MarketingPage'
-import DashboardPage from './pages/DashboardPage'
-import ProfilePage from './pages/ProfilePage'
-import ChatPage from './pages/ChatPage'
-import ReviewsPage from './pages/ReviewsPage'
+
+const MarketingPage = lazy(() => import('./pages/MarketingPage'))
+const DashboardPage = lazy(() => import('./pages/DashboardPage'))
+const ProfilePage = lazy(() => import('./pages/ProfilePage'))
+const ChatPage = lazy(() => import('./pages/ChatPage'))
+const ReviewsPage = lazy(() => import('./pages/ReviewsPage'))
 import MapView from './components/MapView'
 import Logo from './components/Logo'
 import SplitPaymentModal from './components/SplitPaymentModal'
+import PropertyGalleryModal from './components/PropertyGalleryModal'
+import AiConciergeModal from './components/AiConciergeModal'
 import NeighborhoodExplorer from './components/NeighborhoodExplorer'
 import HostCalendar from './components/HostCalendar'
 import { useTheme } from './components/ThemeProvider'
@@ -167,6 +174,9 @@ function App() {
   const { t, i18n } = useTranslation()
   const { user, loading, login, signup, socialLogin, logout, updateProfile } = useAuth()
   const { theme, toggleTheme } = useTheme()
+  const haptics = useHaptics()
+  const { offlineBooking, isOffline, cacheBooking } = useOfflineBooking()
+  const { shareProperty, shareBooking } = useNativeShare()
   const [selectedInvoiceBooking, setSelectedInvoiceBooking] = useState(null)
   const [activePage, setActivePage] = useState('home')
   const [authRequired, setAuthRequired] = useState(() => {
@@ -531,6 +541,7 @@ function App() {
   }
 
   const navigate = (page, property = selectedProperty) => {
+    haptics.trigger('light')
     if (property) {
       setSelectedProperty(property)
     }
@@ -623,6 +634,7 @@ function App() {
   }
 
   const handleLanguageToggle = () => {
+    haptics.trigger('light')
     const nextLanguage = language === 'ar' ? 'en' : 'ar'
     void i18n.changeLanguage(nextLanguage)
     setLanguage(nextLanguage)
@@ -740,6 +752,7 @@ function App() {
 
     const favoriteId = String(propertyId)
     const alreadySaved = isFavorite(favoriteId)
+    haptics.trigger(alreadySaved ? 'light' : 'medium')
 
     setFavorites((currentFavorites) =>
       alreadySaved
@@ -1290,8 +1303,9 @@ function App() {
       }
 
       const savedBooking = await addBooking(newBooking)
-      setLastBooking({ ...savedBooking, paymentMethod })
-      setBookings((currentBookings) => [{ ...savedBooking, paymentMethod }, ...currentBookings])
+      const confirmedBooking = { ...savedBooking, paymentMethod }
+      setLastBooking(confirmedBooking)
+      setBookings((currentBookings) => [confirmedBooking, ...currentBookings])
       addNotification(
         { ar: 'تم تأكيد حجزك', en: 'Booking Confirmed' },
         {
@@ -1300,8 +1314,11 @@ function App() {
         },
         'success'
       )
+      cacheBooking(confirmedBooking, selectedProperty)
+      haptics.trigger('heavy')
       navigate('success')
     } catch (error) {
+      haptics.trigger('error')
       const fallback = language === 'en'
         ? 'Unable to start the payment. Please try again.'
         : 'تعذر بدء عملية الدفع. يرجى المحاولة مرة أخرى.'
@@ -2476,6 +2493,27 @@ function App() {
             <span className="material-symbols-outlined">{isFavorite(selectedProperty.id) ? 'favorite' : 'favorite_border'}</span>
           </button>
 
+          <button
+            type="button"
+            className="gallery-share"
+            aria-label={language === 'en' ? 'Share stay' : 'مشاركة الإقامة'}
+            onClick={async (event) => {
+              event.stopPropagation()
+              haptics.trigger('light')
+              await shareProperty({
+                title: selectedProperty.title,
+                titleEn: selectedProperty.title_en,
+                city: selectedProperty.city || selectedProperty.location,
+                price: selectedProperty.priceValue,
+                currency: selectedProperty.currency,
+                url: typeof window !== 'undefined' ? window.location.href : '',
+                language,
+              })
+            }}
+          >
+            <span className="material-symbols-outlined">share</span>
+          </button>
+
           <div className="gallery-index-badge">{selectedGalleryIndex + 1} / {galleryImages.length}</div>
 
           <div className="gallery-price-overlay">
@@ -3291,10 +3329,39 @@ function App() {
             </div>
           </div>
 
+          <div className="offline-ready-badge">
+            <span className="material-symbols-outlined text-sm">offline_pin</span>
+            <span>
+              {language === 'en'
+                ? 'Saved offline — access your booking & check-in details even with weak signal.'
+                : 'محفوظ للعمل بدون إنترنت — يمكنك الوصول لبيانات الحجز وتعليمات الدخول في أي وقت.'}
+            </span>
+          </div>
+
           <div className="success-actions">
             <button className="primary-button" onClick={() => setSelectedInvoiceBooking(currentBooking)}>
               <span className="material-symbols-outlined text-sm">receipt_long</span>
               <span>{language === 'en' ? 'Official Invoice' : 'الفاتورة الرسمية'}</span>
+            </button>
+            <button
+              type="button"
+              className="secondary-button flex items-center justify-center gap-1.5"
+              onClick={async () => {
+                haptics.trigger('light')
+                await shareBooking({
+                  reference: currentBooking?.reference,
+                  propertyTitle: selectedProperty?.title || currentBooking?.title,
+                  propertyTitleEn: selectedProperty?.title_en || currentBooking?.title_en,
+                  checkIn: currentBooking?.checkIn,
+                  checkOut: currentBooking?.checkOut,
+                  total: currentBooking?.total,
+                  currency: currentBooking?.currency,
+                  language,
+                })
+              }}
+            >
+              <span className="material-symbols-outlined text-sm">share</span>
+              <span>{language === 'en' ? 'Share Booking' : 'مشاركة الحجز'}</span>
             </button>
             <button className="secondary-button" onClick={() => navigate('bookings')}>
               {language === 'en' ? 'My bookings' : 'حجوزاتي'}
@@ -3425,12 +3492,95 @@ function App() {
               key={tab.id}
               type="button"
               className={bookingFilter === tab.id ? 'is-active' : ''}
-              onClick={() => setBookingFilter(tab.id)}
+              onClick={() => {
+                haptics.trigger('light')
+                setBookingFilter(tab.id)
+              }}
             >
               {tab.label}
             </button>
           ))}
         </div>
+
+        {isOffline && (
+          <div className="offline-banner" role="status">
+            <div className="offline-banner-icon">
+              <span className="material-symbols-outlined">cloud_off</span>
+            </div>
+            <div className="offline-banner-text">
+              <strong>{language === 'en' ? 'Offline Mode Active' : 'وضع عدم الاتصال بالإنترنت'}</strong>
+              <p>
+                {language === 'en'
+                  ? 'Showing saved bookings and verified check-in instructions stored on this device.'
+                  : 'بيانات حجزك الأخير وتعليمات الدخول الذاتي متاحة وتعمل بدون إنترنت.'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {offlineBooking && (
+          <div className="offline-booking-card">
+            <div className="offline-card-badge">
+              <span className="material-symbols-outlined text-xs">offline_pin</span>
+              <span>{language === 'en' ? 'Offline Fast Pass' : 'سند الدخول بدون إنترنت'}</span>
+            </div>
+            <div className="offline-card-content">
+              <div>
+                <span className="text-xs text-slate-500 font-medium">
+                  {language === 'en' ? 'Saved stay on device' : 'إقامة محفوظة على هاتفك'}
+                </span>
+                <h4 className="font-bold text-slate-900 dark:text-white text-base">
+                  {offlineBooking.propertyTitle}
+                </h4>
+                <p className="text-xs text-slate-500 font-mono mt-0.5">
+                  {offlineBooking.reference || '#REF-OFFLINE'}
+                </p>
+              </div>
+              <div className="offline-card-actions">
+                <button
+                  type="button"
+                  className="secondary-button small-button flex items-center gap-1"
+                  onClick={() => {
+                    haptics.trigger('light')
+                    setSelectedInvoiceBooking(offlineBooking)
+                  }}
+                  title={language === 'en' ? 'View offline voucher' : 'عرض السند بدون إنترنت'}
+                >
+                  <span className="material-symbols-outlined text-sm">receipt_long</span>
+                  <span>{language === 'en' ? 'Voucher' : 'السند'}</span>
+                </button>
+                <button
+                  type="button"
+                  className="secondary-button small-button flex items-center gap-1"
+                  onClick={async () => {
+                    haptics.trigger('light')
+                    await shareBooking({
+                      reference: offlineBooking.reference,
+                      propertyTitle: offlineBooking.propertyTitle,
+                      propertyTitleEn: offlineBooking.propertyTitleEn,
+                      checkIn: offlineBooking.checkIn,
+                      checkOut: offlineBooking.checkOut,
+                      total: offlineBooking.total,
+                      currency: offlineBooking.currency,
+                      language,
+                    })
+                  }}
+                >
+                  <span className="material-symbols-outlined text-sm">share</span>
+                  <span>{language === 'en' ? 'Share' : 'مشاركة'}</span>
+                </button>
+              </div>
+            </div>
+            {offlineBooking.selfCheckInInstructions && (
+              <div className="offline-checkin-tip">
+                <span className="material-symbols-outlined text-sm text-amber-500">key</span>
+                <span className="text-xs text-slate-600 dark:text-slate-300">
+                  {offlineBooking.selfCheckInInstructions}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="booking-list">
           {visibleBookings.length === 0 ? (
@@ -3715,11 +3865,13 @@ function App() {
 
     if (currentAuthPage === 'marketing') {
       return (
-        <MarketingPage
-          language={language}
-          onOpenLogin={handleMarketingOpenLogin}
-          onBrowseGuest={handleMarketingBrowseGuest}
-        />
+        <Suspense fallback={<LuxuryPageSkeleton />}>
+          <MarketingPage
+            language={language}
+            onOpenLogin={handleMarketingOpenLogin}
+            onBrowseGuest={handleMarketingBrowseGuest}
+          />
+        </Suspense>
       )
     }
 
@@ -4030,7 +4182,9 @@ function App() {
             <Skeleton type="home" count={6} />
           </div>
         ) : (
-          renderPageContent()
+          <Suspense fallback={<LuxuryPageSkeleton />}>
+            {renderPageContent()}
+          </Suspense>
         )}
       </main>
 

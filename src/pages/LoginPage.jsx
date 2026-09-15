@@ -1,20 +1,19 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { forgotPassword } from '../lib/authApi'
 import Logo from '../components/Logo'
 import SocialAuthModal from '../components/SocialAuthModal'
 import { triggerGoogleLogin } from '../lib/googleAuth'
 import { useTheme } from '../components/ThemeProvider'
 
-// Reusable social icons, kept locally for a small and clean dependency footprint.
+// Google Icon with authentic branding
 const GoogleIcon = () => (
-  <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+  <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 shrink-0">
     <path fill="#EA4335" d="M12 10.2v3.9h5.4c-.2 1.3-1.5 3.8-5.4 3.8-3.3 0-6-2.7-6-6s2.7-6 6-6c1.9 0 3.2.8 3.9 1.5l2.7-2.6C16.9 3.1 14.7 2.2 12 2.2 6.8 2.2 2.5 6.5 2.5 11.7S6.8 21.2 12 21.2c6.9 0 11.5-4.8 11.5-11.6 0-.8-.1-1.3-.2-1.9H12z" />
     <path fill="#34A853" d="M3.8 7.3l3.8 2.8c1-1.9 3-3.2 5.4-3.2 1.9 0 3.2.8 3.9 1.5l2.7-2.6C16.9 3.1 14.7 2.2 12 2.2 8.2 2.2 5 4.5 3.8 7.3z" />
     <path fill="#FBBC05" d="M3.8 16.1c1.5 2.9 4.5 4.9 8.2 4.9 2.4 0 4.4-.8 5.9-2.2l-2.8-2.3c-.8.6-1.9 1-3.1 1-2.4 0-4.4-1.7-5.1-4l-3.1 2.4z" />
     <path fill="#4285F4" d="M12 19.8c2.2 0 4.1-.7 5.5-2l-2.7-2.1c-.9.6-2 .9-2.8.9-2.5 0-4.7-1.8-5.2-4.1l-3 2.3C1.4 16.8 6.4 19.8 12 19.8z" />
   </svg>
 )
-
 
 export default function LoginPage({
   language = 'ar',
@@ -28,64 +27,101 @@ export default function LoginPage({
   const { theme, toggleTheme } = useTheme()
   const isDark = theme === 'dark'
 
-  // Use a single source of truth for translated strings to keep labels and validation consistent.
   const text = language === 'en'
     ? {
         brand: 'Hajzy',
+        tagline: 'Luxury Hospitality & Verified Stays',
         title: 'Welcome Back',
-        subtitle: 'Experience verified luxury stays and seamless bookings across Egypt.',
+        subtitle: 'Sign in to access your bookings, saved villas, and personalized concierge.',
+        tabLogin: 'Sign In',
+        tabSignup: 'Create Account',
         emailLabel: 'Email address',
         passwordLabel: 'Password',
-        remember: 'Remember me',
+        remember: 'Remember me on this device',
         forgot: 'Forgot password?',
-        createAccount: 'Create new account',
-        login: 'Sign in',
+        login: 'Sign in to account',
         socialGoogle: 'Continue with Google',
+        dividerText: 'or sign in with email',
         noAccount: "Don't have an account?",
-        signup: 'Sign up',
+        signup: 'Register now',
         togglePassword: 'Show password',
         hidePassword: 'Hide password',
+        capsLockOn: 'Caps Lock is on',
         requiredEmail: 'Please enter your email.',
         invalidEmail: 'Please enter a valid email address.',
         requiredPassword: 'Please enter your password.',
-        passwordLength: 'Password must be at least 8 characters long.',
-        invalidCredentials: 'The email or password is incorrect.',
+        passwordLength: 'Password must be at least 8 characters.',
+        invalidCredentials: 'The email or password you entered is incorrect.',
         resetSent: 'Password reset instructions have been sent to your email.',
-        resetUnavailable: 'The password reset server is not available yet. Please connect the API endpoint first.',
-        browseAsGuest: 'Explore as Guest',
-        guestSubtitle: 'Browse all stays and prices without logging in',
+        resetUnavailable: 'Password reset service is temporarily unavailable.',
+        browseAsGuest: 'Explore Stays as Guest',
+        guestSubtitle: 'Browse verified chalets and villas across Egypt without logging in',
+        showcaseTitle: 'The Premier Luxury Stay Collection in Egypt',
+        showcaseSubtitle: 'From private beachfront villas in El Gouna to serene retreats in Siwa and the Red Sea.',
+        statStays: '5,000+ Verified Stays',
+        statRating: '4.92/5 Guest Score',
+        statInstant: '100% Instant Booking',
+        quote: '“Hajzy changed how we discover and book beachfront escapes in Egypt.”',
+        quoteAuthor: 'Verified Guest • Cairo',
+        noCardNeeded: 'No credit card needed to browse • Instant verified prices',
       }
     : {
-        brand: 'Hajzy',
+        brand: 'حجزي',
+        tagline: 'منصة الإقامات الفاخرة والموثقة',
         title: 'مرحباً بك مجدداً',
-        subtitle: 'استكشف أفضل الإقامات الفاخرة والموثقة في مصر بكل سهولة.',
+        subtitle: 'سجّل دخولك للوصول إلى حجوزاتك، إقاماتك المفضلة، وتجربة الضيافة الحصرية.',
+        tabLogin: 'تسجيل الدخول',
+        tabSignup: 'حساب جديد',
         emailLabel: 'البريد الإلكتروني',
         passwordLabel: 'كلمة المرور',
-        remember: 'تذكرني',
-        forgot: 'هل نسيت كلمة المرور؟',
-        createAccount: 'إنشاء حساب جديد',
-        login: 'تسجيل الدخول',
-        socialGoogle: 'تسجيل الدخول عبر Google',
-        noAccount: 'ليس لديك حساب؟',
-        signup: 'إنشاء حساب',
+        remember: 'تذكر بياناتي على هذا الجهاز',
+        forgot: 'نسيت كلمة المرور؟',
+        login: 'تسجيل الدخول الآن',
+        socialGoogle: 'المتابعة السريعة عبر Google',
+        dividerText: 'أو عبر البريد الإلكتروني',
+        noAccount: 'ليس لديك حساب بعد؟',
+        signup: 'أنشئ حسابك الفاخر',
         togglePassword: 'عرض كلمة المرور',
         hidePassword: 'إخفاء كلمة المرور',
+        capsLockOn: 'زر الحروف الكبيرة (Caps Lock) مفعّل',
         requiredEmail: 'يرجى إدخال البريد الإلكتروني.',
         invalidEmail: 'يرجى إدخال بريد إلكتروني صحيح.',
         requiredPassword: 'يرجى إدخال كلمة المرور.',
         passwordLength: 'يجب أن تكون كلمة المرور 8 أحرف على الأقل.',
         invalidCredentials: 'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
-        resetSent: 'تم إرسال تعليمات استعادة كلمة المرور إلى بريدك الإلكتروني.',
-        resetUnavailable: 'خدمة استعادة كلمة المرور غير متاحة بعد. ربط الـ API أولاً.',
-        browseAsGuest: 'تصفح التطبيق كزائر',
-        guestSubtitle: 'استكشف الإقامات والأسعار فوراً بدون تسجيل',
+        resetSent: 'تم إرسال تعليمات استعادة كلمة المرور إلى بريدك.',
+        resetUnavailable: 'خدمة استعادة كلمة المرور غير متاحة حالياً.',
+        browseAsGuest: 'تصفح الإقامات كزائر فوراً',
+        guestSubtitle: 'استكشف الفلل والشاليهات والأسعار بدون تسجيل',
+        showcaseTitle: 'نخبة الإقامات والمنتجعات الفاخرة في مصر',
+        showcaseSubtitle: 'من الفلل الشاطئية الخاصة في الجونة والبحر الأحمر إلى الواحات الهادئة في سيوة وأسوان.',
+        statStays: '+5,000 إقامة موثقة',
+        statRating: '4.92/5 تقييم الضيوف',
+        statInstant: 'حجز فوري مؤكد 100%',
+        quote: '“أرقى تجربة حجز للإقامات والفلل الساحلية في مصر بأعلى معايير المصداقية.”',
+        quoteAuthor: 'ضيف موثق • القاهرة',
+        noCardNeeded: 'لا يلزم بطاقة دفع للتصفح • أسعار معلنة وموثقة 100%',
       }
 
   const [form, setForm] = useState({ email: '', password: '', remember: true })
   const [showPassword, setShowPassword] = useState(false)
+  const [capsLockActive, setCapsLockActive] = useState(false)
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
   const [resetMessage, setResetMessage] = useState('')
+  const [socialModalProvider, setSocialModalProvider] = useState(null)
+
+  // Load remembered email on mount if previously stored
+  useEffect(() => {
+    try {
+      const savedEmail = localStorage.getItem('hajzy_remembered_email')
+      if (savedEmail) {
+        setForm((prev) => ({ ...prev, email: savedEmail, remember: true }))
+      }
+    } catch {
+      // Storage unavailable or disabled in strict mode
+    }
+  }, [])
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target
@@ -99,7 +135,13 @@ export default function LoginPage({
     }
   }
 
-  // Centralized validation keeps the component predictable and simple to extend.
+  // Detect Caps Lock key state to prevent password input errors
+  const handleKeyModifier = (event) => {
+    if (event.getModifierState) {
+      setCapsLockActive(event.getModifierState('CapsLock'))
+    }
+  }
+
   const validateForm = () => {
     const nextErrors = {}
     const emailValue = form.email.trim()
@@ -123,14 +165,21 @@ export default function LoginPage({
 
   const handleSubmit = async (event) => {
     event.preventDefault()
-
-    if (!validateForm()) {
-      return
-    }
+    if (!validateForm()) return
 
     setLoading(true)
-
     try {
+      // Save or remove remembered email
+      if (form.remember && form.email.trim()) {
+        try {
+          localStorage.setItem('hajzy_remembered_email', form.email.trim())
+        } catch {}
+      } else {
+        try {
+          localStorage.removeItem('hajzy_remembered_email')
+        } catch {}
+      }
+
       const user = await onLogin(form.email, form.password)
       if (!user) {
         setErrors((current) => ({
@@ -159,7 +208,6 @@ export default function LoginPage({
     }
 
     setErrors((current) => ({ ...current, email: '', form: '' }))
-
     try {
       const response = await forgotPassword(emailValue)
       setResetMessage(response?.message || `${text.resetSent} (${emailValue})`)
@@ -167,8 +215,6 @@ export default function LoginPage({
       setResetMessage(error.message || text.resetUnavailable)
     }
   }
-
-  const [socialModalProvider, setSocialModalProvider] = useState(null)
 
   const handleSocialClick = async (provider) => {
     if (loading) return
@@ -188,13 +234,13 @@ export default function LoginPage({
           errMsg.includes('access_denied') ||
           errMsg.includes('closed')
         ) {
-          // User closed popup without selecting an account
+          // Closed by user
         } else if (errMsg.includes('origin_mismatch')) {
           setErrors({
             form:
               language === 'en'
-                ? 'Google OAuth origin mismatch: Please make sure http://localhost:5173 is added to Authorized JavaScript origins in Google Cloud Console.'
-                : 'خطأ نطاق Google: يرجى التأكد من إضافة http://localhost:5173 في Authorized JavaScript origins في Google Cloud Console.',
+                ? 'Google OAuth origin mismatch: Please verify authorized origins.'
+                : 'خطأ نطاق Google: يرجى التحقق من Authorized JavaScript origins.',
           })
         } else {
           setErrors({
@@ -222,211 +268,416 @@ export default function LoginPage({
     }
   }
 
-  const emailPlaceholder = language === 'en' ? 'your@email.com' : 'أدخل بريدك الإلكتروني'
+  const emailPlaceholder = language === 'en' ? 'name@domain.com' : 'name@example.com'
 
   return (
     <div
-      className={`relative min-h-screen overflow-hidden bg-gradient-to-b from-[#f0f9f6] via-[#f8fafc] to-[#eef7f4] dark:from-[#060d0b] dark:via-[#090e11] dark:to-[#040807] px-4 py-8 sm:px-6 lg:px-8 transition-colors duration-300 ${language === 'ar' ? 'rtl' : 'ltr'}`}
+      className={`min-h-[100dvh] w-full bg-[#f8faf9] text-[#111918] dark:bg-[#07090b] dark:text-[#f3f6f5] transition-colors duration-300 flex flex-col justify-between ${
+        language === 'ar' ? 'rtl' : 'ltr'
+      }`}
       dir={language === 'ar' ? 'rtl' : 'ltr'}
     >
-      {/* Ambient background glow orbs */}
-      <div className="pointer-events-none absolute -top-24 -left-24 h-96 w-96 rounded-full bg-emerald-400/20 dark:bg-emerald-500/15 blur-3xl" />
-      <div className="pointer-events-none absolute top-1/2 -right-24 h-96 w-96 rounded-full bg-teal-400/20 dark:bg-teal-500/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 left-1/3 h-80 w-80 rounded-full bg-cyan-400/15 dark:bg-cyan-500/10 blur-3xl" />
+      {/* Top Utility Navigation */}
+      <header className="sticky top-0 z-30 w-full border-b border-slate-200/70 dark:border-white/5 bg-white/80 dark:bg-[#07090b]/85 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-3">
+            <Logo size={34} showText={true} />
+            <span className="hidden sm:inline-block text-[11px] font-semibold tracking-wider text-emerald-800/80 dark:text-emerald-300/80 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/60 dark:border-emerald-800/40 rounded-full px-2.5 py-0.5">
+              {text.tagline}
+            </span>
+          </div>
 
-      <div className="relative mx-auto flex min-h-screen max-w-md items-center justify-center">
-        <div className="w-full overflow-hidden rounded-[32px] border border-white/80 dark:border-white/10 bg-white/85 dark:bg-slate-900/85 shadow-[0_25px_80px_rgba(15,118,110,0.12)] dark:shadow-[0_30px_90px_rgba(0,0,0,0.6)] backdrop-blur-2xl transition-all duration-300">
-          <main className="p-6 sm:p-8">
-            {/* Header: Logo, Theme & Language toggles */}
-            <div className="mb-6 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Logo size={32} showText={true} />
+          <div className="flex items-center gap-2.5">
+            {/* Quick Guest Navigation Button */}
+            {typeof onBrowseGuest === 'function' && (
+              <button
+                type="button"
+                onClick={onBrowseGuest}
+                className="hidden sm:inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold text-emerald-950 dark:text-emerald-100 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition active:scale-95"
+                title={text.guestSubtitle}
+              >
+                <span className="material-symbols-outlined text-[18px] text-emerald-700 dark:text-emerald-400">explore</span>
+                <span>{text.browseAsGuest}</span>
+              </button>
+            )}
+
+            {/* Dark / Light Mode Toggle */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-white/5 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition active:scale-95 shadow-xs theme-toggle"
+              aria-label={
+                isDark
+                  ? language === 'ar' ? 'تفعيل الوضع النهاري' : 'Switch to light mode'
+                  : language === 'ar' ? 'تفعيل الوضع الليلي' : 'Switch to dark mode'
+              }
+              title={
+                isDark
+                  ? language === 'ar' ? 'تفعيل الوضع النهاري' : 'Switch to light mode'
+                  : language === 'ar' ? 'تفعيل الوضع الليلي' : 'Switch to dark mode'
+              }
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                {isDark ? 'light_mode' : 'dark_mode'}
+              </span>
+            </button>
+
+            {/* Language Switcher Pill */}
+            {typeof onToggleLanguage === 'function' && (
+              <button
+                type="button"
+                onClick={onToggleLanguage}
+                className="inline-flex h-10 items-center gap-1.5 rounded-full border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-white/5 px-3.5 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition active:scale-95 shadow-xs language-toggle"
+                aria-label={language === 'en' ? 'Switch to Arabic' : 'التبديل إلى الإنجليزية'}
+              >
+                <span className="material-symbols-outlined text-[17px] text-slate-400 dark:text-slate-500">translate</span>
+                <span>{language === 'en' ? 'العربية' : 'English'}</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Main Luxury Split Workspace */}
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8 flex items-center justify-center">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+          
+          {/* Visual Showcase Panel (Desktop Editorial Display) */}
+          <div className="hidden lg:flex lg:col-span-6 xl:col-span-7 flex-col justify-between self-stretch relative overflow-hidden rounded-[32px] border border-slate-200/80 dark:border-white/10 shadow-2xl bg-[#00433f] text-white min-h-[660px]">
+            {/* Background Luxury Resort Image with Depth Scrim */}
+            <img
+              src="/auth-luxury-stay.jpg"
+              alt="Luxury Resort Egypt"
+              className="absolute inset-0 h-full w-full object-cover object-center transform scale-105 transition-transform duration-1000 ease-out hover:scale-100"
+              loading="eager"
+            />
+            
+            {/* Ambient Multi-layer Gradient Scrim */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#002826] via-[#00433f]/40 to-black/30" />
+            <div className="absolute inset-0 bg-radial from-transparent via-[#00433f]/20 to-[#00201e]/80" />
+
+            {/* Top Bar inside showcase */}
+            <div className="relative z-10 p-8 flex items-center justify-between">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/15 px-3.5 py-1.5 text-xs font-bold backdrop-blur-md">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                {text.statInstant}
+              </span>
+              <span className="text-xs font-semibold text-white/80 tabular-nums">
+                {text.statRating}
+              </span>
+            </div>
+
+            {/* Bottom Content & Testimonial inside showcase */}
+            <div className="relative z-10 p-8 sm:p-10 space-y-6">
+              <div className="space-y-2 max-w-lg">
+                <h2 className="text-2xl xl:text-3xl font-black tracking-tight text-white leading-snug">
+                  {text.showcaseTitle}
+                </h2>
+                <p className="text-sm text-emerald-100/90 leading-relaxed">
+                  {text.showcaseSubtitle}
+                </p>
               </div>
-              <div className="flex items-center gap-2">
+
+              {/* Guest Quote Card */}
+              <div className="rounded-2xl border border-white/15 bg-black/35 backdrop-blur-xl p-4 sm:p-5 shadow-lg max-w-md">
+                <p className="text-xs sm:text-sm font-medium italic text-white/95 leading-relaxed">
+                  {text.quote}
+                </p>
+                <div className="mt-3 flex items-center justify-between text-xs text-emerald-300">
+                  <span>{text.quoteAuthor}</span>
+                  <span className="text-amber-400 font-bold tabular-nums">★★★★★</span>
+                </div>
+              </div>
+
+              {/* Verified Features Row */}
+              <div className="grid grid-cols-3 gap-3 pt-2 text-center border-t border-white/15">
+                <div className="p-2">
+                  <div className="text-base font-black text-white tabular-nums">+5,000</div>
+                  <div className="text-[11px] text-emerald-200/80">{language === 'ar' ? 'إقامة فاخرة' : 'Luxury Stays'}</div>
+                </div>
+                <div className="p-2 border-x border-white/15">
+                  <div className="text-base font-black text-white tabular-nums">100%</div>
+                  <div className="text-[11px] text-emerald-200/80">{language === 'ar' ? 'فحص وتوثيق' : 'Verified'}</div>
+                </div>
+                <div className="p-2">
+                  <div className="text-base font-black text-amber-300 tabular-nums">4.92★</div>
+                  <div className="text-[11px] text-emerald-200/80">{language === 'ar' ? 'رضا النزلاء' : 'Guest Score'}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Interactive Authentication Panel */}
+          <div className="w-full lg:col-span-6 xl:col-span-5 max-w-md mx-auto">
+            <div className="overflow-hidden rounded-[28px] border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#101418] shadow-[0_20px_60px_rgba(0,67,63,0.08)] dark:shadow-[0_25px_70px_rgba(0,0,0,0.5)] p-6 sm:p-8 transition-all">
+              
+              {/* Card Switcher Pills: Sign In vs Sign Up */}
+              <div className="mb-6 flex rounded-2xl bg-slate-100/90 dark:bg-white/5 p-1 border border-slate-200/60 dark:border-white/5">
                 <button
                   type="button"
-                  onClick={toggleTheme}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition active:scale-95"
-                  aria-label={isDark ? (language === 'ar' ? 'تفعيل الوضع النهاري' : 'Switch to light mode') : (language === 'ar' ? 'تفعيل الوضع الليلي' : 'Switch to dark mode')}
-                  title={isDark ? (language === 'ar' ? 'تفعيل الوضع النهاري' : 'Switch to light mode') : (language === 'ar' ? 'تفعيل الوضع الليلي' : 'Switch to dark mode')}
+                  className="flex-1 rounded-xl bg-white dark:bg-emerald-900/60 py-2.5 text-xs sm:text-sm font-black text-emerald-950 dark:text-emerald-100 shadow-xs transition"
                 >
-                  <span className="material-symbols-outlined text-[19px]">
-                    {isDark ? 'light_mode' : 'dark_mode'}
-                  </span>
+                  {text.tabLogin}
                 </button>
-                {typeof onToggleLanguage === 'function' && (
-                  <button
-                    type="button"
-                    onClick={onToggleLanguage}
-                    className="inline-flex items-center gap-1 rounded-full border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/80 dark:bg-slate-800/80 px-3 py-1 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition active:scale-95"
-                    aria-label={language === 'en' ? 'Switch to Arabic' : 'التبديل إلى الإنجليزية'}
+                <button
+                  type="button"
+                  onClick={onSwitchToSignup}
+                  className="flex-1 rounded-xl py-2.5 text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition"
+                >
+                  {text.tabSignup}
+                </button>
+              </div>
+
+              {/* Title & Welcome Note */}
+              <div className="mb-6">
+                <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-950 dark:text-white">
+                  {text.title}
+                </h1>
+                <p className="mt-1.5 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                  {text.subtitle}
+                </p>
+              </div>
+
+              {/* Google One-Click OAuth */}
+              <div className="mb-5">
+                <button
+                  type="button"
+                  onClick={() => handleSocialClick('google')}
+                  disabled={loading}
+                  className="flex w-full min-h-[46px] items-center justify-center gap-3 rounded-2xl border border-slate-300/80 dark:border-white/15 bg-white dark:bg-white/5 px-4 py-3 text-sm font-bold text-slate-800 dark:text-slate-100 transition-all hover:bg-slate-50 dark:hover:bg-white/10 hover:border-slate-400 dark:hover:border-white/25 active:scale-[0.98] disabled:opacity-60 shadow-xs"
+                >
+                  <GoogleIcon />
+                  <span>{text.socialGoogle}</span>
+                </button>
+              </div>
+
+              {/* Thin Line Divider */}
+              <div className="mb-6 flex items-center gap-3 text-xs font-semibold text-slate-400 dark:text-slate-500">
+                <div className="h-[1px] flex-1 bg-slate-200 dark:bg-white/10" />
+                <span>{text.dividerText}</span>
+                <div className="h-[1px] flex-1 bg-slate-200 dark:bg-white/10" />
+              </div>
+
+              {/* Login Form */}
+              <form className="space-y-4" onSubmit={handleSubmit} noValidate>
+                {/* Email Field */}
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-300"
                   >
-                    <span>{language === 'en' ? 'العربية' : 'English'}</span>
-                  </button>
-                )}
-              </div>
-            </div>
-
-
-            {/* Welcome Title & Subtitle */}
-            <div className="mb-6">
-              <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white sm:text-3xl">
-                {text.title}
-              </h1>
-              <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-                {text.subtitle}
-              </p>
-            </div>
-
-            {/* Social Login Button */}
-            <div className="mb-5">
-              <button
-                type="button"
-                onClick={() => handleSocialClick('google')}
-                disabled={loading}
-                className="flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 bg-white dark:bg-slate-800/90 px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 transition-all hover:bg-slate-50 dark:hover:bg-slate-750 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 disabled:opacity-70 active:scale-[0.99]"
-              >
-                <GoogleIcon />
-                <span>{text.socialGoogle}</span>
-              </button>
-            </div>
-
-            {/* Divider */}
-            <div className="mb-5 flex items-center gap-3 text-xs font-semibold text-slate-400 dark:text-slate-500">
-              <div className="h-[1px] flex-1 bg-slate-200/80 dark:bg-slate-800" />
-              <span>{language === 'en' ? 'or sign in with email' : 'أو تسجيل الدخول بالبريد'}</span>
-              <div className="h-[1px] flex-1 bg-slate-200/80 dark:bg-slate-800" />
-            </div>
-
-            {/* Login Form */}
-            <form className="space-y-4" onSubmit={handleSubmit} noValidate>
-              <div>
-                <label htmlFor="email" className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-300">
-                  {text.emailLabel}
-                </label>
-                <div className={`flex items-center gap-2.5 rounded-2xl border bg-slate-50/90 dark:bg-slate-800/70 px-3.5 transition-all ${errors.email ? 'border-red-300 dark:border-red-800/80 bg-red-50/50 dark:bg-red-950/20 shadow-[0_0_0_4px_rgba(239,68,68,0.12)]' : 'border-slate-200/90 dark:border-slate-700/70 focus-within:border-emerald-500 focus-within:bg-white dark:focus-within:bg-slate-900 focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.14)]'}`}>
-                  <span className="material-symbols-outlined text-slate-400 dark:text-slate-500 text-[19px]">mail</span>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={form.email}
-                    onChange={handleChange}
-                    autoComplete="username"
-                    placeholder={emailPlaceholder}
-                    disabled={loading}
-                    aria-invalid={Boolean(errors.email)}
-                    aria-describedby={errors.email ? 'email-error' : undefined}
-                    className="w-full border-0 bg-transparent py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
-                  />
-                </div>
-                {errors.email && (
-                  <p id="email-error" className="mt-1.5 text-xs font-semibold text-red-600 dark:text-red-400">
-                    {errors.email}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <div className="mb-1.5 flex items-center justify-between gap-3">
-                  <label htmlFor="password" className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                    {text.passwordLabel}
+                    {text.emailLabel}
                   </label>
-                  <button
-                    type="button"
-                    onClick={onSwitchToForgotPassword || handleForgotPassword}
-                    className="text-xs font-bold text-emerald-600 dark:text-emerald-400 transition hover:text-emerald-700 dark:hover:text-emerald-300 hover:underline"
+                  <div
+                    className={`flex items-center gap-2.5 rounded-2xl border bg-slate-50/90 dark:bg-white/5 px-3.5 transition-all ${
+                      errors.email
+                        ? 'border-red-400 bg-red-50/50 dark:border-red-500 dark:bg-red-950/30 shadow-[0_0_0_4px_rgba(239,68,68,0.12)]'
+                        : 'border-slate-200 dark:border-white/10 focus-within:border-emerald-600 dark:focus-within:border-emerald-400 focus-within:bg-white dark:focus-within:bg-black/40 focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.12)]'
+                    }`}
                   >
-                    {text.forgot}
-                  </button>
+                    <span className="material-symbols-outlined text-slate-400 dark:text-slate-500 text-[20px] shrink-0">
+                      mail
+                    </span>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={form.email}
+                      onChange={handleChange}
+                      autoComplete="username"
+                      placeholder={emailPlaceholder}
+                      disabled={loading}
+                      aria-invalid={Boolean(errors.email)}
+                      aria-describedby={errors.email ? 'email-error' : undefined}
+                      className="w-full min-h-[46px] border-0 bg-transparent py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
+                    />
+                  </div>
+                  {errors.email && (
+                    <p id="email-error" className="mt-1.5 text-xs font-semibold text-red-600 dark:text-red-400">
+                      {errors.email}
+                    </p>
+                  )}
                 </div>
 
-                <div className={`flex items-center gap-2.5 rounded-2xl border bg-slate-50/90 dark:bg-slate-800/70 px-3.5 transition-all ${errors.password ? 'border-red-300 dark:border-red-800/80 bg-red-50/50 dark:bg-red-950/20 shadow-[0_0_0_4px_rgba(239,68,68,0.12)]' : 'border-slate-200/90 dark:border-slate-700/70 focus-within:border-emerald-500 focus-within:bg-white dark:focus-within:bg-slate-900 focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.14)]'}`}>
-                  <span className="material-symbols-outlined text-slate-400 dark:text-slate-500 text-[19px]">lock</span>
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={form.password}
-                    onChange={handleChange}
-                    autoComplete="current-password"
-                    placeholder="••••••••"
-                    disabled={loading}
-                    aria-invalid={Boolean(errors.password)}
-                    aria-describedby={errors.password ? 'password-error' : undefined}
-                    className="w-full border-0 bg-transparent py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((current) => !current)}
-                    className="flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
-                    aria-label={showPassword ? text.hidePassword : text.togglePassword}
-                    title={showPassword ? text.hidePassword : text.togglePassword}
+                {/* Password Field */}
+                <div>
+                  <div className="mb-1.5 flex items-center justify-between gap-3">
+                    <label
+                      htmlFor="password"
+                      className="block text-xs font-bold text-slate-700 dark:text-slate-300"
+                    >
+                      {text.passwordLabel}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={onSwitchToForgotPassword || handleForgotPassword}
+                      className="text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:underline transition"
+                    >
+                      {text.forgot}
+                    </button>
+                  </div>
+
+                  <div
+                    className={`flex items-center gap-2.5 rounded-2xl border bg-slate-50/90 dark:bg-white/5 px-3.5 transition-all ${
+                      errors.password
+                        ? 'border-red-400 bg-red-50/50 dark:border-red-500 dark:bg-red-950/30 shadow-[0_0_0_4px_rgba(239,68,68,0.12)]'
+                        : 'border-slate-200 dark:border-white/10 focus-within:border-emerald-600 dark:focus-within:border-emerald-400 focus-within:bg-white dark:focus-within:bg-black/40 focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.12)]'
+                    }`}
                   >
-                    <span className="material-symbols-outlined text-[19px]">{showPassword ? 'visibility_off' : 'visibility'}</span>
-                  </button>
+                    <span className="material-symbols-outlined text-slate-400 dark:text-slate-500 text-[20px] shrink-0">
+                      lock
+                    </span>
+                    <input
+                      id="password"
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={form.password}
+                      onChange={handleChange}
+                      onKeyUp={handleKeyModifier}
+                      onKeyDown={handleKeyModifier}
+                      autoComplete="current-password"
+                      placeholder="••••••••"
+                      disabled={loading}
+                      aria-invalid={Boolean(errors.password)}
+                      aria-describedby={
+                        errors.password
+                          ? 'password-error'
+                          : capsLockActive
+                          ? 'capslock-warning'
+                          : undefined
+                      }
+                      className="w-full min-h-[46px] border-0 bg-transparent py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="flex h-9 w-9 items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition active:scale-90"
+                      aria-label={showPassword ? text.hidePassword : text.togglePassword}
+                      title={showPassword ? text.hidePassword : text.togglePassword}
+                    >
+                      <span className="material-symbols-outlined text-[20px]">
+                        {showPassword ? 'visibility_off' : 'visibility'}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Caps Lock indicator */}
+                  {capsLockActive && (
+                    <div
+                      id="capslock-warning"
+                      className="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400"
+                    >
+                      <span className="material-symbols-outlined text-[15px]">warning</span>
+                      <span>{text.capsLockOn}</span>
+                    </div>
+                  )}
+
+                  {errors.password && (
+                    <p id="password-error" className="mt-1.5 text-xs font-semibold text-red-600 dark:text-red-400">
+                      {errors.password}
+                    </p>
+                  )}
                 </div>
-                {errors.password && (
-                  <p id="password-error" className="mt-1.5 text-xs font-semibold text-red-600 dark:text-red-400">
-                    {errors.password}
-                  </p>
+
+                {/* Remember Me */}
+                <div className="flex items-center justify-between text-xs pt-1">
+                  <label
+                    htmlFor="remember-me"
+                    className="inline-flex cursor-pointer items-center gap-2 font-medium text-slate-700 dark:text-slate-300 select-none"
+                  >
+                    <input
+                      id="remember-me"
+                      type="checkbox"
+                      name="remember"
+                      checked={form.remember}
+                      onChange={handleChange}
+                      className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <span>{text.remember}</span>
+                  </label>
+                </div>
+
+                {/* Feedback Alerts */}
+                {resetMessage && (
+                  <div
+                    className="rounded-2xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 p-3.5 text-xs font-semibold text-emerald-800 dark:text-emerald-200 flex items-start gap-2"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <span className="material-symbols-outlined text-[18px] text-emerald-600 shrink-0">check_circle</span>
+                    <span>{resetMessage}</span>
+                  </div>
                 )}
-              </div>
 
-              <div className="flex items-center justify-between text-xs pt-1">
-                <label className="inline-flex cursor-pointer items-center gap-2 font-medium text-slate-700 dark:text-slate-300 select-none">
-                  <input
-                    type="checkbox"
-                    name="remember"
-                    checked={form.remember}
-                    onChange={handleChange}
-                    className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-500"
-                  />
-                  <span>{text.remember}</span>
-                </label>
-              </div>
-
-              {resetMessage && (
-                <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 p-3 text-xs font-semibold text-emerald-800 dark:text-emerald-200" role="status" aria-live="polite">
-                  {resetMessage}
-                </div>
-              )}
-
-              {errors.form && (
-                <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/40 p-3 text-xs font-semibold text-red-700 dark:text-red-300" role="alert">
-                  {errors.form}
-                </div>
-              )}
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 px-4 py-3.5 text-base font-extrabold text-white shadow-[0_14px_28px_rgba(16,185,129,0.3)] transition-all hover:shadow-[0_18px_32px_rgba(16,185,129,0.35)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                {loading ? (
-                  <>
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                    <span>{text.login}</span>
-                  </>
-                ) : (
-                  <span>{text.login}</span>
+                {errors.form && (
+                  <div
+                    className="rounded-2xl border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/40 p-3.5 text-xs font-semibold text-red-700 dark:text-red-300 flex items-start gap-2"
+                    role="alert"
+                  >
+                    <span className="material-symbols-outlined text-[18px] text-red-600 shrink-0">error</span>
+                    <span>{errors.form}</span>
+                  </div>
                 )}
-              </button>
 
-              {/* Create Account Secondary Button */}
-              <button
-                type="button"
-                onClick={onSwitchToSignup}
-                className="w-full rounded-2xl border border-slate-200/90 dark:border-slate-700/80 bg-slate-50/60 dark:bg-slate-800/50 py-3 text-xs font-bold text-slate-700 dark:text-slate-300 transition-all hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-[0.99]"
-              >
-                {text.createAccount}
-              </button>
-            </form>
-          </main>
+                {/* Primary Submit Button */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex w-full min-h-[50px] items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#00433f] via-[#0b5f59] to-[#00433f] px-4 py-3.5 text-sm sm:text-base font-extrabold text-white shadow-[0_12px_28px_rgba(0,67,63,0.25)] transition-all hover:shadow-[0_16px_34px_rgba(0,67,63,0.35)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {loading ? (
+                    <>
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                      <span>{text.login}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-[20px]">login</span>
+                      <span>{text.login}</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Explore as Guest Secondary CTA with Trust Micro-copy */}
+                {typeof onBrowseGuest === 'function' && (
+                  <div className="space-y-1.5 pt-1">
+                    <button
+                      type="button"
+                      onClick={onBrowseGuest}
+                      className="flex w-full min-h-[46px] items-center justify-center gap-2 rounded-2xl border border-emerald-600/30 dark:border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/20 py-3 text-xs sm:text-sm font-bold text-emerald-900 dark:text-emerald-200 transition-all hover:bg-emerald-100/60 dark:hover:bg-emerald-950/40 active:scale-[0.98]"
+                    >
+                      <span className="material-symbols-outlined text-[18px] text-emerald-600 dark:text-emerald-400">explore</span>
+                      <span>{text.browseAsGuest}</span>
+                    </button>
+                    <p className="text-[11px] text-center text-slate-400 dark:text-slate-500">
+                      {text.noCardNeeded}
+                    </p>
+                  </div>
+                )}
+              </form>
+
+              {/* Switch to Signup footer note */}
+              <div className="mt-6 text-center text-xs text-slate-500 dark:text-slate-400">
+                <span>{text.noAccount} </span>
+                <button
+                  type="button"
+                  onClick={onSwitchToSignup}
+                  className="font-bold text-emerald-700 dark:text-emerald-400 hover:underline transition"
+                >
+                  {text.signup}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </main>
 
+      {/* Footer Branding Guarantee */}
+      <footer className="w-full border-t border-slate-200/60 dark:border-white/5 py-4 text-center text-xs text-slate-400 dark:text-slate-600">
+        <p>© {new Date().getFullYear()} Hajzy. {language === 'ar' ? 'جميع الحقوق محفوظة • حجز آمن وموثق 100%' : 'All rights reserved • 100% Secured Luxury Stays'}</p>
+      </footer>
+
+      {/* Social Auth Modal */}
       <SocialAuthModal
         isOpen={Boolean(socialModalProvider)}
         provider={socialModalProvider || 'google'}

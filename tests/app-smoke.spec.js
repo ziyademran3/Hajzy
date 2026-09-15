@@ -86,4 +86,48 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
     await expect(page.locator('input[type="email"]')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('button[type="submit"]')).toBeVisible();
   });
+
+  test('Property details renders share button and bookings page displays offline booking card', async ({ page }) => {
+    // Navigate with guest mode
+    await page.goto('/');
+    await page.evaluate(() => {
+      localStorage.setItem('hajzy_guest_mode', 'true');
+      localStorage.setItem('hajzy_offline_booking', JSON.stringify({
+        id: 'test-offline-1',
+        reference: '#REF-TEST99',
+        propertyTitle: 'فيلا الساحل الشمالي الفاخرة',
+        propertyLocation: 'الساحل الشمالي',
+        checkIn: '2026-09-20',
+        checkOut: '2026-09-25',
+        total: 15000,
+        currency: 'EGP',
+        selfCheckInInstructions: 'الكود السري لباب الفيلا: 4482',
+      }));
+    });
+    await page.goto('/');
+
+    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+
+    // Open first property card
+    const firstCard = page.locator('.property-card').first();
+    await expect(firstCard).toBeVisible({ timeout: 10000 });
+    await firstCard.click();
+
+    // Verify share button is visible on property details gallery
+    const shareBtn = page.locator('.gallery-share');
+    await expect(shareBtn).toBeVisible({ timeout: 10000 });
+
+    // Click on Bookings tab in bottom navigation
+    const bookingsNav = page.locator('.bottom-nav .nav-item').filter({ hasText: /حجوزاتي|Bookings/i });
+    if (await bookingsNav.isVisible()) {
+      await bookingsNav.click();
+
+      // Verify offline booking card is visible
+      const offlineCard = page.locator('.offline-booking-card');
+      await expect(offlineCard).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('text=#REF-TEST99')).toBeVisible();
+      await expect(page.locator('text=الكود السري لباب الفيلا')).toBeVisible();
+    }
+  });
 });
+

@@ -9,26 +9,32 @@ export default function ForgotPasswordPage({ language = 'ar', onToggleLanguage, 
 
   const text = language === 'en'
     ? {
-        title: 'Forgot password',
-        subtitle: 'Enter your email and we will send a reset link.',
+        brand: 'Hajzy',
+        tagline: 'Luxury Hospitality & Verified Stays',
+        title: 'Reset Password',
+        subtitle: 'Enter your registered email address and we will provide you with secure reset instructions.',
         email: 'Email address',
-        submit: 'Send reset link',
+        submit: 'Send recovery link',
         back: 'Back to sign in',
         signup: 'Create account',
         requiredEmail: 'Please enter your email.',
         invalidEmail: 'Please enter a valid email address.',
         success: 'Reset instructions were sent successfully.',
+        guarantee: 'Your data and credentials are encrypted and protected under strict privacy standards.',
       }
     : {
-        title: 'نسيت كلمة المرور',
-        subtitle: 'أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة التعيين.',
+        brand: 'حجزي',
+        tagline: 'منصة الإقامات الفاخرة والموثقة',
+        title: 'استعادة كلمة المرور',
+        subtitle: 'أدخل بريدك الإلكتروني المسجل وسنرسل لك تعليمات آمنة لتعيين كلمة مرور جديدة.',
         email: 'البريد الإلكتروني',
-        submit: 'إرسال رابط الاستعادة',
+        submit: 'إرسال رابط الاستعادة الآمن',
         back: 'العودة لتسجيل الدخول',
-        signup: 'إنشاء حساب',
+        signup: 'إنشاء حساب جديد',
         requiredEmail: 'يرجى إدخال البريد الإلكتروني.',
         invalidEmail: 'يرجى إدخال بريد إلكتروني صحيح.',
         success: 'تم إرسال تعليمات استعادة كلمة المرور بنجاح.',
+        guarantee: 'بياناتك وكلمة مرورك مشفرة ومحمية بالكامل بأعلى معايير الخصوصية.',
       }
 
   const [email, setEmail] = useState('')
@@ -87,81 +93,137 @@ export default function ForgotPasswordPage({ language = 'ar', onToggleLanguage, 
   }
 
   return (
-    <div className={`min-h-screen bg-[#f4faf7] dark:bg-[#090b0d] px-4 py-8 sm:px-6 lg:px-8 transition-colors duration-200 ${language === 'ar' ? 'rtl' : 'ltr'}`} dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      <div className="mx-auto flex min-h-screen max-w-md items-center justify-center">
-        <div className="w-full rounded-[28px] border border-emerald-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 p-6 shadow-[0_25px_80px_rgba(15,118,110,0.08)] dark:shadow-[0_25px_80px_rgba(0,0,0,0.4)] backdrop-blur-xl sm:p-8 transition-colors duration-200">
-          <div className="mb-6 flex items-center justify-between">
-            <Logo size={32} showText={true} />
-            <div className="flex items-center gap-2">
+    <div
+      className={`min-h-[100dvh] w-full bg-[#f8faf9] text-[#111918] dark:bg-[#07090b] dark:text-[#f3f6f5] transition-colors duration-300 flex flex-col justify-between ${
+        language === 'ar' ? 'rtl' : 'ltr'
+      }`}
+      dir={language === 'ar' ? 'rtl' : 'ltr'}
+    >
+      {/* Top Bar */}
+      <header className="sticky top-0 z-30 w-full border-b border-slate-200/70 dark:border-white/5 bg-white/80 dark:bg-[#07090b]/85 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-3">
+            <Logo size={34} showText={true} />
+            <span className="hidden sm:inline-block text-[11px] font-semibold tracking-wider text-emerald-800/80 dark:text-emerald-300/80 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/60 dark:border-emerald-800/40 rounded-full px-2.5 py-0.5">
+              {text.tagline}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-white/5 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition active:scale-95 shadow-xs theme-toggle"
+              aria-label={
+                isDark
+                  ? language === 'ar' ? 'تفعيل الوضع النهاري' : 'Switch to light mode'
+                  : language === 'ar' ? 'تفعيل الوضع الليلي' : 'Switch to dark mode'
+              }
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                {isDark ? 'light_mode' : 'dark_mode'}
+              </span>
+            </button>
+
+            {typeof onToggleLanguage === 'function' && (
               <button
                 type="button"
-                onClick={toggleTheme}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
-                aria-label={isDark ? (language === 'ar' ? 'تفعيل الوضع النهاري' : 'Switch to light mode') : (language === 'ar' ? 'تفعيل الوضع الليلي' : 'Switch to dark mode')}
-                title={isDark ? (language === 'ar' ? 'تفعيل الوضع النهاري' : 'Switch to light mode') : (language === 'ar' ? 'تفعيل الوضع الليلي' : 'Switch to dark mode')}
+                onClick={onToggleLanguage}
+                className="inline-flex h-10 items-center gap-1.5 rounded-full border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-white/5 px-3.5 text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition active:scale-95 shadow-xs language-toggle"
+                aria-label={language === 'en' ? 'Switch to Arabic' : 'التبديل إلى الإنجليزية'}
               >
-                <span className="material-symbols-outlined text-[19px]">
-                  {isDark ? 'light_mode' : 'dark_mode'}
-                </span>
+                <span className="material-symbols-outlined text-[17px] text-slate-400 dark:text-slate-500">translate</span>
+                <span>{language === 'en' ? 'العربية' : 'English'}</span>
               </button>
-              {typeof onToggleLanguage === 'function' && (
-                <button
-                  type="button"
-                  onClick={onToggleLanguage}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
-                  aria-label={language === 'en' ? 'Switch to Arabic' : 'التبديل إلى الإنجليزية'}
-                >
-                  <span>{language === 'en' ? 'العربية' : 'English'}</span>
-                </button>
-              )}
-            </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Main Container */}
+      <main className="mx-auto w-full max-w-md flex-1 px-4 py-12 flex items-center justify-center">
+        <div className="w-full overflow-hidden rounded-[28px] border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#101418] shadow-[0_20px_60px_rgba(0,67,63,0.08)] dark:shadow-[0_25px_70px_rgba(0,0,0,0.5)] p-6 sm:p-8 transition-all">
+          
+          {/* Back Icon Button */}
+          <div className="mb-4">
+            <button
+              type="button"
+              onClick={onBackToLogin}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-400 transition"
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                {language === 'ar' ? 'arrow_forward' : 'arrow_back'}
+              </span>
+              <span>{text.back}</span>
+            </button>
           </div>
 
-          <div className="mb-8">
-            <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white sm:text-4xl">{text.title}</h1>
-            <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">{text.subtitle}</p>
+          <div className="mb-6">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-950 dark:text-white">
+              {text.title}
+            </h1>
+            <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              {text.subtitle}
+            </p>
           </div>
 
-          <form className="space-y-5" onSubmit={handleSubmit} noValidate>
+          <form className="space-y-4" onSubmit={handleSubmit} noValidate>
             <div>
-              <label htmlFor="forgot-email" className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">{text.email}</label>
-              <input
-                id="forgot-email"
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                autoComplete="email"
-                placeholder="name@example.com"
-                className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3 py-3.5 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-emerald-600 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-4 focus:ring-emerald-100 dark:focus:ring-emerald-950/40"
-              />
+              <label htmlFor="forgot-email" className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-300">
+                {text.email}
+              </label>
+              <div
+                className={`flex items-center gap-2.5 rounded-2xl border bg-slate-50/90 dark:bg-white/5 px-3.5 transition-all ${
+                  error
+                    ? 'border-red-400 bg-red-50/50 dark:border-red-500 dark:bg-red-950/30 shadow-[0_0_0_4px_rgba(239,68,68,0.12)]'
+                    : 'border-slate-200 dark:border-white/10 focus-within:border-emerald-600 dark:focus-within:border-emerald-400 focus-within:bg-white dark:focus-within:bg-black/40 focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.12)]'
+                }`}
+              >
+                <span className="material-symbols-outlined text-slate-400 dark:text-slate-500 text-[20px] shrink-0">
+                  mail
+                </span>
+                <input
+                  id="forgot-email"
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  autoComplete="email"
+                  placeholder="name@example.com"
+                  disabled={loading}
+                  className="w-full min-h-[46px] border-0 bg-transparent py-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
+                />
+              </div>
             </div>
 
             {error && (
-              <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm font-medium text-red-700 dark:text-red-300" role="alert">
-                {error}
+              <div
+                className="rounded-2xl border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/40 p-3.5 text-xs font-semibold text-red-700 dark:text-red-300 flex items-start gap-2"
+                role="alert"
+              >
+                <span className="material-symbols-outlined text-[18px] text-red-600 shrink-0">error</span>
+                <span>{error}</span>
               </div>
             )}
 
             {message && (
-              <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-2 text-sm font-medium text-emerald-800 dark:text-emerald-200" role="status">
-                {message}
+              <div
+                className="rounded-2xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 p-3.5 text-xs font-semibold text-emerald-800 dark:text-emerald-200 flex items-start gap-2"
+                role="status"
+              >
+                <span className="material-symbols-outlined text-[18px] text-emerald-600 shrink-0">check_circle</span>
+                <span>{message}</span>
               </div>
             )}
 
             {resetLink && (
-              <div className="rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/90 dark:bg-emerald-950/40 p-4 text-center space-y-2.5 shadow-sm">
+              <div className="rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/90 dark:bg-emerald-950/40 p-4 text-center space-y-2.5 shadow-xs">
                 <div className="flex items-center justify-center gap-1.5 text-emerald-800 dark:text-emerald-300 font-bold text-sm">
                   <span className="material-symbols-outlined text-lg text-emerald-600 dark:text-emerald-400">check_circle</span>
                   <span>{language === 'en' ? 'Password reset link is ready!' : 'تم تجهيز رابط استعادة الحساب بنجاح!'}</span>
                 </div>
-                <p className="text-xs text-slate-600 dark:text-slate-400">
-                  {language === 'en'
-                    ? 'Click the button below to set your new password directly:'
-                    : 'اضغط على الزر أدناه لتعيين كلمة المرور الجديدة مباشرة:'}
-                </p>
                 <a
                   href={resetLink}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-md hover:bg-emerald-700 transition"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#00433f] to-[#0b5f59] py-3 text-sm font-bold text-white shadow-md hover:brightness-110 active:scale-[0.98] transition"
                 >
                   <span className="material-symbols-outlined text-base">lock_reset</span>
                   <span>{language === 'en' ? 'Reset Password Now' : 'إعادة تعيين كلمة المرور الآن'}</span>
@@ -172,32 +234,51 @@ export default function ForgotPasswordPage({ language = 'ar', onToggleLanguage, 
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-300 px-4 py-3.5 text-base font-bold text-slate-950 shadow-[0_18px_30px_rgba(16,185,129,0.3)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_34px_rgba(16,185,129,0.28)] disabled:cursor-not-allowed disabled:opacity-70"
+              className="flex w-full min-h-[50px] items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#00433f] via-[#0b5f59] to-[#00433f] px-4 py-3.5 text-sm sm:text-base font-extrabold text-white shadow-[0_12px_28px_rgba(0,67,63,0.25)] transition-all hover:shadow-[0_16px_34px_rgba(0,67,63,0.35)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
             >
               {loading ? (
-                <span className="flex items-center gap-2">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-900/30 border-t-slate-900" />
-                  {text.submit}
-                </span>
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  <span>{text.submit}</span>
+                </>
               ) : (
-                text.submit
+                <>
+                  <span className="material-symbols-outlined text-[20px]">mark_email_read</span>
+                  <span>{text.submit}</span>
+                </>
               )}
             </button>
           </form>
 
-          <div className="mt-8 space-y-3 text-center text-sm text-slate-600 dark:text-slate-400">
-            <button type="button" onClick={onBackToLogin} className="font-semibold text-emerald-600 dark:text-emerald-400 transition hover:text-emerald-700 dark:hover:text-emerald-300">
+          {/* Footer note */}
+          <div className="mt-8 text-center text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-white/5 pt-5 flex items-center justify-center gap-4">
+            <button
+              type="button"
+              onClick={onBackToLogin}
+              className="font-bold text-emerald-700 dark:text-emerald-400 hover:underline transition"
+            >
               {text.back}
             </button>
-            <p>
-              {language === 'ar' ? 'أو' : 'or'}{' '}
-              <button type="button" onClick={onSwitchToSignup} className="font-bold text-emerald-600 dark:text-emerald-400 transition hover:text-emerald-700 dark:hover:text-emerald-300">
-                {text.signup}
-              </button>
-            </p>
+            {typeof onSwitchToSignup === 'function' && (
+              <>
+                <span className="text-slate-300 dark:text-slate-700">•</span>
+                <button
+                  type="button"
+                  onClick={onSwitchToSignup}
+                  className="font-bold text-emerald-700 dark:text-emerald-400 hover:underline transition"
+                >
+                  {text.signup}
+                </button>
+              </>
+            )}
           </div>
         </div>
-      </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="w-full border-t border-slate-200/60 dark:border-white/5 py-4 text-center text-xs text-slate-400 dark:text-slate-600">
+        <p>© {new Date().getFullYear()} Hajzy. {language === 'ar' ? 'جميع الحقوق محفوظة • حجز آمن وموثق 100%' : 'All rights reserved • 100% Secured Luxury Stays'}</p>
+      </footer>
     </div>
   )
 }

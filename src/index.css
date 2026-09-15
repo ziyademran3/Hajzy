@@ -14,6 +14,38 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Impeccable Craft Floor: Themed Browser Surfaces */
+::selection {
+  background-color: #00433f;
+  color: #ffffff;
+}
+
+html[data-theme='dark'] ::selection,
+.app-shell[data-theme='dark'] ::selection {
+  background-color: #0f766e;
+  color: #ffffff;
+}
+
+input, textarea {
+  caret-color: #0f766e;
+}
+
+/* Custom Themed Scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(15, 118, 110, 0.22);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 118, 110, 0.45);
+}
+
 * {
   box-sizing: border-box;
 }

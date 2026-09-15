@@ -8685,6 +8685,168 @@ body[data-theme='dark'] .profile-item:hover,
   font-size: 1.1rem;
 }
 
+/* ══════════════════════════════════════════════════════
+   Phase 5: Share & Offline Stays Styling
+   ══════════════════════════════════════════════════════ */
+.gallery-share {
+  position: absolute;
+  top: 14px;
+  right: 58px;
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 999px;
+  padding: 8px;
+  border: 1px solid rgba(15, 118, 110, 0.08);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 35;
+  cursor: pointer;
+  color: #334155;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+[dir="rtl"] .gallery-fav {
+  right: auto;
+  left: 14px;
+}
+
+[dir="rtl"] .gallery-share {
+  right: auto;
+  left: 58px;
+}
+
+.gallery-share:hover,
+.gallery-share:active {
+  transform: scale(1.06);
+  background: #ffffff;
+}
+
+[data-theme="dark"] .gallery-share {
+  background: rgba(30, 41, 59, 0.88);
+  color: #f1f5f9;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.offline-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(217, 119, 6, 0.08));
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 16px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  color: #b45309;
+}
+
+[data-theme="dark"] .offline-banner {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(180, 83, 9, 0.1));
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #fde68a;
+}
+
+.offline-banner-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.offline-banner-text strong {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.offline-banner-text p {
+  font-size: 0.75rem;
+  margin: 0;
+  opacity: 0.9;
+}
+
+.offline-ready-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin: 16px auto 0;
+  text-align: center;
+}
+
+[data-theme="dark"] .offline-ready-badge {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.offline-booking-card {
+  background: var(--surface-card, #ffffff);
+  border: 1px solid rgba(15, 118, 110, 0.15);
+  border-radius: 20px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .offline-booking-card {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.offline-card-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #0d9488;
+  background: rgba(13, 148, 136, 0.1);
+  padding: 3px 8px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+
+[data-theme="dark"] .offline-card-badge {
+  color: #2dd4bf;
+  background: rgba(45, 212, 191, 0.12);
+}
+
+.offline-card-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.offline-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.offline-checkin-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(148, 163, 184, 0.25);
+}
+
 
 
 
