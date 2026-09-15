@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { AiOutlineHome, AiOutlineCalendar } from 'react-icons/ai'
-import { FiGrid, FiUser } from 'react-icons/fi'
+import { AiOutlineHome, AiOutlineCalendar, AiOutlineHeart } from 'react-icons/ai'
+import { FiUser } from 'react-icons/fi'
 import '../styles/safe-area.css'
 
 // BottomNav
@@ -10,9 +10,9 @@ import '../styles/safe-area.css'
 
 const ITEMS = [
   { id: 'home', label: 'الرئيسية', labelEn: 'Home', icon: AiOutlineHome },
+  { id: 'favorites', label: 'المفضلة', labelEn: 'Favorites', icon: AiOutlineHeart },
   { id: 'bookings', label: 'حجوزاتي', labelEn: 'Bookings', icon: AiOutlineCalendar },
-  { id: 'dashboard', label: 'حسابي', labelEn: 'My Account', icon: FiGrid },
-  { id: 'profile', label: 'الملف الشخصي', labelEn: 'Profile', icon: FiUser },
+  { id: 'account', label: 'حسابي', labelEn: 'My Account', icon: FiUser },
 ]
 
 export default function BottomNav({ initial = 'home', onChange }) {

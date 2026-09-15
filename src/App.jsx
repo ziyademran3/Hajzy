@@ -226,6 +226,9 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('')
   const [activeFilter, setActiveFilter] = useState('all')
   const [favorites, setFavorites] = useState([])
+  const [showDealModal, setShowDealModal] = useState(false)
+  const [copiedDealCode, setCopiedDealCode] = useState(false)
+  const [accountTab, setAccountTab] = useState('overview')
   const [lastBooking, setLastBooking] = useState(null)
   const defaultBookingDates = getDefaultBookingDates()
 
@@ -572,7 +575,15 @@ function App() {
     if (property) {
       setSelectedProperty(property)
     }
-    setActivePage(page)
+    if (page === 'profile') {
+      setActivePage('account')
+      setAccountTab('settings')
+    } else if (page === 'dashboard') {
+      setActivePage('account')
+      setAccountTab('overview')
+    } else {
+      setActivePage(page)
+    }
 
     // Pages share the document scroll container in the mobile WebView. Reset it
     // after rendering so a newly opened checkout never inherits the previous
@@ -2027,7 +2038,14 @@ function App() {
         </div>
 
         {/* Exclusive Promotional Offer */}
-        <div className="exclusive-deal-banner rounded-3xl border border-emerald-200/80 bg-gradient-to-r from-emerald-600 via-teal-600 to-teal-700 p-5 text-white shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div
+          className="exclusive-deal-banner rounded-3xl border border-emerald-200/80 bg-gradient-to-r from-emerald-600 via-teal-600 to-teal-700 p-5 text-white shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer transition-all hover:shadow-xl hover:scale-[1.005] active:scale-[0.995]"
+          onClick={() => setShowDealModal(true)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && setShowDealModal(true)}
+          aria-label={language === 'en' ? 'Open promotional offer details' : 'عرض تفاصيل العرض الترويجي'}
+        >
           <div className="space-y-1">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-bold text-white backdrop-blur-sm">
               <span>🔥</span>
@@ -2042,13 +2060,14 @@ function App() {
           </div>
           <button
             type="button"
-            className="shrink-0 rounded-2xl bg-white px-5 py-2.5 text-xs font-extrabold text-emerald-800 shadow-md hover:bg-emerald-50 transition"
-            onClick={() => {
-              setActiveFilter('الإسكندرية')
-              setHomeQuickSearch((current) => ({ ...current, destination: 'الإسكندرية' }))
+            className="shrink-0 rounded-2xl bg-white px-5 py-2.5 text-xs font-extrabold text-emerald-800 shadow-md hover:bg-emerald-50 transition active:scale-95 flex items-center gap-1.5"
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowDealModal(true)
             }}
           >
-            {language === 'en' ? 'Explore Deals' : 'استفد من العرض'}
+            <span className="material-symbols-outlined text-sm">local_fire_department</span>
+            <span>{language === 'en' ? 'Explore Deals' : 'استفد من العرض'}</span>
           </button>
         </div>
 
@@ -4107,25 +4126,188 @@ function App() {
     )
   }
 
+  const renderFavoritesPage = () => {
+    const savedProperties = properties.filter((property) => isFavorite(property.id))
+
+    return (
+      <div className="page-shell favorites-shell max-w-5xl mx-auto px-4 py-6">
+        <div className="section-head-row mb-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2.5">
+              <span className="material-symbols-outlined text-rose-500 text-3xl">favorite</span>
+              <span>{language === 'en' ? 'Favorite Stays' : 'الإقامات المفضلة'}</span>
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              {language === 'en'
+                ? `${savedProperties.length} stays saved to your wishlist`
+                : `${savedProperties.length} إقامة محفوظة في قائمتك المفضلة`}
+            </p>
+          </div>
+          {savedProperties.length > 0 && (
+            <button
+              type="button"
+              className="text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:underline"
+              onClick={() => navigate('home')}
+            >
+              {language === 'en' ? '+ Explore more' : '+ استكشف المزيد'}
+            </button>
+          )}
+        </div>
+
+        {savedProperties.length === 0 ? (
+          <div className="empty-state-card text-center p-10 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 my-8 shadow-sm">
+            <div className="w-20 h-20 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-500 flex items-center justify-center mx-auto mb-4 border border-rose-100 dark:border-rose-900/50">
+              <span className="material-symbols-outlined text-4xl">favorite_border</span>
+            </div>
+            <h3 className="text-lg font-black text-slate-800 dark:text-slate-100">
+              {language === 'en' ? 'No favorites saved yet' : 'لم تقم بحفظ أي إقامات بعد'}
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-2 mb-6 leading-relaxed">
+              {language === 'en'
+                ? 'Tap the heart icon on any luxury villa or chalet to save it here for quick access later.'
+                : 'اضغط على رمز القلب في أي فيلا أو شاليه لإضافته إلى قائمتك المفضلة والرجوع إليه بسهولة في أي وقت.'}
+            </p>
+            <button
+              type="button"
+              className="primary-button inline-flex items-center gap-2 px-6 py-3"
+              onClick={() => navigate('home')}
+            >
+              <span className="material-symbols-outlined text-base">explore</span>
+              <span>{language === 'en' ? 'Explore Stays' : 'استكشف الإقامات'}</span>
+            </button>
+          </div>
+        ) : (
+          <div className="property-list">
+            {savedProperties.map((property) => (
+              <article
+                key={property.id}
+                className="property-card cursor-pointer"
+                onClick={() => navigate('details', property)}
+              >
+                <div className="property-media">
+                  <img src={property.image} alt={getPropertyTitle(property)} onError={handleStayImageError} />
+                  <button
+                    type="button"
+                    className="favorite-button active"
+                    aria-label={language === 'en' ? 'Remove from favorites' : 'إزالة من المفضلة'}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      toggleFavorite(event, property.id)
+                    }}
+                  >
+                    <HeartIcon filled={true} size={20} />
+                  </button>
+                </div>
+                <div className="property-body">
+                  <div className="property-header">
+                    <div>
+                      <h4>{getPropertyTitle(property)}</h4>
+                      <p>{getPropertyLocation(property)}</p>
+                    </div>
+                    <div className="rating-chip">
+                      <span className="material-symbols-outlined">star</span>
+                      <span>{property.rating}</span>
+                    </div>
+                  </div>
+                  <div className="property-footer">
+                    <div className="property-price">
+                      <strong>{formatCurrency(property.priceValue, property.currency, language)}</strong>
+                      <span>/ {language === 'en' ? 'night' : 'ليلة'}</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="primary-button small-button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        navigate('details', property)
+                      }}
+                    >
+                      {language === 'en' ? 'Book now' : 'احجز الآن'}
+                    </button>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const renderAccountPage = () => {
+    return (
+      <div className="page-shell account-shell max-w-5xl mx-auto pb-16">
+        {/* Modern Segmented Tab Switcher */}
+        <div className="flex items-center justify-center pt-3 pb-4 px-4 sticky top-14 z-20 bg-[#FBF9F5]/90 dark:bg-[#090B0D]/90 backdrop-blur-md">
+          <div className="inline-flex rounded-2xl bg-slate-200/70 dark:bg-slate-800/80 p-1 border border-slate-300/60 dark:border-slate-700/60 shadow-inner">
+            <button
+              type="button"
+              className={`flex items-center gap-2 rounded-xl px-5 py-2 text-xs font-bold transition-all ${
+                accountTab === 'overview'
+                  ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+              onClick={() => setAccountTab('overview')}
+            >
+              <span className="material-symbols-outlined text-sm">dashboard</span>
+              <span>{language === 'en' ? 'Activity & Club' : 'نشاطي ونقاطي'}</span>
+            </button>
+            <button
+              type="button"
+              className={`flex items-center gap-2 rounded-xl px-5 py-2 text-xs font-bold transition-all ${
+                accountTab === 'settings'
+                  ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+              onClick={() => setAccountTab('settings')}
+            >
+              <span className="material-symbols-outlined text-sm">manage_accounts</span>
+              <span>{language === 'en' ? 'Profile & Settings' : 'البيانات والإعدادات'}</span>
+            </button>
+          </div>
+        </div>
+
+        {accountTab === 'overview' ? (
+          <DashboardPage
+            user={user}
+            bookings={bookings}
+            properties={properties}
+            favorites={favorites}
+            language={language}
+            onNavigate={(dest, item) => {
+              if (dest === 'profile') {
+                setAccountTab('settings')
+              } else {
+                navigate(dest, item)
+              }
+            }}
+            onLogout={handleLogout}
+            onSupportRequest={handleSupportRequest}
+          />
+        ) : (
+          <ProfilePage
+            user={user || effectiveUser}
+            bookings={bookings}
+            language={language}
+            onEdit={() => navigate('profile-edit')}
+            onUpdateProfile={updateProfile}
+            onToggleLanguage={handleLanguageToggle}
+            onLogout={handleLogout}
+          />
+        )}
+      </div>
+    )
+  }
+
   const renderPageContent = () => {
     if (activePage === 'notifications') return renderNotificationsPage()
     if (isOwner && activePage === 'owner-settings') return renderOwnerSettingsPage()
     if (isOwner && (activePage === 'owner' || activePage === 'dashboard' || activePage === 'home')) {
       return renderOwnerPage()
     }
-    if (activePage === 'dashboard') {
-      return (
-        <DashboardPage
-          user={user}
-          bookings={bookings}
-          properties={properties}
-          favorites={favorites}
-          language={language}
-          onNavigate={navigate}
-          onLogout={handleLogout}
-          onSupportRequest={handleSupportRequest}
-        />
-      )
+    if (activePage === 'favorites') return renderFavoritesPage()
+    if (activePage === 'account' || activePage === 'dashboard' || activePage === 'profile') {
+      return renderAccountPage()
     }
     if (activePage === 'home') {
       return renderHomePage()
@@ -4150,45 +4332,164 @@ function App() {
     if (activePage === 'checkout') return renderCheckoutPage()
     if (activePage === 'success') return renderSuccessPage()
     if (activePage === 'bookings') return renderBookingsPage()
-    if (activePage === 'profile') return (
-      <ProfilePage
-        user={user || effectiveUser}
-        bookings={bookings}
-        language={language}
-        onEdit={() => navigate('profile-edit')}
-        onUpdateProfile={updateProfile}
-        onToggleLanguage={handleLanguageToggle}
-        onLogout={handleLogout}
-      />
-    )
 
-    return renderProfilePage()
+    return renderAccountPage()
   }
 
-  const dashboardPageKey = isOwner ? 'owner' : 'dashboard'
+  const bottomNavItems = isOwner
+    ? [
+        {
+          key: 'owner',
+          label: language === 'en' ? 'Dashboard' : 'لوحة التحكم',
+          icon: 'dashboard',
+        },
+        {
+          key: 'home',
+          label: language === 'en' ? 'Home' : 'الرئيسية',
+          icon: 'home',
+        },
+        {
+          key: 'bookings',
+          label: language === 'en' ? 'Bookings' : 'حجوزاتي',
+          icon: 'calendar_month',
+        },
+        {
+          key: 'account',
+          label: language === 'en' ? 'My Account' : 'حسابي',
+          icon: 'person',
+        },
+      ]
+    : [
+        {
+          key: 'home',
+          label: language === 'en' ? 'Home' : 'الرئيسية',
+          icon: 'home',
+        },
+        {
+          key: 'favorites',
+          label: language === 'en' ? 'Favorites' : 'المفضلة',
+          icon: 'favorite',
+          badge: favorites.length > 0 ? favorites.length : null,
+        },
+        {
+          key: 'bookings',
+          label: language === 'en' ? 'Bookings' : 'حجوزاتي',
+          icon: 'calendar_month',
+        },
+        {
+          key: 'account',
+          label: language === 'en' ? 'My Account' : 'حسابي',
+          icon: 'person',
+        },
+      ]
 
-  const bottomNavItems = [
-    {
-      key: dashboardPageKey,
-      label: language === 'en' ? (isOwner ? 'Dashboard' : 'My Account') : (isOwner ? 'لوحة التحكم' : 'حسابي'),
-      icon: isOwner ? 'dashboard' : 'account_circle',
-    },
-    {
-      key: 'home',
-      label: language === 'en' ? 'Home' : 'الرئيسية',
-      icon: 'home',
-    },
-    {
-      key: 'bookings',
-      label: language === 'en' ? 'Bookings' : 'حجوزاتي',
-      icon: 'calendar_month',
-    },
-    {
-      key: 'profile',
-      label: language === 'en' ? 'Profile' : 'الملف الشخصي',
-      icon: 'person',
-    },
-  ]
+  const renderDealModal = () => {
+    if (!showDealModal) return null
+
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto"
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="relative w-full max-w-lg rounded-3xl bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800/60 p-6 md:p-8 shadow-2xl text-slate-900 dark:text-slate-100 overflow-hidden my-8">
+          <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-24 -left-24 w-48 h-48 rounded-full bg-teal-500/15 blur-3xl pointer-events-none" />
+
+          <button
+            type="button"
+            className="absolute top-5 left-5 md:top-6 md:left-6 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition"
+            onClick={() => setShowDealModal(false)}
+            aria-label={language === 'en' ? 'Close' : 'إغلاق'}
+          >
+            <span className="material-symbols-outlined text-lg">close</span>
+          </button>
+
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              <span className="material-symbols-outlined text-2xl">local_fire_department</span>
+            </div>
+            <div>
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-950/60 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
+                {language === 'en' ? 'Limited Time Deal' : 'عرض حصري لفترة محدودة'}
+              </span>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white mt-0.5">
+                {language === 'en' ? '20% Off Coastal Getaways' : 'وفر حتى 20% على الفيلات والشاليهات'}
+              </h3>
+            </div>
+          </div>
+
+          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed mb-5">
+            {language === 'en'
+              ? 'Enjoy an exclusive 20% discount on luxury villas and chalets across Alexandria, North Coast, Hurghada, and Sharm El Sheikh. Instant booking with free cancellation.'
+              : 'استمتع بخصم حصري حتى 20% على أفخم الفيلات والشاليهات في الإسكندرية والساحل الشمالي والغردقة وشرم الشيخ مع تأكيد فوري وخيارات إلغاء مرنة وضمان أفضل سعر.'}
+          </p>
+
+          <div className="rounded-2xl border border-dashed border-emerald-400 bg-emerald-50/70 dark:bg-emerald-950/30 p-4 mb-6 flex items-center justify-between gap-3">
+            <div>
+              <span className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300 block">
+                {language === 'en' ? 'Promo Code' : 'كود الخصم الترويجي'}
+              </span>
+              <span className="font-mono text-xl font-black tracking-widest text-emerald-900 dark:text-emerald-200">
+                COAST20
+              </span>
+            </div>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition active:scale-95"
+              onClick={() => {
+                navigator.clipboard?.writeText('COAST20')
+                setCopiedDealCode(true)
+                showToast(language === 'en' ? 'Code COAST20 copied!' : 'تم نسخ الكود COAST20 بنجاح!')
+                setTimeout(() => setCopiedDealCode(false), 2500)
+              }}
+            >
+              <span className="material-symbols-outlined text-sm">
+                {copiedDealCode ? 'check' : 'content_copy'}
+              </span>
+              <span>{copiedDealCode ? (language === 'en' ? 'Copied!' : 'تم النسخ!') : (language === 'en' ? 'Copy Code' : 'نسخ الكود')}</span>
+            </button>
+          </div>
+
+          <ul className="space-y-2.5 text-xs text-slate-600 dark:text-slate-300 mb-6">
+            <li className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-emerald-500 text-base">check_circle</span>
+              <span>{language === 'en' ? 'Valid on all coastal stays in Egypt' : 'ساري على جميع الإقامات الساحلية في مصر'}</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-emerald-500 text-base">check_circle</span>
+              <span>{language === 'en' ? 'Free cancellation up to 48h before arrival' : 'إلغاء مجاني حتى 48 ساعة قبل موعد الوصول'}</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-emerald-500 text-base">check_circle</span>
+              <span>{language === 'en' ? 'Instant booking confirmation guaranteed' : 'ضمان تأكيد فوري للحجز بدون انتظار'}</span>
+            </li>
+          </ul>
+
+          <button
+            type="button"
+            className="w-full primary-button py-3 text-xs font-black shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2"
+            onClick={() => {
+              setShowDealModal(false)
+              if (activePage !== 'home') {
+                setActivePage('home')
+              }
+              setActiveFilter('الإسكندرية')
+              setHomeQuickSearch((current) => ({ ...current, destination: 'الإسكندرية' }))
+              showToast(language === 'en' ? '🎉 Coastal Deals applied! Explore below' : '🎉 تم تفعيل العرض! استعرض الإقامات بالأسفل')
+              setTimeout(() => {
+                const el = document.querySelector('.property-list') || document.querySelector('.featured-collection')
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }, 150)
+            }}
+          >
+            <span className="material-symbols-outlined text-base">travel_explore</span>
+            <span>{language === 'en' ? 'View Coastal Stays' : 'استعراض الإقامات الساحلية المشمولة'}</span>
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   const renderInvoiceModal = () => {
     if (!selectedInvoiceBooking) return null
@@ -4409,6 +4710,7 @@ function App() {
       </main>
 
       {renderInvoiceModal()}
+      {renderDealModal()}
 
       <SplitPaymentModal
         isOpen={isSplitModalOpen}
@@ -4427,21 +4729,27 @@ function App() {
 
       {!isOwner && (
         <nav className="bottom-nav" aria-label="التنقل الرئيسي">
-          {bottomNavItems.map((item) => (
-            <button
-              key={item.key}
-              className={activePage === item.key ? 'nav-item active' : 'nav-item'}
-              onClick={() => navigate(item.key)}
-              aria-label={item.label}
-              title={item.label}
-            >
-              <span className="nav-icon-wrap">
-                <span className="material-symbols-outlined">{item.icon}</span>
-                {item.badge ? <span className="nav-badge">{item.badge}</span> : null}
-              </span>
-              <span className="nav-label">{item.label}</span>
-            </button>
-          ))}
+          {bottomNavItems.map((item) => {
+            const isItemActive =
+              activePage === item.key ||
+              (item.key === 'account' && (activePage === 'dashboard' || activePage === 'profile'))
+
+            return (
+              <button
+                key={item.key}
+                className={isItemActive ? 'nav-item active' : 'nav-item'}
+                onClick={() => navigate(item.key)}
+                aria-label={item.label}
+                title={item.label}
+              >
+                <span className="nav-icon-wrap">
+                  <span className="material-symbols-outlined">{item.icon}</span>
+                  {item.badge ? <span className="nav-badge">{item.badge}</span> : null}
+                </span>
+                <span className="nav-label">{item.label}</span>
+              </button>
+            )
+          })}
         </nav>
       )}
     </div>
