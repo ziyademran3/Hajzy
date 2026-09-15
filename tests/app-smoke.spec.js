@@ -73,7 +73,7 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
     }
   });
 
-  test('Login page has guest access button and enters app when clicked', async ({ page }) => {
+  test('Login page renders properly with form fields and submit button', async ({ page }) => {
     // Clear localStorage to test unauthenticated visitor experience
     await page.goto('/');
     await page.evaluate(() => {
@@ -82,12 +82,8 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
     });
     await page.goto('/');
 
-    // Guest access button should be visible on login page
-    const guestBtn = page.getByRole('button', { name: /تصفح التطبيق كزائر|Explore as Guest|تصفح/i });
-    await expect(guestBtn.first()).toBeVisible({ timeout: 10000 });
-
-    // Clicking guest button should navigate into app-shell
-    await guestBtn.first().click();
-    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+    // Email input and submit button should be visible on login page
+    await expect(page.locator('input[type="email"]')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('button[type="submit"]')).toBeVisible();
   });
 });

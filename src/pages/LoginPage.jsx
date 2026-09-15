@@ -267,34 +267,6 @@ export default function LoginPage({
               </div>
             </div>
 
-            {/* Instant Guest Mode Banner (One-click entry) */}
-            {typeof onBrowseGuest === 'function' && (
-              <button
-                type="button"
-                onClick={onBrowseGuest}
-                className="w-full mb-6 group relative overflow-hidden flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-emerald-500/5 hover:from-emerald-500/20 hover:via-teal-500/15 hover:to-emerald-500/10 border border-emerald-500/30 hover:border-emerald-500/60 transition-all duration-300 shadow-sm"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/30 group-hover:scale-105 transition-transform">
-                    <span className="material-symbols-outlined text-[22px]">explore</span>
-                  </span>
-                  <div className="text-start">
-                    <div className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
-                      <span>{text.browseAsGuest}</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500 text-white font-bold tracking-wide uppercase">
-                        {language === 'en' ? 'Quick Access' : 'دخول فوري'}
-                      </span>
-                    </div>
-                    <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-                      {text.guestSubtitle}
-                    </div>
-                  </div>
-                </div>
-                <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform">
-                  arrow_forward
-                </span>
-              </button>
-            )}
 
             {/* Welcome Title & Subtitle */}
             <div className="mb-6">
