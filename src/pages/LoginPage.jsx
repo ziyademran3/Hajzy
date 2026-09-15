@@ -16,7 +16,15 @@ const GoogleIcon = () => (
 )
 
 
-export default function LoginPage({ language = 'ar', onToggleLanguage, onLogin, onSwitchToSignup, onSwitchToForgotPassword, onSocialLogin = () => {} }) {
+export default function LoginPage({
+  language = 'ar',
+  onToggleLanguage,
+  onLogin,
+  onSwitchToSignup,
+  onSwitchToForgotPassword,
+  onSocialLogin = () => {},
+  onBrowseGuest,
+}) {
   const { theme, toggleTheme } = useTheme()
   const isDark = theme === 'dark'
 
@@ -24,8 +32,8 @@ export default function LoginPage({ language = 'ar', onToggleLanguage, onLogin, 
   const text = language === 'en'
     ? {
         brand: 'Hajzy',
-        title: 'Sign in',
-        subtitle: 'Sign in to manage your bookings and stay updates.',
+        title: 'Welcome Back',
+        subtitle: 'Experience verified luxury stays and seamless bookings across Egypt.',
         emailLabel: 'Email address',
         passwordLabel: 'Password',
         remember: 'Remember me',
@@ -44,12 +52,13 @@ export default function LoginPage({ language = 'ar', onToggleLanguage, onLogin, 
         invalidCredentials: 'The email or password is incorrect.',
         resetSent: 'Password reset instructions have been sent to your email.',
         resetUnavailable: 'The password reset server is not available yet. Please connect the API endpoint first.',
-        browseAsGuest: 'Browse as guest',
+        browseAsGuest: 'Explore as Guest',
+        guestSubtitle: 'Browse all stays and prices without logging in',
       }
     : {
         brand: 'Hajzy',
-        title: 'تسجيل الدخول',
-        subtitle: 'سجل الدخول لإدارة حجوزاتك وتحديثات إقامتك.',
+        title: 'مرحباً بك مجدداً',
+        subtitle: 'استكشف أفضل الإقامات الفاخرة والموثقة في مصر بكل سهولة.',
         emailLabel: 'البريد الإلكتروني',
         passwordLabel: 'كلمة المرور',
         remember: 'تذكرني',
@@ -68,7 +77,8 @@ export default function LoginPage({ language = 'ar', onToggleLanguage, onLogin, 
         invalidCredentials: 'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
         resetSent: 'تم إرسال تعليمات استعادة كلمة المرور إلى بريدك الإلكتروني.',
         resetUnavailable: 'خدمة استعادة كلمة المرور غير متاحة بعد. ربط الـ API أولاً.',
-        browseAsGuest: 'تصفح بدون تسجيل',
+        browseAsGuest: 'تصفح التطبيق كزائر',
+        guestSubtitle: 'استكشف الإقامات والأسعار فوراً بدون تسجيل',
       }
 
   const [form, setForm] = useState({ email: '', password: '', remember: true })
@@ -216,19 +226,27 @@ export default function LoginPage({ language = 'ar', onToggleLanguage, onLogin, 
 
   return (
     <div
-      className={`min-h-screen bg-[#f4faf7] dark:bg-[#090b0d] px-4 py-8 sm:px-6 lg:px-8 transition-colors duration-200 ${language === 'ar' ? 'rtl' : 'ltr'}`}
+      className={`relative min-h-screen overflow-hidden bg-gradient-to-b from-[#f0f9f6] via-[#f8fafc] to-[#eef7f4] dark:from-[#060d0b] dark:via-[#090e11] dark:to-[#040807] px-4 py-8 sm:px-6 lg:px-8 transition-colors duration-300 ${language === 'ar' ? 'rtl' : 'ltr'}`}
       dir={language === 'ar' ? 'rtl' : 'ltr'}
     >
-      <div className="mx-auto flex min-h-screen max-w-md items-center justify-center">
-        <div className="w-full overflow-hidden rounded-[28px] border border-emerald-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 shadow-[0_25px_80px_rgba(15,118,110,0.08)] dark:shadow-[0_25px_80px_rgba(0,0,0,0.4)] backdrop-blur-xl transition-colors duration-200">
-          <main className="bg-white dark:bg-slate-900 p-6 sm:p-8 transition-colors duration-200">
+      {/* Ambient background glow orbs */}
+      <div className="pointer-events-none absolute -top-24 -left-24 h-96 w-96 rounded-full bg-emerald-400/20 dark:bg-emerald-500/15 blur-3xl" />
+      <div className="pointer-events-none absolute top-1/2 -right-24 h-96 w-96 rounded-full bg-teal-400/20 dark:bg-teal-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 left-1/3 h-80 w-80 rounded-full bg-cyan-400/15 dark:bg-cyan-500/10 blur-3xl" />
+
+      <div className="relative mx-auto flex min-h-screen max-w-md items-center justify-center">
+        <div className="w-full overflow-hidden rounded-[32px] border border-white/80 dark:border-white/10 bg-white/85 dark:bg-slate-900/85 shadow-[0_25px_80px_rgba(15,118,110,0.12)] dark:shadow-[0_30px_90px_rgba(0,0,0,0.6)] backdrop-blur-2xl transition-all duration-300">
+          <main className="p-6 sm:p-8">
+            {/* Header: Logo, Theme & Language toggles */}
             <div className="mb-6 flex items-center justify-between">
-              <Logo size={32} showText={true} />
+              <div className="flex items-center gap-2">
+                <Logo size={32} showText={true} />
+              </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={toggleTheme}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition active:scale-95"
                   aria-label={isDark ? (language === 'ar' ? 'تفعيل الوضع النهاري' : 'Switch to light mode') : (language === 'ar' ? 'تفعيل الوضع الليلي' : 'Switch to dark mode')}
                   title={isDark ? (language === 'ar' ? 'تفعيل الوضع النهاري' : 'Switch to light mode') : (language === 'ar' ? 'تفعيل الوضع الليلي' : 'Switch to dark mode')}
                 >
@@ -240,7 +258,7 @@ export default function LoginPage({ language = 'ar', onToggleLanguage, onLogin, 
                   <button
                     type="button"
                     onClick={onToggleLanguage}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                    className="inline-flex items-center gap-1 rounded-full border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/80 dark:bg-slate-800/80 px-3 py-1 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition active:scale-95"
                     aria-label={language === 'en' ? 'Switch to Arabic' : 'التبديل إلى الإنجليزية'}
                   >
                     <span>{language === 'en' ? 'العربية' : 'English'}</span>
@@ -249,36 +267,73 @@ export default function LoginPage({ language = 'ar', onToggleLanguage, onLogin, 
               </div>
             </div>
 
-            <div className="mb-8">
-              <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white sm:text-4xl">
+            {/* Instant Guest Mode Banner (One-click entry) */}
+            {typeof onBrowseGuest === 'function' && (
+              <button
+                type="button"
+                onClick={onBrowseGuest}
+                className="w-full mb-6 group relative overflow-hidden flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-emerald-500/5 hover:from-emerald-500/20 hover:via-teal-500/15 hover:to-emerald-500/10 border border-emerald-500/30 hover:border-emerald-500/60 transition-all duration-300 shadow-sm"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/30 group-hover:scale-105 transition-transform">
+                    <span className="material-symbols-outlined text-[22px]">explore</span>
+                  </span>
+                  <div className="text-start">
+                    <div className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                      <span>{text.browseAsGuest}</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500 text-white font-bold tracking-wide uppercase">
+                        {language === 'en' ? 'Quick Access' : 'دخول فوري'}
+                      </span>
+                    </div>
+                    <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+                      {text.guestSubtitle}
+                    </div>
+                  </div>
+                </div>
+                <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform">
+                  arrow_forward
+                </span>
+              </button>
+            )}
+
+            {/* Welcome Title & Subtitle */}
+            <div className="mb-6">
+              <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white sm:text-3xl">
                 {text.title}
               </h1>
+              <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                {text.subtitle}
+              </p>
             </div>
 
+            {/* Social Login Button */}
             <div className="mb-5">
               <button
                 type="button"
                 onClick={() => handleSocialClick('google')}
                 disabled={loading}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-4 py-3 text-sm font-semibold text-slate-700 dark:text-slate-200 transition hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-70"
+                className="flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 bg-white dark:bg-slate-800/90 px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 transition-all hover:bg-slate-50 dark:hover:bg-slate-750 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 disabled:opacity-70 active:scale-[0.99]"
               >
                 <GoogleIcon />
-                {text.socialGoogle}
+                <span>{text.socialGoogle}</span>
               </button>
             </div>
 
-            <div className="mb-5 flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
-              <div className="h-[1px] flex-1 bg-slate-200 dark:bg-slate-700" />
-              <span>{language === 'en' ? 'or continue with email' : 'أو تابع بالبريد الإلكتروني'}</span>
-              <div className="h-[1px] flex-1 bg-slate-200 dark:bg-slate-700" />
+            {/* Divider */}
+            <div className="mb-5 flex items-center gap-3 text-xs font-semibold text-slate-400 dark:text-slate-500">
+              <div className="h-[1px] flex-1 bg-slate-200/80 dark:bg-slate-800" />
+              <span>{language === 'en' ? 'or sign in with email' : 'أو تسجيل الدخول بالبريد'}</span>
+              <div className="h-[1px] flex-1 bg-slate-200/80 dark:bg-slate-800" />
             </div>
 
-            <form className="space-y-5" onSubmit={handleSubmit} noValidate>
+            {/* Login Form */}
+            <form className="space-y-4" onSubmit={handleSubmit} noValidate>
               <div>
-                <label htmlFor="email" className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                <label htmlFor="email" className="mb-1.5 block text-xs font-bold text-slate-700 dark:text-slate-300">
                   {text.emailLabel}
                 </label>
-                <div className={`flex items-center gap-3 rounded-2xl border bg-slate-50 dark:bg-slate-800/60 px-3 transition ${errors.email ? 'border-[#f1c5c9] dark:border-red-800/60 bg-[#fff8f8] dark:bg-red-950/20 shadow-[0_0_0_4px_rgba(241,197,201,0.16)]' : 'border-slate-200 dark:border-slate-700 focus-within:border-emerald-500 focus-within:bg-white dark:focus-within:bg-slate-900 focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.12)]'}`}>
+                <div className={`flex items-center gap-2.5 rounded-2xl border bg-slate-50/90 dark:bg-slate-800/70 px-3.5 transition-all ${errors.email ? 'border-red-300 dark:border-red-800/80 bg-red-50/50 dark:bg-red-950/20 shadow-[0_0_0_4px_rgba(239,68,68,0.12)]' : 'border-slate-200/90 dark:border-slate-700/70 focus-within:border-emerald-500 focus-within:bg-white dark:focus-within:bg-slate-900 focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.14)]'}`}>
+                  <span className="material-symbols-outlined text-slate-400 dark:text-slate-500 text-[19px]">mail</span>
                   <input
                     id="email"
                     name="email"
@@ -290,33 +345,32 @@ export default function LoginPage({ language = 'ar', onToggleLanguage, onLogin, 
                     disabled={loading}
                     aria-invalid={Boolean(errors.email)}
                     aria-describedby={errors.email ? 'email-error' : undefined}
-                    className="w-full border-0 bg-transparent py-3.5 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
+                    className="w-full border-0 bg-transparent py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
                   />
                 </div>
                 {errors.email && (
-                  <p id="email-error" className="mt-2 text-sm font-medium text-red-600 dark:text-red-400">
+                  <p id="email-error" className="mt-1.5 text-xs font-semibold text-red-600 dark:text-red-400">
                     {errors.email}
                   </p>
                 )}
               </div>
 
               <div>
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <label htmlFor="password" className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                <div className="mb-1.5 flex items-center justify-between gap-3">
+                  <label htmlFor="password" className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                     {text.passwordLabel}
                   </label>
                   <button
                     type="button"
-                    onClick={() => setShowPassword((current) => !current)}
-                    className="flex items-center justify-center w-10 h-10 text-emerald-600 dark:text-emerald-400 transition hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg"
-                    aria-label={showPassword ? text.hidePassword : text.togglePassword}
-                    title={showPassword ? text.hidePassword : text.togglePassword}
+                    onClick={onSwitchToForgotPassword || handleForgotPassword}
+                    className="text-xs font-bold text-emerald-600 dark:text-emerald-400 transition hover:text-emerald-700 dark:hover:text-emerald-300 hover:underline"
                   >
-                    <span className="material-symbols-outlined text-base">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                    {text.forgot}
                   </button>
                 </div>
 
-                <div className={`flex items-center gap-3 rounded-2xl border bg-slate-50 dark:bg-slate-800/60 px-3 transition ${errors.password ? 'border-[#f1c5c9] dark:border-red-800/60 bg-[#fff8f8] dark:bg-red-950/20 shadow-[0_0_0_4px_rgba(241,197,201,0.16)]' : 'border-slate-200 dark:border-slate-700 focus-within:border-emerald-500 focus-within:bg-white dark:focus-within:bg-slate-900 focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.12)]'}`}>
+                <div className={`flex items-center gap-2.5 rounded-2xl border bg-slate-50/90 dark:bg-slate-800/70 px-3.5 transition-all ${errors.password ? 'border-red-300 dark:border-red-800/80 bg-red-50/50 dark:bg-red-950/20 shadow-[0_0_0_4px_rgba(239,68,68,0.12)]' : 'border-slate-200/90 dark:border-slate-700/70 focus-within:border-emerald-500 focus-within:bg-white dark:focus-within:bg-slate-900 focus-within:shadow-[0_0_0_4px_rgba(16,185,129,0.14)]'}`}>
+                  <span className="material-symbols-outlined text-slate-400 dark:text-slate-500 text-[19px]">lock</span>
                   <input
                     id="password"
                     name="password"
@@ -328,72 +382,74 @@ export default function LoginPage({ language = 'ar', onToggleLanguage, onLogin, 
                     disabled={loading}
                     aria-invalid={Boolean(errors.password)}
                     aria-describedby={errors.password ? 'password-error' : undefined}
-                    className="w-full border-0 bg-transparent py-3.5 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
+                    className="w-full border-0 bg-transparent py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((current) => !current)}
+                    className="flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+                    aria-label={showPassword ? text.hidePassword : text.togglePassword}
+                    title={showPassword ? text.hidePassword : text.togglePassword}
+                  >
+                    <span className="material-symbols-outlined text-[19px]">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                  </button>
                 </div>
                 {errors.password && (
-                  <p id="password-error" className="mt-2 text-sm font-medium text-red-600 dark:text-red-400">
+                  <p id="password-error" className="mt-1.5 text-xs font-semibold text-red-600 dark:text-red-400">
                     {errors.password}
                   </p>
                 )}
               </div>
 
-              <div className="flex items-center justify-between gap-3 text-sm">
-                <label className="inline-flex cursor-pointer items-center gap-2 text-slate-700 dark:text-slate-300">
+              <div className="flex items-center justify-between text-xs pt-1">
+                <label className="inline-flex cursor-pointer items-center gap-2 font-medium text-slate-700 dark:text-slate-300 select-none">
                   <input
                     type="checkbox"
                     name="remember"
                     checked={form.remember}
                     onChange={handleChange}
-                    className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-emerald-600 focus:ring-emerald-500"
+                    className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-500"
                   />
                   <span>{text.remember}</span>
                 </label>
-
-                <button
-                  type="button"
-                  onClick={onSwitchToForgotPassword || handleForgotPassword}
-                  className="font-semibold text-emerald-600 dark:text-emerald-400 underline-offset-4 transition hover:text-emerald-700 dark:hover:text-emerald-300 hover:underline"
-                >
-                  {text.forgot}
-                </button>
               </div>
 
-              <button
-                type="button"
-                onClick={onSwitchToSignup}
-                className="w-full rounded-2xl border border-emerald-300 dark:border-emerald-700/60 bg-white dark:bg-slate-800/80 px-4 py-2.5 text-sm font-semibold text-emerald-700 dark:text-emerald-300 transition hover:bg-emerald-50 dark:hover:bg-emerald-950/40 active:scale-[0.99]"
-              >
-                {text.createAccount}
-              </button>
-
               {resetMessage && (
-                <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-2 text-sm font-medium text-emerald-800 dark:text-emerald-200" role="status" aria-live="polite">
+                <div className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 p-3 text-xs font-semibold text-emerald-800 dark:text-emerald-200" role="status" aria-live="polite">
                   {resetMessage}
                 </div>
               )}
 
               {errors.form && (
-                <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm font-medium text-red-700 dark:text-red-300" role="alert">
+                <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/40 p-3 text-xs font-semibold text-red-700 dark:text-red-300" role="alert">
                   {errors.form}
                 </div>
               )}
 
+              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={loading}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-300 px-4 py-3.5 text-base font-bold text-slate-950 shadow-[0_18px_30px_rgba(16,185,129,0.3)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_34px_rgba(16,185,129,0.28)] disabled:cursor-not-allowed disabled:opacity-70"
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 px-4 py-3.5 text-base font-extrabold text-white shadow-[0_14px_28px_rgba(16,185,129,0.3)] transition-all hover:shadow-[0_18px_32px_rgba(16,185,129,0.35)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {loading ? (
                   <>
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-900/30 border-t-slate-900" />
-                    {text.login}
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    <span>{text.login}</span>
                   </>
                 ) : (
-                  text.login
+                  <span>{text.login}</span>
                 )}
               </button>
 
+              {/* Create Account Secondary Button */}
+              <button
+                type="button"
+                onClick={onSwitchToSignup}
+                className="w-full rounded-2xl border border-slate-200/90 dark:border-slate-700/80 bg-slate-50/60 dark:bg-slate-800/50 py-3 text-xs font-bold text-slate-700 dark:text-slate-300 transition-all hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-[0.99]"
+              >
+                {text.createAccount}
+              </button>
             </form>
           </main>
         </div>

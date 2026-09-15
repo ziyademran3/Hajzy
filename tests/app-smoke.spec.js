@@ -72,4 +72,22 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
       expect(toggledTheme).not.toBe(initialTheme);
     }
   });
+
+  test('Login page has guest access button and enters app when clicked', async ({ page }) => {
+    // Clear localStorage to test unauthenticated visitor experience
+    await page.goto('/');
+    await page.evaluate(() => {
+      localStorage.clear();
+      localStorage.setItem('hajzy_force_login', 'true');
+    });
+    await page.goto('/');
+
+    // Guest access button should be visible on login page
+    const guestBtn = page.getByRole('button', { name: /تصفح التطبيق كزائر|Explore as Guest|تصفح/i });
+    await expect(guestBtn.first()).toBeVisible({ timeout: 10000 });
+
+    // Clicking guest button should navigate into app-shell
+    await guestBtn.first().click();
+    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+  });
 });

@@ -1939,11 +1939,17 @@ function App() {
 
         <div className="hero-banner">
           <div className="hero-copy">
-            <span className="hero-kicker">{language === 'en' ? 'Trending now' : 'الأكثر طلباً'}</span>
-            <h3>{language === 'en' ? 'Luxury stays for your next escape' : 'إقامات فاخرة لرحلتك القادمة'}</h3>
+            <span className="hero-kicker">
+              {language === 'en' ? 'Verified Luxury Stays' : 'إقامات فاخرة موثقة'}
+            </span>
+            <h3>{language === 'en' ? 'Find Your Perfect Haven in Egypt' : 'اعثر على إقامتك المثالية في مصر'}</h3>
+            <p className="hero-subtext">
+              {language === 'en' ? 'Handpicked villas & premium apartments with instant secure booking.' : 'فيلات وشاليهات وشقق مختارة بعناية مع حجز ودفع إلكتروني آمن.'}
+            </p>
             <div className="hero-actions">
               <button type="button" className="primary-button hero-cta" onClick={runHomeSearch}>
-                {language === 'en' ? 'Explore homes' : 'استكشف العقارات'}
+                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>search</span>
+                <span>{language === 'en' ? 'Explore homes' : 'استكشف الإقامات'}</span>
               </button>
               <button
                 type="button"
@@ -1953,13 +1959,18 @@ function App() {
                   setActiveFilter('الإسكندرية')
                 }}
               >
-                {language === 'en' ? 'Nearby homes' : 'بيوت قريبة منك'}
+                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>near_me</span>
+                <span>{language === 'en' ? 'Alexandria stays' : 'عقارات الإسكندرية'}</span>
               </button>
             </div>
           </div>
           <div className="hero-mini-stat">
-            <strong>4.9</strong>
-            <span>{language === 'en' ? 'Average rating' : 'متوسط التقييم'}</span>
+            <div className="hero-rating-stars">
+              <span className="material-symbols-outlined" style={{ fontSize: '17px', color: '#f59e0b' }}>star</span>
+              <strong>4.95</strong>
+            </div>
+            <span>{language === 'en' ? 'Guest Rating' : 'تقييم النزلاء'}</span>
+            <small className="hero-stat-badge">{language === 'en' ? 'Top Rated' : 'الأعلى تقييماً'}</small>
           </div>
         </div>
 
@@ -3720,6 +3731,7 @@ function App() {
         onSwitchToSignup={() => setCurrentAuthPage('signup')}
         onSwitchToForgotPassword={() => setCurrentAuthPage('forgot')}
         onSocialLogin={handleSocialLogin}
+        onBrowseGuest={handleMarketingBrowseGuest}
       />
     )
   }
