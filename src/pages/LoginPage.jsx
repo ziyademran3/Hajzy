@@ -329,7 +329,7 @@ export default function LoginPage({
         <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           
           {/* Visual Showcase Panel (Desktop Editorial Display) */}
-          <div className="hidden lg:flex lg:col-span-6 xl:col-span-7 flex-col justify-between self-stretch relative overflow-hidden rounded-[32px] border border-slate-200/80 dark:border-white/10 shadow-2xl bg-[#00433f] text-white min-h-[660px]">
+          <div className="hidden lg:flex lg:col-span-6 xl:col-span-7 order-2 lg:order-2 flex-col justify-between self-stretch relative overflow-hidden rounded-[32px] border border-slate-200/80 dark:border-white/10 shadow-2xl bg-[#00433f] text-white min-h-[660px]">
             {/* Background Luxury Resort Image with Depth Scrim */}
             <img
               src="/auth-luxury-stay.jpg"
@@ -338,9 +338,9 @@ export default function LoginPage({
               loading="eager"
             />
             
-            {/* Ambient Multi-layer Gradient Scrim */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#002826] via-[#00433f]/40 to-black/30" />
-            <div className="absolute inset-0 bg-radial from-transparent via-[#00433f]/20 to-[#00201e]/80" />
+            {/* Ambient Multi-layer Gradient Scrim (subtle top & bottom for high image clarity) */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#001817]/90 via-black/20 to-black/15" />
+            <div className="absolute inset-0 bg-radial from-transparent via-transparent to-[#001211]/50" />
 
             {/* Top Bar inside showcase */}
             <div className="relative z-10 p-8 flex items-center justify-between">
@@ -394,7 +394,7 @@ export default function LoginPage({
           </div>
 
           {/* Interactive Authentication Panel */}
-          <div className="w-full lg:col-span-6 xl:col-span-5 max-w-md mx-auto">
+          <div className="w-full lg:col-span-6 xl:col-span-5 order-1 lg:order-1 max-w-md mx-auto">
             <div className="overflow-hidden rounded-[28px] border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#101418] shadow-[0_20px_60px_rgba(0,67,63,0.08)] dark:shadow-[0_25px_70px_rgba(0,0,0,0.5)] p-6 sm:p-8 transition-all">
               
               {/* Card Switcher Pills: Sign In vs Sign Up */}
