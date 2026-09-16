@@ -80,26 +80,28 @@ const handleStayImageError = (event) => {
 
 const pageTitlesByLanguage = {
   ar: {
-    dashboard: 'حسابي',
+    dashboard: 'لوحة التحكم',
+    account: 'حسابي',
     home: 'Hajzy',
     details: 'تفاصيل الشقة',
     checkout: 'تأكيد الحجز',
     success: 'تم التأكيد',
     bookings: 'حجوزاتي',
     notifications: 'الإشعارات',
-    profile: 'الملف الشخصي',
+    profile: 'حسابي',
     owner: 'لوحة المالك',
     'owner-settings': 'إعدادات المالك',
   },
   en: {
     dashboard: 'Dashboard',
+    account: 'My Account',
     home: 'Hajzy',
     details: 'Property details',
     checkout: 'Confirm booking',
     success: 'Confirmed',
     bookings: 'My bookings',
     notifications: 'Notifications',
-    profile: 'Profile',
+    profile: 'My Account',
     owner: 'Owner dashboard',
     'owner-settings': 'Owner settings',
   },
@@ -4616,11 +4618,11 @@ function App() {
 
   const notificationLabel = language === 'en' ? 'Notifications' : 'الإشعارات'
   const topBarTitle =
-    activePage === 'home' || activePage === dashboardPageKey || activePage === 'owner'
+    activePage === 'home' || activePage === 'dashboard' || activePage === 'owner'
       ? 'Hajzy'
       : isOwner
-        ? pageTitlesByLanguage[language][activePage] || pageTitlesByLanguage[language].owner
-        : pageTitlesByLanguage[language][activePage] || pageTitlesByLanguage[language].dashboard
+        ? pageTitlesByLanguage[language]?.[activePage] || pageTitlesByLanguage[language]?.owner || 'Hajzy'
+        : pageTitlesByLanguage[language]?.[activePage] || pageTitlesByLanguage[language]?.dashboard || 'Hajzy'
 
   const handleMarketingOpenLogin = () => {
     setIsGuestMode(false)
