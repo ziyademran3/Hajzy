@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { AiOutlineHome, AiOutlineCalendar, AiOutlineHeart } from 'react-icons/ai'
-import { FiUser } from 'react-icons/fi'
+import { AiOutlineHome, AiOutlineCalendar } from 'react-icons/ai'
+import { FiGrid, FiUser } from 'react-icons/fi'
 import '../styles/safe-area.css'
 
 // BottomNav
@@ -9,8 +9,8 @@ import '../styles/safe-area.css'
 // - Safe-area padding applied via .safe-area-bottom
 
 const ITEMS = [
+  { id: 'dashboard', label: 'لوحة التحكم', labelEn: 'Dashboard', icon: FiGrid },
   { id: 'home', label: 'الرئيسية', labelEn: 'Home', icon: AiOutlineHome },
-  { id: 'favorites', label: 'المفضلة', labelEn: 'Favorites', icon: AiOutlineHeart },
   { id: 'bookings', label: 'حجوزاتي', labelEn: 'Bookings', icon: AiOutlineCalendar },
   { id: 'account', label: 'حسابي', labelEn: 'My Account', icon: FiUser },
 ]

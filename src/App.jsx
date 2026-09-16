@@ -577,10 +577,6 @@ function App() {
     }
     if (page === 'profile') {
       setActivePage('account')
-      setAccountTab('settings')
-    } else if (page === 'dashboard') {
-      setActivePage('account')
-      setAccountTab('overview')
     } else {
       setActivePage(page)
     }
@@ -4306,8 +4302,32 @@ function App() {
       return renderOwnerPage()
     }
     if (activePage === 'favorites') return renderFavoritesPage()
-    if (activePage === 'account' || activePage === 'dashboard' || activePage === 'profile') {
-      return renderAccountPage()
+    if (activePage === 'dashboard') {
+      return (
+        <DashboardPage
+          user={user}
+          bookings={bookings}
+          properties={properties}
+          favorites={favorites}
+          language={language}
+          onNavigate={navigate}
+          onLogout={handleLogout}
+          onSupportRequest={handleSupportRequest}
+        />
+      )
+    }
+    if (activePage === 'account' || activePage === 'profile') {
+      return (
+        <ProfilePage
+          user={user || effectiveUser}
+          bookings={bookings}
+          language={language}
+          onEdit={() => navigate('profile-edit')}
+          onUpdateProfile={updateProfile}
+          onToggleLanguage={handleLanguageToggle}
+          onLogout={handleLogout}
+        />
+      )
     }
     if (activePage === 'home') {
       return renderHomePage()
@@ -4333,55 +4353,41 @@ function App() {
     if (activePage === 'success') return renderSuccessPage()
     if (activePage === 'bookings') return renderBookingsPage()
 
-    return renderAccountPage()
+    return (
+      <ProfilePage
+        user={user || effectiveUser}
+        bookings={bookings}
+        language={language}
+        onEdit={() => navigate('profile-edit')}
+        onUpdateProfile={updateProfile}
+        onToggleLanguage={handleLanguageToggle}
+        onLogout={handleLogout}
+      />
+    )
   }
 
-  const bottomNavItems = isOwner
-    ? [
-        {
-          key: 'owner',
-          label: language === 'en' ? 'Dashboard' : 'لوحة التحكم',
-          icon: 'dashboard',
-        },
-        {
-          key: 'home',
-          label: language === 'en' ? 'Home' : 'الرئيسية',
-          icon: 'home',
-        },
-        {
-          key: 'bookings',
-          label: language === 'en' ? 'Bookings' : 'حجوزاتي',
-          icon: 'calendar_month',
-        },
-        {
-          key: 'account',
-          label: language === 'en' ? 'My Account' : 'حسابي',
-          icon: 'person',
-        },
-      ]
-    : [
-        {
-          key: 'home',
-          label: language === 'en' ? 'Home' : 'الرئيسية',
-          icon: 'home',
-        },
-        {
-          key: 'favorites',
-          label: language === 'en' ? 'Favorites' : 'المفضلة',
-          icon: 'favorite',
-          badge: favorites.length > 0 ? favorites.length : null,
-        },
-        {
-          key: 'bookings',
-          label: language === 'en' ? 'Bookings' : 'حجوزاتي',
-          icon: 'calendar_month',
-        },
-        {
-          key: 'account',
-          label: language === 'en' ? 'My Account' : 'حسابي',
-          icon: 'person',
-        },
-      ]
+  const bottomNavItems = [
+    {
+      key: isOwner ? 'owner' : 'dashboard',
+      label: language === 'en' ? 'Dashboard' : 'لوحة التحكم',
+      icon: 'dashboard',
+    },
+    {
+      key: 'home',
+      label: language === 'en' ? 'Home' : 'الرئيسية',
+      icon: 'home',
+    },
+    {
+      key: 'bookings',
+      label: language === 'en' ? 'Bookings' : 'حجوزاتي',
+      icon: 'calendar_month',
+    },
+    {
+      key: 'account',
+      label: language === 'en' ? 'My Account' : 'حسابي',
+      icon: 'person',
+    },
+  ]
 
   const renderDealModal = () => {
     if (!showDealModal) return null
@@ -4732,7 +4738,8 @@ function App() {
           {bottomNavItems.map((item) => {
             const isItemActive =
               activePage === item.key ||
-              (item.key === 'account' && (activePage === 'dashboard' || activePage === 'profile'))
+              (item.key === 'account' && activePage === 'profile') ||
+              (item.key === 'dashboard' && isOwner && activePage === 'owner')
 
             return (
               <button
