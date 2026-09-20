@@ -1,4 +1,4 @@
-import React, { useEffect, useState, lazy, Suspense } from 'react'
+import React, { useEffect, useState, useRef, lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Capacitor } from '@capacitor/core'
 import './App.css'
@@ -206,7 +206,7 @@ function App() {
   const { offlineBooking, isOffline, cacheBooking } = useOfflineBooking()
   const { shareProperty, shareBooking } = useNativeShare()
   const [selectedInvoiceBooking, setSelectedInvoiceBooking] = useState(null)
-  const [activeBookingMenuId, setActiveBookingMenuId] = useState(null)
+  const [activeBookingActionsTarget, setActiveBookingActionsTarget] = useState(null)
   const [activePage, setActivePage] = useState('home')
   const [authRequired, setAuthRequired] = useState(() => {
     try {
@@ -230,6 +230,10 @@ function App() {
   const [favorites, setFavorites] = useState([])
   const [showDealModal, setShowDealModal] = useState(false)
   const [copiedDealCode, setCopiedDealCode] = useState(false)
+  const [promoCodeInput, setPromoCodeInput] = useState('')
+  const [appliedPromo, setAppliedPromo] = useState(null)
+  const [promoError, setPromoError] = useState('')
+  const isBookingSubmittingRef = useRef(false)
   const [accountTab, setAccountTab] = useState('overview')
   const [lastBooking, setLastBooking] = useState(null)
   const defaultBookingDates = getDefaultBookingDates()
@@ -968,14 +972,67 @@ function App() {
     ),
   )
 
+  const AVAILABLE_PROMOS = {
+    COAST20: { percent: 20, labelAr: 'خصم الساحل الحصري 20%', labelEn: '20% Coastal Exclusive Deal' },
+    HAJZY10: { percent: 10, labelAr: 'خصم حاجزي 10%', labelEn: '10% Hajzy Discount' },
+    WELCOME15: { percent: 15, labelAr: 'خصم الضيوف الجدد 15%', labelEn: '15% Welcome Discount' },
+    WELCOME: { percent: 10, labelAr: 'خصم الترحيب 10%', labelEn: '10% Welcome Discount' },
+    SUMMER20: { percent: 20, labelAr: 'خصم الصيف 20%', labelEn: '20% Summer Discount' },
+    EID25: { percent: 25, labelAr: 'خصم العيد 25%', labelEn: '25% Eid Discount' },
+  }
+
+  const handleApplyPromoCode = (codeToApply = null) => {
+    const rawCode = (typeof codeToApply === 'string' ? codeToApply : promoCodeInput || '').trim().toUpperCase()
+    if (!rawCode) {
+      setPromoError(language === 'en' ? 'Please enter a promo code' : 'يرجى إدخال كود الخصم أولاً')
+      return
+    }
+
+    const promo = AVAILABLE_PROMOS[rawCode]
+    if (promo) {
+      setAppliedPromo({
+        code: rawCode,
+        percent: promo.percent,
+        label: language === 'en' ? promo.labelEn : promo.labelAr,
+      })
+      setPromoCodeInput(rawCode)
+      setPromoError('')
+      showToast(
+        language === 'en'
+          ? `🎉 Promo code ${rawCode} applied! Saved ${promo.percent}%`
+          : `🎉 تم تطبيق كود الخصم ${rawCode} بنجاح! وفرت ${promo.percent}%`
+      )
+    } else {
+      setPromoError(
+        language === 'en'
+          ? 'Invalid or expired promo code. Try COAST20'
+          : 'كود الخصم غير صالح أو منتهي الصلاحية. جرّب COAST20'
+      )
+    }
+  }
+
+  const handleRemovePromoCode = () => {
+    setAppliedPromo(null)
+    setPromoCodeInput('')
+    setPromoError('')
+    showToast(language === 'en' ? 'Promo code removed' : 'تمت إزالة كود الخصم')
+  }
+
   const bookingTotal = selectedProperty ? selectedProperty.priceValue * stayNights : 0
-  const serviceFee = bookingTotal * 0.08
-  const grandTotal = bookingTotal + serviceFee
+  const promoDiscountAmount = appliedPromo ? Math.round((bookingTotal * appliedPromo.percent) / 100) : 0
+  const subtotalAfterDiscount = Math.max(0, bookingTotal - promoDiscountAmount)
+  const serviceFee = Math.round(subtotalAfterDiscount * 0.08)
+  const grandTotal = subtotalAfterDiscount + serviceFee
   const bookingBreakdown = [
     {
       label: language === 'en' ? 'Stay total' : 'إجمالي الإقامة',
       value: bookingTotal,
     },
+    ...(appliedPromo ? [{
+      label: language === 'en' ? `Promo discount (${appliedPromo.code} -${appliedPromo.percent}%)` : `خصم الكوبون (${appliedPromo.code} -${appliedPromo.percent}%)`,
+      value: promoDiscountAmount,
+      isDiscount: true,
+    }] : []),
     {
       label: language === 'en' ? 'Service fee' : 'رسوم الخدمة',
       value: serviceFee,
@@ -1277,7 +1334,7 @@ function App() {
       return
     }
 
-    if (isProcessingPayment) {
+    if (isProcessingPayment || isBookingSubmittingRef.current) {
       return
     }
 
@@ -1290,6 +1347,7 @@ function App() {
       return
     }
 
+    isBookingSubmittingRef.current = true
     setIsProcessingPayment(true)
 
     try {
@@ -1304,6 +1362,8 @@ function App() {
         checkOut: bookingDates.checkOut,
         guests: Number(bookingDates.guests),
         total: grandTotal,
+        discountAmount: promoDiscountAmount || 0,
+        promoCode: appliedPromo?.code || null,
         currency: selectedProperty.currency,
         // A booking must not be shown as paid/confirmed before Paymob returns
         // a successful transaction callback.
@@ -1360,6 +1420,7 @@ function App() {
         : 'تعذر بدء عملية الدفع. يرجى المحاولة مرة أخرى.'
       showToast(error?.message || fallback)
     } finally {
+      isBookingSubmittingRef.current = false
       setIsProcessingPayment(false)
     }
   }
@@ -3015,30 +3076,63 @@ function App() {
                 <div className="info-grid">
                   <div className="info-box">
                     <span>{language === 'en' ? 'Check-in date' : 'تاريخ الوصول'}</span>
-                    <input
-                      type="date"
-                      value={bookingDates.checkIn}
-                      onChange={(event) =>
-                        setBookingDates((currentDates) => ({
-                          ...currentDates,
-                          checkIn: event.target.value,
-                          checkOut: currentDates.checkOut && new Date(event.target.value) > new Date(currentDates.checkOut) ? '' : currentDates.checkOut,
-                        }))
-                      }
-                    />
+                    <div
+                      className="date-picker-field"
+                      onClick={(e) => {
+                        try {
+                          e.currentTarget.querySelector('input[type="date"]')?.showPicker?.()
+                        } catch (err) {}
+                      }}
+                    >
+                      <div className="date-picker-display">
+                        <span className="material-symbols-outlined date-icon">calendar_today</span>
+                        <span className="date-text">{formatDate(bookingDates.checkIn, language)}</span>
+                      </div>
+                      <input
+                        type="date"
+                        className="date-picker-native-input"
+                        value={bookingDates.checkIn}
+                        onChange={(event) =>
+                          setBookingDates((currentDates) => ({
+                            ...currentDates,
+                            checkIn: event.target.value,
+                            checkOut:
+                              currentDates.checkOut && new Date(event.target.value) > new Date(currentDates.checkOut)
+                                ? ''
+                                : currentDates.checkOut,
+                          }))
+                        }
+                        aria-label={language === 'en' ? 'Check-in date' : 'تاريخ الوصول'}
+                      />
+                    </div>
                   </div>
                   <div className="info-box">
                     <span>{language === 'en' ? 'Check-out date' : 'تاريخ المغادرة'}</span>
-                    <input
-                      type="date"
-                      value={bookingDates.checkOut}
-                      onChange={(event) =>
-                        setBookingDates((currentDates) => ({
-                          ...currentDates,
-                          checkOut: event.target.value,
-                        }))
-                      }
-                    />
+                    <div
+                      className="date-picker-field"
+                      onClick={(e) => {
+                        try {
+                          e.currentTarget.querySelector('input[type="date"]')?.showPicker?.()
+                        } catch (err) {}
+                      }}
+                    >
+                      <div className="date-picker-display">
+                        <span className="material-symbols-outlined date-icon">calendar_today</span>
+                        <span className="date-text">{formatDate(bookingDates.checkOut, language)}</span>
+                      </div>
+                      <input
+                        type="date"
+                        className="date-picker-native-input"
+                        value={bookingDates.checkOut}
+                        onChange={(event) =>
+                          setBookingDates((currentDates) => ({
+                            ...currentDates,
+                            checkOut: event.target.value,
+                          }))
+                        }
+                        aria-label={language === 'en' ? 'Check-out date' : 'تاريخ المغادرة'}
+                      />
+                    </div>
                   </div>
                   <div className="info-box">
                     <span>{language === 'en' ? 'Guests' : 'الضيوف'}</span>
@@ -3207,7 +3301,7 @@ function App() {
                     className="secondary-button split-trigger-btn"
                     onClick={() => setIsSplitModalOpen(true)}
                   >
-                    <span className="material-symbols-outlined text-sm">group_work</span>
+                    <span className="material-symbols-outlined text-[18px]">group_work</span>
                     <span>{language === 'en' ? 'Split Payment' : 'تقسيم الفاتورة'}</span>
                   </button>
                 </div>
@@ -3334,6 +3428,95 @@ function App() {
                   </label>
                 </section>
 
+                {/* Promo / Discount Code Card */}
+                <section className="promo-code-card">
+                  <div className="flex items-center gap-2.5 mb-2">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-lg">local_offer</span>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-slate-900 dark:text-white">
+                        {language === 'en' ? 'Promo Code / Discount' : 'كود الخصم / كوبون التخفيض'}
+                      </h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        {language === 'en' ? 'Have a voucher code? Apply it before payment.' : 'هل لديك كود خصم؟ طبقه هنا لتخفيض الفاتورة قبل الدفع.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {appliedPromo ? (
+                    <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-emerald-600 text-lg">check_circle</span>
+                        <div>
+                          <strong className="text-xs font-bold text-emerald-800 dark:text-emerald-300 block">
+                            {appliedPromo.code} ({appliedPromo.percent}% {language === 'en' ? 'OFF' : 'خصم'})
+                          </strong>
+                          <span className="text-[11px] text-emerald-700 dark:text-emerald-400">
+                            {language === 'en'
+                              ? `Saved ${formatCurrency(promoDiscountAmount, selectedProperty?.currency, language)} on this stay`
+                              : `وفرت ${formatCurrency(promoDiscountAmount, selectedProperty?.currency, language)} من إجمالي الحجز`}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="text-xs font-bold text-rose-600 hover:text-rose-700 dark:text-rose-400 hover:underline px-2 py-1"
+                        onClick={handleRemovePromoCode}
+                      >
+                        {language === 'en' ? 'Remove' : 'إلغاء'}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 mt-2">
+                      <div className="promo-input-group">
+                        <input
+                          type="text"
+                          value={promoCodeInput}
+                          onChange={(e) => {
+                            setPromoCodeInput(e.target.value.toUpperCase())
+                            if (promoError) setPromoError('')
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault()
+                              handleApplyPromoCode()
+                            }
+                          }}
+                          placeholder={language === 'en' ? 'e.g. COAST20' : 'مثال: COAST20'}
+                          className="promo-input-field"
+                        />
+                        <button
+                          type="button"
+                          className="promo-apply-btn"
+                          onClick={() => handleApplyPromoCode()}
+                        >
+                          {language === 'en' ? 'Apply' : 'تطبيق'}
+                        </button>
+                      </div>
+
+                      {promoError && (
+                        <p className="text-xs text-rose-500 font-medium flex items-center gap-1">
+                          <span className="material-symbols-outlined text-sm">error</span>
+                          <span>{promoError}</span>
+                        </p>
+                      )}
+
+                      <div className="flex items-center gap-1.5 flex-wrap text-xs text-slate-500 pt-0.5">
+                        <span className="text-[11px]">{language === 'en' ? 'Available code:' : 'كود متاح:'}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleApplyPromoCode('COAST20')}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100/80 hover:bg-emerald-200/70 dark:bg-emerald-950 dark:hover:bg-emerald-900 text-emerald-800 dark:text-emerald-300 font-mono text-[11px] font-bold transition"
+                        >
+                          <span>COAST20</span>
+                          <span className="text-[10px] font-sans font-normal opacity-85">({language === 'en' ? '20% off' : 'خصم 20%'})</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </section>
+
                 <section className="booking-summary-sheet compact-summary">
                   <div className="booking-summary-header">
                     <div>
@@ -3367,9 +3550,16 @@ function App() {
 
                   <div className="booking-price-list">
                     {bookingBreakdown.map((item, index) => (
-                      <div key={`${item.label}-${index}`} className={item.total ? 'booking-price-row total' : 'booking-price-row'}>
+                      <div
+                        key={`${item.label}-${index}`}
+                        className={item.total ? 'booking-price-row total' : item.isDiscount ? 'booking-price-row discount text-emerald-600 dark:text-emerald-400 font-semibold' : 'booking-price-row'}
+                      >
                         <span>{item.label}</span>
-                        <strong>{formatCurrency(item.value, selectedProperty.currency, language)}</strong>
+                        <strong>
+                          {item.isDiscount
+                            ? `-${formatCurrency(item.value, selectedProperty.currency, language)}`
+                            : formatCurrency(item.value, selectedProperty.currency, language)}
+                        </strong>
                       </div>
                     ))}
                   </div>
@@ -3550,7 +3740,32 @@ function App() {
       return 'pending'
     }
 
-    const safeBookings = Array.isArray(bookings) ? bookings.filter(Boolean) : []
+    const rawBookings = Array.isArray(bookings) ? bookings.filter(Boolean) : []
+    
+    // Deduplicate bookings: if same property and dates exist, keep the confirmed one
+    const deduplicateList = (list) => {
+      const map = new Map()
+      const sorted = [...list].sort((a, b) => {
+        const aConf = normalizeBookingStatus(a.status) === 'confirmed' ? 1 : 0
+        const bConf = normalizeBookingStatus(b.status) === 'confirmed' ? 1 : 0
+        if (aConf !== bConf) return bConf - aConf
+        return String(b.id || '').localeCompare(String(a.id || ''))
+      })
+
+      for (const item of sorted) {
+        const propKey = String(item.propertyId || item.title || '').trim()
+        const checkInKey = String(item.checkIn || '').trim()
+        const checkOutKey = String(item.checkOut || '').trim()
+        const refKey = item.reference && !item.reference.includes('00000') ? `ref_${item.reference}` : `${propKey}_${checkInKey}_${checkOutKey}`
+        
+        if (!map.has(refKey)) {
+          map.set(refKey, item)
+        }
+      }
+      return Array.from(map.values())
+    }
+
+    const safeBookings = deduplicateList(rawBookings)
 
     const visibleBookings = safeBookings.filter((booking) => {
       const normalizedStatus = normalizeBookingStatus(booking?.status)
@@ -3822,87 +4037,16 @@ function App() {
                           {language === 'en' ? 'Invoice' : 'الفاتورة'}
                         </button>
 
-                        {/* 3-Dots Dropdown Trigger for secondary actions */}
-                        <div className="relative">
-                          <button
-                            type="button"
-                            className="secondary-button small-button px-2.5 flex items-center justify-center text-slate-600 dark:text-slate-300"
-                            onClick={() => setActiveBookingMenuId(activeBookingMenuId === (booking.id || index) ? null : (booking.id || index))}
-                            aria-label={language === 'en' ? 'More actions' : 'خيارات إضافية'}
-                            title={language === 'en' ? 'More actions' : 'خيارات إضافية'}
-                          >
-                            <span className="material-symbols-outlined text-lg leading-none">more_vert</span>
-                          </button>
-
-                          {activeBookingMenuId === (booking.id || index) && (
-                            <>
-                              <div
-                                className="fixed inset-0 z-40"
-                                onClick={() => setActiveBookingMenuId(null)}
-                              />
-                              <div className="absolute end-0 top-full mt-1.5 z-50 min-w-[170px] rounded-2xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900 p-1.5 shadow-xl">
-                                {normalizedStatus !== 'cancelled' && (
-                                  <button
-                                    type="button"
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                                    onClick={() => {
-                                      setActiveBookingMenuId(null)
-                                      setSelectedProperty(property)
-                                      setBookingDates({
-                                        checkIn: booking.checkIn || '',
-                                        checkOut: booking.checkOut || '',
-                                        guests: booking.guests || 1,
-                                      })
-                                      navigate('checkout')
-                                    }}
-                                  >
-                                    <span className="material-symbols-outlined text-sm text-slate-500">edit_calendar</span>
-                                    <span>{language === 'en' ? 'Edit dates' : 'تعديل الحجز'}</span>
-                                  </button>
-                                )}
-
-                                <button
-                                  type="button"
-                                  className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                                  onClick={async () => {
-                                    setActiveBookingMenuId(null)
-                                    haptics.trigger('light')
-                                    await shareBooking({
-                                      reference: booking.reference || `#HB-${booking.id}`,
-                                      propertyTitle: getPropertyTitle(property) || booking.title,
-                                      propertyTitleEn: property?.titleEn || booking.title,
-                                      checkIn: booking.checkIn,
-                                      checkOut: booking.checkOut,
-                                      total: booking.total,
-                                      currency: booking.currency || 'EGP',
-                                      language,
-                                    })
-                                  }}
-                                >
-                                  <span className="material-symbols-outlined text-sm text-slate-500">share</span>
-                                  <span>{language === 'en' ? 'Share booking' : 'مشاركة الحجز'}</span>
-                                </button>
-
-                                {normalizedStatus !== 'cancelled' && (
-                                  <>
-                                    <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
-                                    <button
-                                      type="button"
-                                      className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
-                                      onClick={() => {
-                                        setActiveBookingMenuId(null)
-                                        handleCancelBooking(booking.id)
-                                      }}
-                                    >
-                                      <span className="material-symbols-outlined text-sm text-rose-500">cancel</span>
-                                      <span>{language === 'en' ? 'Cancel booking' : 'إلغاء الحجز'}</span>
-                                    </button>
-                                  </>
-                                )}
-                              </div>
-                            </>
-                          )}
-                        </div>
+                        {/* 3-Dots Action Trigger for mobile-friendly full action sheet */}
+                        <button
+                          type="button"
+                          className="secondary-button small-button px-2.5 flex items-center justify-center text-slate-600 dark:text-slate-300"
+                          onClick={() => setActiveBookingActionsTarget({ booking, property, normalizedStatus })}
+                          aria-label={language === 'en' ? 'More actions' : 'خيارات إضافية'}
+                          title={language === 'en' ? 'More actions' : 'خيارات إضافية'}
+                        >
+                          <span className="material-symbols-outlined text-lg leading-none">more_vert</span>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -4448,14 +4592,20 @@ function App() {
               onClick={() => {
                 navigator.clipboard?.writeText('COAST20')
                 setCopiedDealCode(true)
-                showToast(language === 'en' ? 'Code COAST20 copied!' : 'تم نسخ الكود COAST20 بنجاح!')
+                setPromoCodeInput('COAST20')
+                setAppliedPromo({
+                  code: 'COAST20',
+                  percent: 20,
+                  label: language === 'en' ? '20% Coastal Exclusive Deal' : 'خصم الساحل الحصري 20%',
+                })
+                showToast(language === 'en' ? 'Code COAST20 copied & ready for checkout!' : 'تم نسخ كود COAST20 وتجهيزه لصفحة الدفع!')
                 setTimeout(() => setCopiedDealCode(false), 2500)
               }}
             >
               <span className="material-symbols-outlined text-sm">
                 {copiedDealCode ? 'check' : 'content_copy'}
               </span>
-              <span>{copiedDealCode ? (language === 'en' ? 'Copied!' : 'تم النسخ!') : (language === 'en' ? 'Copy Code' : 'نسخ الكود')}</span>
+              <span>{copiedDealCode ? (language === 'en' ? 'Copied & Applied!' : 'تم النسخ والتفعيل!') : (language === 'en' ? 'Copy & Apply' : 'نسخ وتفعيل الكود')}</span>
             </button>
           </div>
 
@@ -4479,12 +4629,18 @@ function App() {
             className="w-full primary-button py-3 text-xs font-black shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2"
             onClick={() => {
               setShowDealModal(false)
+              setPromoCodeInput('COAST20')
+              setAppliedPromo({
+                code: 'COAST20',
+                percent: 20,
+                label: language === 'en' ? '20% Coastal Exclusive Deal' : 'خصم الساحل الحصري 20%',
+              })
               if (activePage !== 'home') {
                 setActivePage('home')
               }
               setActiveFilter('الإسكندرية')
               setHomeQuickSearch((current) => ({ ...current, destination: 'الإسكندرية' }))
-              showToast(language === 'en' ? '🎉 Coastal Deals applied! Explore below' : '🎉 تم تفعيل العرض! استعرض الإقامات بالأسفل')
+              showToast(language === 'en' ? '🎉 Coastal Deal activated (20% OFF)! Explore below' : '🎉 تم تفعيل خصم 20%! استعرض الإقامات بالأسفل')
               setTimeout(() => {
                 const el = document.querySelector('.property-list') || document.querySelector('.featured-collection')
                 if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -4499,6 +4655,174 @@ function App() {
     )
   }
 
+  const renderBookingActionsModal = () => {
+    if (!activeBookingActionsTarget) return null
+
+    const { booking, property, normalizedStatus } = activeBookingActionsTarget
+    const title = getPropertyTitle(property) || booking?.title || (language === 'en' ? 'Stay Booking' : 'حجز الإقامة')
+    const location = getPropertyLocation(property) || booking?.location || ''
+    const isCancelled = normalizedStatus === 'cancelled'
+
+    return (
+      <div
+        className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4"
+        onClick={() => setActiveBookingActionsTarget(null)}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div
+          className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-5 space-y-4 max-h-[85vh] overflow-y-auto my-0 sm:my-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Mobile Handle Indicator */}
+          <div className="w-12 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto sm:hidden -mt-1 mb-2" />
+
+          {/* Header with thumbnail & details */}
+          <div className="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <img
+              src={booking?.image || property?.image}
+              alt={title}
+              onError={handleStayImageError}
+              className="w-14 h-14 rounded-2xl object-cover shrink-0 border border-slate-200 dark:border-slate-700"
+            />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="font-bold text-sm text-slate-900 dark:text-white truncate">{title}</h4>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                  isCancelled
+                    ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400'
+                    : normalizedStatus === 'confirmed'
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'
+                    : 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400'
+                }`}>
+                  {isCancelled ? (language === 'en' ? 'Cancelled' : 'ملغية') : normalizedStatus === 'confirmed' ? (language === 'en' ? 'Confirmed' : 'مؤكدة') : (language === 'en' ? 'Pending' : 'قيد المراجعة')}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 truncate mt-0.5">{location}</p>
+              <div className="text-[11px] font-mono text-slate-400 mt-0.5">{booking?.reference || `#HB-${booking?.id || ''}`}</div>
+            </div>
+            <button
+              type="button"
+              className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center shrink-0 hover:text-slate-800 dark:hover:text-white transition"
+              onClick={() => setActiveBookingActionsTarget(null)}
+              aria-label={language === 'en' ? 'Close' : 'إغلاق'}
+            >
+              <span className="material-symbols-outlined text-base">close</span>
+            </button>
+          </div>
+
+          {/* Action List */}
+          <div className="space-y-2 py-1">
+            {/* View Official Invoice */}
+            <button
+              type="button"
+              className="w-full flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-slate-800 dark:text-slate-200 transition group text-start font-medium text-sm"
+              onClick={() => {
+                setActiveBookingActionsTarget(null)
+                setSelectedInvoiceBooking(booking)
+              }}
+            >
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition">
+                <span className="material-symbols-outlined text-xl">receipt_long</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-xs sm:text-sm">{language === 'en' ? 'Official Invoice & Receipt' : 'الفاتورة وسند الحجز الرسمي'}</div>
+                <div className="text-[11px] text-slate-400">{language === 'en' ? 'View, download and print receipt' : 'عرض وطباعة سند الحجز والتكاليف'}</div>
+              </div>
+              <span className="material-symbols-outlined text-slate-400 text-sm">arrow_forward_ios</span>
+            </button>
+
+            {/* Edit Dates (if not cancelled) */}
+            {!isCancelled && (
+              <button
+                type="button"
+                className="w-full flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 transition group text-start font-medium text-sm"
+                onClick={() => {
+                  setActiveBookingActionsTarget(null)
+                  setSelectedProperty(property)
+                  setBookingDates({
+                    checkIn: booking?.checkIn || '',
+                    checkOut: booking?.checkOut || '',
+                    guests: booking?.guests || 1,
+                  })
+                  navigate('checkout')
+                }}
+              >
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition">
+                  <span className="material-symbols-outlined text-xl">edit_calendar</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-xs sm:text-sm">{language === 'en' ? 'Modify Booking Dates' : 'تعديل تواريخ الحجز'}</div>
+                  <div className="text-[11px] text-slate-400">{language === 'en' ? 'Change check-in and check-out dates' : 'تغيير موعد الوصول والمغادرة'}</div>
+                </div>
+                <span className="material-symbols-outlined text-slate-400 text-sm">arrow_forward_ios</span>
+              </button>
+            )}
+
+            {/* Share Booking */}
+            <button
+              type="button"
+              className="w-full flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 transition group text-start font-medium text-sm"
+              onClick={async () => {
+                setActiveBookingActionsTarget(null)
+                haptics.trigger('light')
+                await shareBooking({
+                  reference: booking?.reference || `#HB-${booking?.id}`,
+                  propertyTitle: getPropertyTitle(property) || booking?.title,
+                  propertyTitleEn: property?.titleEn || booking?.title,
+                  checkIn: booking?.checkIn,
+                  checkOut: booking?.checkOut,
+                  total: booking?.total,
+                  currency: booking?.currency || 'EGP',
+                  language,
+                })
+              }}
+            >
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition">
+                <span className="material-symbols-outlined text-xl">share</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-xs sm:text-sm">{language === 'en' ? 'Share Booking' : 'مشاركة تفاصيل الحجز'}</div>
+                <div className="text-[11px] text-slate-400">{language === 'en' ? 'Send reservation details via link or apps' : 'إرسال تفاصيل الإقامة عبر الواتساب أو التطبيقات'}</div>
+              </div>
+              <span className="material-symbols-outlined text-slate-400 text-sm">arrow_forward_ios</span>
+            </button>
+
+            {/* Cancel Booking (if not cancelled) */}
+            {!isCancelled && (
+              <button
+                type="button"
+                className="w-full flex items-center gap-3 p-3 rounded-2xl bg-rose-50/70 dark:bg-rose-950/20 hover:bg-rose-100 dark:hover:bg-rose-950/40 text-rose-700 dark:text-rose-400 transition group text-start font-medium text-sm"
+                onClick={() => {
+                  setActiveBookingActionsTarget(null)
+                  handleCancelBooking(booking?.id)
+                }}
+              >
+                <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition">
+                  <span className="material-symbols-outlined text-xl">cancel</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-xs sm:text-sm">{language === 'en' ? 'Cancel Reservation' : 'إلغاء هذا الحجز'}</div>
+                  <div className="text-[11px] text-rose-500/80 dark:text-rose-400/80">{language === 'en' ? 'Cancel your stay subject to cancellation policy' : 'إلغاء الحجز واسترداد الرصيد المتاح'}</div>
+                </div>
+                <span className="material-symbols-outlined text-rose-400 text-sm">arrow_forward_ios</span>
+              </button>
+            )}
+          </div>
+
+          {/* Dismiss button */}
+          <button
+            type="button"
+            className="w-full py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-sm transition"
+            onClick={() => setActiveBookingActionsTarget(null)}
+          >
+            {language === 'en' ? 'Close' : 'إغلاق'}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   const renderInvoiceModal = () => {
     if (!selectedInvoiceBooking) return null
 
@@ -4507,107 +4831,134 @@ function App() {
     const checkInDate = b.checkIn ? new Date(b.checkIn) : new Date()
     const checkOutDate = b.checkOut ? new Date(b.checkOut) : new Date(Date.now() + 86400000)
     const nights = Math.max(1, Math.round((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24)))
-    const pricePerNight = b.total ? Math.round(Number(b.total) / (nights * 1.08)) : (prop.priceValue || 1000)
+    const discountAmount = Number(b.discountAmount) || 0
+    const totalAmount = Number(b.total) || 0
+    const pricePerNight = prop.priceValue || (nights > 0 ? Math.round((totalAmount + discountAmount) / (nights * 1.08)) : 1000)
     const subtotal = pricePerNight * nights
-    const serviceFee = Math.round(subtotal * 0.08)
-    const totalAmount = Number(b.total) || (subtotal + serviceFee)
+    const serviceFee = Math.max(0, Math.round((subtotal - discountAmount) * 0.08))
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto" role="dialog" aria-modal="true">
-        <div className="relative w-full max-w-2xl rounded-3xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 p-6 md:p-8 text-slate-900 dark:text-slate-100 my-8">
-          <button
-            type="button"
-            className="absolute top-5 left-5 md:top-6 md:left-6 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition"
-            onClick={() => setSelectedInvoiceBooking(null)}
-            aria-label={language === 'en' ? 'Close' : 'إغلاق'}
-          >
-            <span className="material-symbols-outlined text-lg">close</span>
-          </button>
-
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">Hajzy</span>
-                <span className="text-sm font-bold text-slate-400">| حجزي</span>
+      <div
+        className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto"
+        role="dialog"
+        aria-modal="true"
+        onClick={() => setSelectedInvoiceBooking(null)}
+      >
+        <div
+          className="relative w-full max-w-xl rounded-t-3xl sm:rounded-3xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 my-0 sm:my-auto max-h-[92vh] flex flex-col overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Top Modal Header */}
+          <div className="flex items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 p-4 sm:p-5 bg-slate-50/70 dark:bg-slate-900/70 shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-black flex items-center justify-center text-xl">
+                H
               </div>
-              <p className="text-xs text-slate-500 mt-1">{language === 'en' ? 'Official Booking Receipt & Invoice' : 'فاتورة وسند حجز إلكتروني رسمي'}</p>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">Hajzy</span>
+                  <span className="text-xs font-bold text-slate-400">| حجزي</span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium">
+                  {language === 'en' ? 'Official Booking Receipt & Invoice' : 'فاتورة وسند حجز إلكتروني رسمي'}
+                </p>
+              </div>
             </div>
-            <div className="text-end">
-              <span className="inline-block rounded-full bg-emerald-100 dark:bg-emerald-950/60 px-3 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                {language === 'en' ? 'CONFIRMED' : 'حجز مؤكد'}
-              </span>
-              <div className="text-xs text-slate-500 font-mono mt-1">{b.reference || '#REF-78921'}</div>
+
+            <div className="flex items-center gap-2.5">
+              <div className="text-end">
+                <span className="inline-block rounded-full bg-emerald-100 dark:bg-emerald-950/60 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                  {language === 'en' ? 'CONFIRMED' : 'حجز مؤكد'}
+                </span>
+                <div className="text-[11px] text-slate-500 font-mono mt-0.5">{b.reference || '#REF-78921'}</div>
+              </div>
+              <button
+                type="button"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition shrink-0"
+                onClick={() => setSelectedInvoiceBooking(null)}
+                aria-label={language === 'en' ? 'Close' : 'إغلاق'}
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-5 text-sm">
-            <div className="space-y-1">
-              <span className="text-xs text-slate-500 font-semibold">{language === 'en' ? 'Guest Information' : 'بيانات الضيف'}</span>
-              <div className="font-bold text-base">{b.guestName || user?.name || (language === 'en' ? 'Verified Guest' : 'ضيف مؤكد')}</div>
-              <div className="text-xs text-slate-500">{b.guestEmail || user?.email || '-'}</div>
-              <div className="text-xs text-slate-500">{b.guestPhone || user?.phone || '+20 10...'}</div>
-            </div>
-            <div className="space-y-1">
-              <span className="text-xs text-slate-500 font-semibold">{language === 'en' ? 'Property & Dates' : 'بيانات الإقامة والتواريخ'}</span>
-              <div className="font-bold text-base">{b.title || prop.title || 'إقامة فاخرة'}</div>
-              <div className="text-xs text-slate-500">{b.location || prop.location || 'مصر'}</div>
-              <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                {formatDate(b.checkIn || new Date())} ← {formatDate(b.checkOut || new Date())} ({nights} {language === 'en' ? (nights === 1 ? 'night' : 'nights') : 'ليالٍ'})
+          {/* Scrollable Content */}
+          <div className="overflow-y-auto p-4 sm:p-6 space-y-4 text-sm flex-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/50 text-xs">
+              <div className="space-y-1">
+                <span className="text-slate-400 font-semibold">{language === 'en' ? 'Guest Information' : 'بيانات الضيف'}</span>
+                <div className="font-bold text-sm text-slate-800 dark:text-slate-200">{b.guestName || user?.name || (language === 'en' ? 'Verified Guest' : 'ضيف مؤكد')}</div>
+                <div className="text-slate-500 dir-ltr text-start">{b.guestEmail || user?.email || '-'}</div>
+                <div className="text-slate-500 dir-ltr text-start">{b.guestPhone || user?.phone || '+20 10...'}</div>
+              </div>
+              <div className="space-y-1">
+                <span className="text-slate-400 font-semibold">{language === 'en' ? 'Property & Dates' : 'بيانات الإقامة والتواريخ'}</span>
+                <div className="font-bold text-sm text-slate-800 dark:text-slate-200">{b.title || prop.title || 'إقامة فاخرة'}</div>
+                <div className="text-slate-500">{b.location || prop.location || 'مصر'}</div>
+                <div className="font-medium text-emerald-600 dark:text-emerald-400">
+                  {formatDate(b.checkIn || new Date())} ← {formatDate(b.checkOut || new Date())} ({nights} {language === 'en' ? (nights === 1 ? 'night' : 'nights') : 'ليالٍ'})
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/60 p-4 mb-6">
-            <div className="flex justify-between text-xs font-bold text-slate-500 border-b border-slate-200 dark:border-slate-700 pb-2 mb-2">
-              <span>{language === 'en' ? 'Description' : 'البيان'}</span>
-              <span>{language === 'en' ? 'Amount' : 'المبلغ'}</span>
+            <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/60 p-4 border border-slate-200/60 dark:border-slate-700/50">
+              <div className="flex justify-between text-xs font-bold text-slate-500 border-b border-slate-200 dark:border-slate-700 pb-2 mb-2">
+                <span>{language === 'en' ? 'Description' : 'البيان'}</span>
+                <span>{language === 'en' ? 'Amount' : 'المبلغ'}</span>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>{language === 'en' ? `Accommodation (${nights} nights)` : `تكلفة الإقامة (${nights} ليالٍ)`}</span>
+                  <span className="font-semibold">{formatCurrency(subtotal, b.currency || 'EGP')}</span>
+                </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-semibold">
+                    <span>{language === 'en' ? `Promo Discount (${b.promoCode || 'PROMO'})` : `خصم كود الترويجي (${b.promoCode || 'كود خصم'})`}</span>
+                    <span>-{formatCurrency(discountAmount, b.currency || 'EGP')}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span>{language === 'en' ? 'Platform & Service Fee (8%)' : 'رسوم الخدمة والتأمين (8%)'}</span>
+                  <span className="font-semibold">{formatCurrency(serviceFee, b.currency || 'EGP')}</span>
+                </div>
+                <div className="flex justify-between text-xs text-slate-500">
+                  <span>{language === 'en' ? 'VAT 14% (Included)' : 'ضريبة القيمة المضافة 14% (شاملة)'}</span>
+                  <span>{formatCurrency(Math.round(subtotal * 0.14), b.currency || 'EGP')}</span>
+                </div>
+                <div className="border-t border-slate-200 dark:border-slate-700 pt-2 flex justify-between font-extrabold text-base text-emerald-600 dark:text-emerald-400">
+                  <span>{language === 'en' ? 'Total Paid' : 'الإجمالي المدفوع'}</span>
+                  <span>{formatCurrency(totalAmount, b.currency || 'EGP')}</span>
+                </div>
+              </div>
             </div>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span>{language === 'en' ? `Accommodation (${nights} nights)` : `تكلفة الإقامة (${nights} ليالٍ)`}</span>
-                <span>{formatCurrency(subtotal, b.currency || 'EGP')}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>{language === 'en' ? 'Platform & Service Fee (8%)' : 'رسوم الخدمة والتأمين (8%)'}</span>
-                <span>{formatCurrency(serviceFee, b.currency || 'EGP')}</span>
-              </div>
-              <div className="flex justify-between text-xs text-slate-500">
-                <span>{language === 'en' ? 'VAT 14% (Included)' : 'ضريبة القيمة المضافة 14% (شاملة)'}</span>
-                <span>{formatCurrency(Math.round(subtotal * 0.14), b.currency || 'EGP')}</span>
-              </div>
-              <div className="border-t border-slate-200 dark:border-slate-700 pt-2 flex justify-between font-extrabold text-base text-emerald-600 dark:text-emerald-400">
-                <span>{language === 'en' ? 'Total Paid' : 'الإجمالي المدفوع'}</span>
-                <span>{formatCurrency(totalAmount, b.currency || 'EGP')}</span>
-              </div>
-            </div>
-          </div>
 
-          <div className="flex items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-800 pt-4 text-xs text-slate-500">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center text-2xl border border-slate-300 dark:border-slate-700">
+            <div className="flex items-center gap-3 p-3 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200/50 dark:border-emerald-800/40 text-xs text-slate-600 dark:text-slate-300">
+              <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-xl flex items-center justify-center text-xl shrink-0">
                 📱
               </div>
               <div>
-                <strong className="block text-slate-700 dark:text-slate-300">{language === 'en' ? 'Verified Electronic Voucher' : 'سند إلكتروني معتمد'}</strong>
-                <span>{language === 'en' ? 'Present this invoice upon arrival for instant check-in' : 'أظهر هذه الفاتورة عند الوصول لتسجيل الدخول الفوري'}</span>
+                <strong className="block text-emerald-800 dark:text-emerald-300 font-bold">{language === 'en' ? 'Verified Electronic Voucher' : 'سند إلكتروني معتمد'}</strong>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">{language === 'en' ? 'Present this invoice upon arrival for instant check-in' : 'أظهر هذه الفاتورة عند الوصول لتسجيل الدخول الفوري'}</span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 mt-6">
+          {/* Sticky Actions Footer */}
+          <div className="flex items-center justify-end gap-3 p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/90 shrink-0">
             <button
               type="button"
-              className="secondary-button"
+              className="secondary-button !py-2.5 !px-5 text-sm"
               onClick={() => setSelectedInvoiceBooking(null)}
             >
               {language === 'en' ? 'Close' : 'إغلاق'}
             </button>
             <button
               type="button"
-              className="primary-button flex items-center gap-2"
+              className="primary-button !py-2.5 !px-5 text-sm flex items-center gap-2 shadow-lg shadow-emerald-600/20"
               onClick={() => window.print()}
             >
-              <span className="material-symbols-outlined text-sm">print</span>
+              <span className="material-symbols-outlined text-base">print</span>
               <span>{language === 'en' ? 'Print Invoice' : 'طباعة الفاتورة'}</span>
             </button>
           </div>
@@ -4717,6 +5068,7 @@ function App() {
         )}
       </main>
 
+      {renderBookingActionsModal()}
       {renderInvoiceModal()}
       {renderDealModal()}
 

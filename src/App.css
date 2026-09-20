@@ -32,6 +32,7 @@ html[dir='ltr'] .nav-label {
   --bg-soft: #f7faf5;
   --bg-card: rgba(255, 255, 255, 0.96);
   --bg-card-alt: rgba(244, 247, 245, 0.96);
+  --split-dialog-bg: #ffffff;
   --primary: #00433f;
   --primary-strong: #0f766e;
   --primary-soft: #dff8f4;
@@ -98,6 +99,7 @@ html[dir='ltr'] .nav-label {
   --bg-soft: #0b0d10;
   --bg-card: rgba(17, 18, 21, 0.96);
   --bg-card-alt: rgba(23, 25, 28, 0.97);
+  --split-dialog-bg: #11161f;
   --primary: #f3f4f6;
   --primary-strong: #d4d4d8;
   --text: #f8fafc;
@@ -4220,26 +4222,128 @@ body::-webkit-scrollbar,
 .info-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
 }
 
 .info-box {
   background: linear-gradient(135deg, rgba(0, 67, 63, 0.06), rgba(0, 67, 63, 0.02));
   border: 1px solid rgba(0, 67, 63, 0.08);
   border-radius: 14px;
-  padding: 14px 12px;
+  padding-block: 12px;
+  padding-inline: 10px;
+  min-width: 0;
+  overflow: hidden;
+  width: 100%;
 }
 
-.info-box input,
+.info-box span {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.info-box strong {
+  display: block;
+  font-size: 0.92rem;
+  font-weight: 800;
+  margin-top: 8px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .info-box select {
   width: 100%;
+  min-width: 0;
   margin-top: 6px;
   border: 1px solid rgba(0, 67, 63, 0.15);
-  border-radius: 8px;
-  padding: 8px 10px;
-  font-size: 0.9rem;
+  border-radius: 10px;
+  padding-block: 7px;
+  padding-inline: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
   color: var(--text);
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.85);
+  outline: none;
+}
+
+/* Custom Localized Date Picker Field */
+.date-picker-field {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  margin-top: 6px;
+  cursor: pointer;
+}
+
+.date-picker-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(0, 67, 63, 0.18);
+  border-radius: 10px;
+  padding-block: 7px;
+  padding-inline: 8px;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.date-picker-field:hover .date-picker-display,
+.date-picker-field:focus-within .date-picker-display {
+  border-color: var(--primary-strong, #0f766e);
+  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.15);
+}
+
+.app-shell[data-theme='dark'] .date-picker-display {
+  background: #1a212d;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f8fafc;
+}
+
+.date-picker-display .date-text {
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1;
+  text-align: start;
+}
+
+.date-picker-display .date-icon {
+  font-size: 16px;
+  color: var(--primary-strong, #0f766e);
+  flex-shrink: 0;
+}
+
+.app-shell[data-theme='dark'] .date-picker-display .date-icon {
+  color: #10b981;
+}
+
+.date-picker-native-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 5;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
 }
 
 .checkout-actions {
@@ -4626,6 +4730,116 @@ body::-webkit-scrollbar,
 
 .booking-price-row.total strong {
   color: var(--primary);
+}
+
+.booking-price-row.discount {
+  color: #059669;
+  font-weight: 700;
+}
+
+.booking-price-row.discount strong {
+  color: #059669;
+  font-weight: 800;
+}
+
+.promo-code-card {
+  margin-top: 16px;
+  margin-bottom: 16px;
+  background: var(--bg-card, #ffffff);
+  border: 1.5px dashed rgba(5, 150, 105, 0.4);
+  border-radius: 18px;
+  padding-block: 16px;
+  padding-inline: 16px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+  transition: all 0.25s ease;
+  min-width: 0;
+}
+
+.promo-code-card:hover {
+  border-color: rgba(5, 150, 105, 0.7);
+}
+
+.app-shell[data-theme='dark'] .promo-code-card {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.promo-input-group {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.promo-input-field {
+  flex: 1 1 0%;
+  min-width: 0;
+  width: 100%;
+  font-family: monospace;
+  text-transform: uppercase;
+  font-size: 0.82rem;
+  padding-block: 9px;
+  padding-inline: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 67, 63, 0.18);
+  background: #ffffff;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.promo-input-field:focus {
+  border-color: #059669;
+  box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.18);
+}
+
+.app-shell[data-theme='dark'] .promo-input-field {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+}
+
+.promo-apply-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-block: 9px;
+  padding-inline: 18px;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+  background: linear-gradient(135deg, #00433f 0%, #005a54 100%);
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 67, 63, 0.15);
+  transition: all 0.2s ease;
+}
+
+.promo-apply-btn:hover:not(:disabled) {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.promo-apply-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.app-shell[data-theme='dark'] .promo-apply-btn {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: #ffffff;
+}
+
+.promo-code-card:hover {
+  border-color: rgba(5, 150, 105, 0.7);
+}
+
+.app-shell[data-theme='dark'] .promo-code-card {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(16, 185, 129, 0.35);
 }
 
 .booking-summary {
@@ -7179,14 +7393,24 @@ body[data-theme='dark'] .app-shell {
    ========================================================================== */
 .split-payment-trigger-card {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
   gap: 12px;
-  padding: 14px 16px;
+  padding-block: 14px;
+  padding-inline: 16px;
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(6, 95, 70, 0.05));
   border: 1px dashed rgba(16, 185, 129, 0.35);
   border-radius: 16px;
   margin-bottom: 16px;
+  min-width: 0;
+}
+
+@media (min-width: 580px) {
+  .split-payment-trigger-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
 }
 
 .split-badge {
@@ -7195,9 +7419,15 @@ body[data-theme='dark'] .app-shell {
   font-weight: 800;
   color: #059669;
   background: rgba(16, 185, 129, 0.15);
-  padding: 2px 8px;
+  padding-block: 2px;
+  padding-inline: 8px;
   border-radius: 999px;
   margin-bottom: 4px;
+}
+
+.split-trigger-copy {
+  flex: 1;
+  min-width: 0;
 }
 
 .split-trigger-copy strong {
@@ -7215,20 +7445,25 @@ body[data-theme='dark'] .app-shell {
 .split-trigger-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 8px;
   white-space: nowrap;
   font-weight: 700;
-  padding: 8px 14px;
+  padding-block: 10px;
+  padding-inline: 16px;
+  width: 100%;
+  border-radius: 12px;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
-.split-modal {
-  max-width: 480px;
-  width: 95%;
-  background: var(--bg-card);
-  border-radius: 24px;
-  padding: 20px;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.18);
+@media (min-width: 580px) {
+  .split-trigger-btn {
+    width: auto;
+  }
 }
+
+
 
 .split-config-card {
   background: var(--bg-card-alt);
@@ -8380,7 +8615,6 @@ body[data-theme='dark'] .profile-item:hover,
    ══════════════════════════════════════════════════════ */
 
 /* Base shared modal shell */
-.split-modal,
 .social-oauth-modal {
   width: min(92%, 420px);
   background: var(--bg-card);
@@ -8392,7 +8626,6 @@ body[data-theme='dark'] .profile-item:hover,
   overflow: hidden;
 }
 
-.app-shell[data-theme='dark'] .split-modal,
 .app-shell[data-theme='dark'] .social-oauth-modal {
   background: linear-gradient(180deg, rgba(20, 22, 26, 0.98), rgba(15, 17, 20, 0.99));
   border-color: rgba(255, 255, 255, 0.08);

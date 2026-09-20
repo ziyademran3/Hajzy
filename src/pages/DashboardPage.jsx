@@ -51,9 +51,9 @@ export default function DashboardPage({
   const pendingBookings = bookings.filter((b) => b.status === 'pending')
 
   // Loyalty Points & Club Tier
-  // 1 point per 100 EGP spent — starts from 0
+  // 1 point per 1000 EGP spent — starts from 0
   const loyaltyPoints = useMemo(() => {
-    return Math.floor(totalSpend / 100)
+    return Math.floor(totalSpend / 1000)
   }, [totalSpend])
 
   const loyaltyTier = useMemo(() => {
@@ -290,7 +290,7 @@ export default function DashboardPage({
             </div>
           )}
           <div className="mt-2 text-[9px] text-slate-500">
-            {isAr ? 'اكسب نقطة لكل 100 ج.م تحجز بيها' : 'Earn 1 pt per 100 EGP spent'}
+            {isAr ? 'اكسب نقطة لكل 1000 ج.م تحجز بيها' : 'Earn 1 pt per 1,000 EGP spent'}
           </div>
         </div>
       </section>

@@ -308,7 +308,7 @@ export default function ProfilePage({
           </div>
           <div>
             <div className="text-xs font-bold text-slate-400">{language === 'en' ? 'Club Points' : 'نقاط الولاء'}</div>
-            <div className="text-sm font-black text-amber-500 mt-0.5">{Math.floor(bookings.reduce((sum, b) => sum + Number(b.total || 0), 0) / 100)} ⭐</div>
+            <div className="text-sm font-black text-amber-500 mt-0.5">{Math.floor(bookings.reduce((sum, b) => sum + Number(b.total || 0), 0) / 1000)} ⭐</div>
           </div>
         </div>
       </div>
