@@ -976,8 +976,50 @@ app.post('/api/properties', authenticate, async (req, res) => {
 app.post('/api/bookings', authenticate, async (req, res) => {
   try {
     const userId = req.auth?.userId
-    const { propertyId, startDate, endDate } = req.body || {}
+    const { propertyId, startDate, endDate, fullName, phone, email, notes } = req.body || {}
     if (!propertyId || !startDate || !endDate) return res.status(400).json({ message: 'propertyId, startDate and endDate are required.' })
+
+    // Validate Guest Details (Backend validation)
+    const rawName = String(fullName || '').trim()
+    if (!rawName) {
+      return res.status(400).json({ message: 'الاسم الكامل مطلوب', field: 'fullName' })
+    }
+    if (rawName.length < 3) {
+      return res.status(400).json({ message: 'الاسم يجب أن يكون 3 أحرف على الأقل', field: 'fullName' })
+    }
+    const normalizedFullName = rawName.replace(/\s+/g, ' ')
+
+    // Normalize and validate phone
+    const normalizedArabicPhone = String(phone || '')
+      .replace(/[٠۰]/g, '0').replace(/[١۱]/g, '1').replace(/[٢۲]/g, '2')
+      .replace(/[٣۳]/g, '3').replace(/[٤۴]/g, '4').replace(/[٥۵]/g, '5')
+      .replace(/[٦۶]/g, '6').replace(/[٧۷]/g, '7').replace(/[٨۸]/g, '8')
+      .replace(/[٩۹]/g, '9')
+    const cleanedPhone = normalizedArabicPhone.replace(/[\s\-()]/g, '').trim()
+
+    if (!cleanedPhone) {
+      return res.status(400).json({ message: 'رقم الهاتف مطلوب', field: 'phone' })
+    }
+
+    let normalizedPhone = ''
+    if (/^01[0125]\d{8}$/.test(cleanedPhone)) {
+      normalizedPhone = `+20${cleanedPhone.slice(1)}`
+    } else if (/^(\+20|0020)1[0125]\d{8}$/.test(cleanedPhone)) {
+      normalizedPhone = cleanedPhone.startsWith('0020') ? `+20${cleanedPhone.slice(4)}` : cleanedPhone
+    } else if (/^\+[1-9]\d{7,14}$/.test(cleanedPhone)) {
+      normalizedPhone = cleanedPhone
+    } else {
+      return res.status(400).json({ message: 'رقم الهاتف غير صحيح، مثال: 01012345678', field: 'phone' })
+    }
+
+    // Normalize and validate email
+    const normalizedEmail = String(email || '').trim().toLowerCase()
+    if (!normalizedEmail) {
+      return res.status(400).json({ message: 'البريد الإلكتروني مطلوب', field: 'email' })
+    }
+    if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(normalizedEmail)) {
+      return res.status(400).json({ message: 'البريد الإلكتروني غير صحيح', field: 'email' })
+    }
 
     // fetch property to calculate price
     const property = await db.getPropertyById(propertyId)
@@ -995,7 +1037,17 @@ app.post('/api/bookings', authenticate, async (req, res) => {
     const total = Math.max(0, nights * pricePerNight)
 
     try {
-      const booking = await db.createBooking({ propertyId, userId, startDate: start.toISOString(), endDate: end.toISOString(), totalPrice: total })
+      const booking = await db.createBooking({
+        propertyId,
+        userId,
+        startDate: start.toISOString(),
+        endDate: end.toISOString(),
+        totalPrice: total,
+        fullName: normalizedFullName,
+        phone: normalizedPhone,
+        email: normalizedEmail,
+        notes: String(notes || '').trim(),
+      })
       return res.status(201).json({ booking })
     } catch (err) {
       if (err && err.code === 'BOOKING_CONFLICT') {

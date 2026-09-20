@@ -29,6 +29,7 @@ import HostCalendar from './components/HostCalendar'
 import { useTheme } from './components/ThemeProvider'
 import { formatCurrency, formatDate } from './lib/formatters'
 import { createPaymobPaymentSession } from './lib/authApi'
+import { validateGuestForm, validateFullName, validatePhone, validateEmail } from './lib/bookingValidation'
 import {
   addBooking,
   addChatMessage,
@@ -258,20 +259,42 @@ function App() {
 
   const [paymentMethod, setPaymentMethod] = useState('card')
   const [bookingStep, setBookingStep] = useState(1)
-  const [guestForm, setGuestForm] = useState({
-    fullName: '',
-    phone: '',
-    email: '',
-    notes: '',
+  const [guestForm, setGuestForm] = useState(() => {
+    try {
+      const stored = sessionStorage.getItem('hajzy_booking_guest_info')
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (parsed && typeof parsed === 'object') {
+          return {
+            fullName: parsed.fullName || '',
+            phone: parsed.phone || '',
+            email: parsed.email || '',
+            notes: parsed.notes || '',
+          }
+        }
+      }
+    } catch {}
+    return {
+      fullName: '',
+      phone: '',
+      email: '',
+      notes: '',
+    }
   })
+  const [guestErrors, setGuestErrors] = useState({})
+  const [guestFormTouched, setGuestFormTouched] = useState(false)
+  const guestNameRef = useRef(null)
+  const guestPhoneRef = useRef(null)
+  const guestEmailRef = useRef(null)
+  const isSubmittingStep2Ref = useRef(false)
   const [chatOpen, setChatOpen] = useState(false)
   const [chatInput, setChatInput] = useState('')
   const [chatMessages, setChatMessages] = useState([])
   const [calendarMonth, setCalendarMonth] = useState(() => new Date())
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
   const [isSplitModalOpen, setIsSplitModalOpen] = useState(false)
-  const [walletNumber, setWalletNumber] = useState('01023456789')
-  const [instapayHandle, setInstapayHandle] = useState('user@instapay')
+  const [walletNumber, setWalletNumber] = useState('')
+  const [instapayHandle, setInstapayHandle] = useState('')
   const [fawryRefCode] = useState('74920184')
   const [toast, setToast] = useState(null)
   const [_showNotifications, setShowNotifications] = useState(false)
@@ -584,6 +607,11 @@ function App() {
     if (page === 'profile') {
       setActivePage('account')
     } else {
+      if (page === 'checkout') {
+        setBookingStep(1)
+        setGuestErrors({})
+        setGuestFormTouched(false)
+      }
       setActivePage(page)
     }
 
@@ -1347,6 +1375,48 @@ function App() {
       return
     }
 
+    const guestValidation = validateGuestForm(guestForm, language)
+    if (!guestValidation.isValid) {
+      setBookingStep(2)
+      setGuestErrors(guestValidation.errors)
+      setGuestFormTouched(true)
+      showToast(language === 'en' ? 'Please complete your guest details.' : 'يرجى إكمال بيانات الضيف بشكل صحيح.')
+      return
+    }
+
+    if (paymentMethod === 'wallet') {
+      const cleanWallet = cleanPhoneNumber(walletNumber)
+      if (!cleanWallet) {
+        showToast(
+          language === 'en'
+            ? 'Please enter your mobile wallet number.'
+            : 'يرجى إدخال رقم الهاتف المسجل بالمحفظة الإلكترونية.'
+        )
+        return
+      }
+      if (!/^01[0125]\d{8}$/.test(cleanWallet)) {
+        showToast(
+          language === 'en'
+            ? 'Invalid Egyptian wallet number, e.g. 01012345678'
+            : 'رقم محفظة غير صحيح، مثال: 01012345678'
+        )
+        return
+      }
+    }
+
+    if (paymentMethod === 'instapay') {
+      if (!instapayHandle.trim()) {
+        showToast(
+          language === 'en'
+            ? 'Please enter your InstaPay IPA address or mobile number.'
+            : 'يرجى إدخال عنوان الدفع اللحظي (IPA) أو رقم الهاتف في إنستاباي.'
+        )
+        return
+      }
+    }
+
+    const normalizedGuest = guestValidation.normalizedData
+
     isBookingSubmittingRef.current = true
     setIsProcessingPayment(true)
 
@@ -1371,11 +1441,28 @@ function App() {
         reference,
         paymentMethod,
         userId: user?.id || null,
+        fullName: normalizedGuest.fullName,
+        phone: normalizedGuest.phone,
+        email: normalizedGuest.email,
+        notes: normalizedGuest.notes,
+        guestName: normalizedGuest.fullName,
+        guestPhone: normalizedGuest.phone,
+        guestEmail: normalizedGuest.email,
+        walletNumber: paymentMethod === 'wallet' ? cleanPhoneNumber(walletNumber) : null,
+        instapayHandle: paymentMethod === 'instapay' ? instapayHandle.trim() : null,
+      }
+
+      let paymobAmount = grandTotal
+      if (String(selectedProperty.currency || 'EGP').toUpperCase() !== 'EGP') {
+        const ratesToEGP = { USD: 49.5, SAR: 13.2, EUR: 53.5, AED: 13.5 }
+        const propCurrency = String(selectedProperty.currency).toUpperCase()
+        const rate = ratesToEGP[propCurrency] || 1
+        paymobAmount = Math.round(grandTotal * rate)
       }
 
       const paymentSession = await createPaymobPaymentSession({
-        amount: grandTotal,
-        currency: selectedProperty.currency,
+        amount: paymobAmount,
+        currency: 'EGP',
         propertyTitle: selectedProperty.title,
         paymentMethod,
         // Return to the installed Android app or directly to the current web origin's payment-result
@@ -3035,6 +3122,228 @@ function App() {
     }))
   }
 
+  useEffect(() => {
+    if (user) {
+      setGuestForm((current) => {
+        const hasData = current.fullName || current.phone || current.email
+        if (!hasData) {
+          const prefilled = {
+            fullName: user.fullName || user.name || '',
+            phone: user.phone || '',
+            email: user.email || '',
+            notes: current.notes || '',
+          }
+          try {
+            sessionStorage.setItem('hajzy_booking_guest_info', JSON.stringify(prefilled))
+          } catch {}
+          return prefilled
+        }
+        return current
+      })
+    }
+  }, [user])
+
+  useEffect(() => {
+    if (guestForm.phone && !walletNumber) {
+      const clean = cleanPhoneNumber(guestForm.phone)
+      if (/^01[0125]\d{8}$/.test(clean)) {
+        setWalletNumber(clean)
+      } else if (/^(\+20|0020)1[0125]\d{8}$/.test(clean)) {
+        const local = clean.startsWith('0020') ? `0${clean.slice(4)}` : `0${clean.slice(3)}`
+        setWalletNumber(local)
+      }
+    }
+  }, [guestForm.phone, walletNumber])
+
+  const handleGuestFieldChange = (field, value) => {
+    const nextForm = { ...guestForm, [field]: value }
+    setGuestForm(nextForm)
+    try {
+      sessionStorage.setItem('hajzy_booking_guest_info', JSON.stringify(nextForm))
+    } catch {}
+
+    if (guestFormTouched) {
+      if (field === 'fullName') {
+        const valRes = validateFullName(value, language)
+        setGuestErrors((prev) => ({
+          ...prev,
+          fullName: valRes.isValid ? '' : valRes.error,
+        }))
+      } else if (field === 'phone') {
+        const valRes = validatePhone(value, language)
+        setGuestErrors((prev) => ({
+          ...prev,
+          phone: valRes.isValid ? '' : valRes.error,
+        }))
+      } else if (field === 'email') {
+        const valRes = validateEmail(value, language)
+        setGuestErrors((prev) => ({
+          ...prev,
+          email: valRes.isValid ? '' : valRes.error,
+        }))
+      }
+    }
+  }
+
+  const handleStepNavigation = (targetStep) => {
+    if (targetStep === bookingStep) return
+
+    // Going backwards is always allowed, preserving input values
+    if (targetStep < bookingStep) {
+      setBookingStep(targetStep)
+      return
+    }
+
+    // Checking step 1 dates validity before proceeding to 2 or 3
+    const isStep1Valid = Boolean(
+      bookingDates?.checkIn &&
+      bookingDates?.checkOut &&
+      new Date(bookingDates.checkOut) > new Date(bookingDates.checkIn)
+    )
+
+    if (!isStep1Valid) {
+      showToast(
+        language === 'en'
+          ? 'Please select valid check-in and check-out dates first.'
+          : 'يرجى تحديد تواريخ وصول ومغادرة صحيحة أولاً.'
+      )
+      setBookingStep(1)
+      return
+    }
+
+    const minRequiredNights = Number(selectedProperty?.minNights || selectedProperty?.min_nights || 1)
+    if (stayNights < minRequiredNights) {
+      showToast(
+        language === 'en'
+          ? `Minimum stay is ${minRequiredNights} ${minRequiredNights === 1 ? 'night' : 'nights'}.`
+          : `الحد الأدنى للإقامة في هذا العقار هو ${minRequiredNights} ${minRequiredNights === 2 ? 'ليلتان' : 'ليالٍ'}.`
+      )
+      setBookingStep(1)
+      return
+    }
+
+    if (targetStep === 2) {
+      setBookingStep(2)
+      return
+    }
+
+    if (targetStep === 3) {
+      // Must validate guest information completely before advancing to payment
+      const validation = validateGuestForm(guestForm, language)
+      if (!validation.isValid) {
+        setGuestErrors(validation.errors)
+        setGuestFormTouched(true)
+        setBookingStep(2)
+        showToast(
+          language === 'en'
+            ? 'Please fill in all required guest details.'
+            : 'يرجى ملء جميع بيانات الضيف الإجبارية بشكل صحيح.'
+        )
+        setTimeout(() => {
+          if (validation.firstInvalidField === 'fullName' && guestNameRef.current) {
+            guestNameRef.current.focus()
+            guestNameRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          } else if (validation.firstInvalidField === 'phone' && guestPhoneRef.current) {
+            guestPhoneRef.current.focus()
+            guestPhoneRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          } else if (validation.firstInvalidField === 'email' && guestEmailRef.current) {
+            guestEmailRef.current.focus()
+            guestEmailRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
+        }, 50)
+        return
+      }
+
+      setGuestForm(validation.normalizedData)
+      try {
+        sessionStorage.setItem('hajzy_booking_guest_info', JSON.stringify(validation.normalizedData))
+      } catch {}
+      setGuestErrors({})
+      setBookingStep(3)
+    }
+  }
+
+  const handleProceedToPayment = (e) => {
+    if (e && e.preventDefault) e.preventDefault()
+    if (isSubmittingStep2Ref.current) return
+    isSubmittingStep2Ref.current = true
+
+    const isStep1Valid = Boolean(
+      bookingDates?.checkIn &&
+      bookingDates?.checkOut &&
+      new Date(bookingDates.checkOut) > new Date(bookingDates.checkIn)
+    )
+
+    if (!isStep1Valid) {
+      showToast(
+        language === 'en'
+          ? 'Please select valid check-in and check-out dates first.'
+          : 'يرجى تحديد تواريخ وصول ومغادرة صحيحة أولاً.'
+      )
+      setBookingStep(1)
+      isSubmittingStep2Ref.current = false
+      return
+    }
+
+    const validation = validateGuestForm(guestForm, language)
+    if (!validation.isValid) {
+      setGuestErrors(validation.errors)
+      setGuestFormTouched(true)
+      haptics.trigger('error')
+
+      setTimeout(() => {
+        if (validation.firstInvalidField === 'fullName' && guestNameRef.current) {
+          guestNameRef.current.focus()
+          guestNameRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        } else if (validation.firstInvalidField === 'phone' && guestPhoneRef.current) {
+          guestPhoneRef.current.focus()
+          guestPhoneRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        } else if (validation.firstInvalidField === 'email' && guestEmailRef.current) {
+          guestEmailRef.current.focus()
+          guestEmailRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 50)
+
+      isSubmittingStep2Ref.current = false
+      return
+    }
+
+    // If all valid, normalize and save data
+    setGuestForm(validation.normalizedData)
+    try {
+      sessionStorage.setItem('hajzy_booking_guest_info', JSON.stringify(validation.normalizedData))
+    } catch {}
+    setGuestErrors({})
+    haptics.trigger('light')
+    setBookingStep(3)
+
+    setTimeout(() => {
+      isSubmittingStep2Ref.current = false
+    }, 400)
+  }
+
+  useEffect(() => {
+    if (activePage !== 'checkout') return
+
+    if (bookingStep === 3) {
+      const validation = validateGuestForm(guestForm, language)
+      if (!validation.isValid) {
+        setBookingStep(2)
+        setGuestErrors(validation.errors)
+        setGuestFormTouched(true)
+      }
+    } else if (bookingStep === 2) {
+      const isStep1Valid = Boolean(
+        bookingDates?.checkIn &&
+        bookingDates?.checkOut &&
+        new Date(bookingDates.checkOut) > new Date(bookingDates.checkIn)
+      )
+      if (!isStep1Valid) {
+        setBookingStep(1)
+      }
+    }
+  }, [activePage, bookingStep, guestForm, language, bookingDates])
+
   const renderCheckoutPage = () => {
     const stepTitles = [
       language === 'en' ? 'Stay details' : 'تفاصيل الإقامة',
@@ -3043,6 +3352,7 @@ function App() {
     ]
     const calendarWeekdays = language === 'en' ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] : ['إثن', 'ثلاث', 'أرب', 'خم', 'جم', 'سب', 'حد']
     const monthFormatter = new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'ar-EG', { month: 'long', year: 'numeric' })
+    const minRequiredNights = Number(selectedProperty?.minNights || selectedProperty?.min_nights || 1)
 
     return (
       <div className="page-shell checkout-shell">
@@ -3052,12 +3362,27 @@ function App() {
           </div>
 
           <div className="checkout-body">
-            <div className="booking-progress-steps">
-              {stepTitles.map((title, index) => (
-                <span key={title} className={bookingStep === index + 1 ? 'active' : ''}>
-                  {index + 1}. {title}
-                </span>
-              ))}
+            <div className="booking-progress-steps" role="tablist" aria-label={language === 'en' ? 'Booking steps' : 'خطوات الحجز'}>
+              {stepTitles.map((title, index) => {
+                const stepNum = index + 1
+                const isActive = bookingStep === stepNum
+                const isCompleted = bookingStep > stepNum
+                return (
+                  <button
+                    key={title}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    className={[
+                      isActive ? 'active' : '',
+                      isCompleted ? 'completed' : '',
+                    ].filter(Boolean).join(' ')}
+                    onClick={() => handleStepNavigation(stepNum)}
+                  >
+                    {stepNum}. {title}
+                  </button>
+                )
+              })}
             </div>
 
             <div className="details-header compact">
@@ -3154,8 +3479,24 @@ function App() {
                   <div className="info-box">
                     <span>{language === 'en' ? 'Nights' : 'عدد الليالي'}</span>
                     <strong>{language === 'en' ? `${stayNights} nights` : `${stayNights} ليلة`}</strong>
+                    {minRequiredNights > 1 && (
+                      <small className={`block text-[11px] mt-0.5 ${stayNights < minRequiredNights ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-500'}`}>
+                        {language === 'en' ? `Min. ${minRequiredNights} nights` : `الحد الأدنى: ${minRequiredNights} ليالٍ`}
+                      </small>
+                    )}
                   </div>
                 </div>
+
+                {stayNights < minRequiredNights && (
+                  <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-2 my-2">
+                    <span className="material-symbols-outlined text-base text-amber-600 shrink-0">info</span>
+                    <span>
+                      {language === 'en'
+                        ? `This property requires a minimum stay of ${minRequiredNights} nights.`
+                        : `يشترط هذا العقار حداً أدنى للإقامة قدره ${minRequiredNights} ${minRequiredNights === 2 ? 'ليلتان' : 'ليالٍ'}. يرجى تمديد موعد المغادرة للمتابعة.`}
+                    </span>
+                  </div>
+                )}
 
                 <div className="calendar-picker" dir={language === 'en' ? 'ltr' : 'rtl'}>
                   <div className="calendar-header">
@@ -3204,7 +3545,7 @@ function App() {
                   <button type="button" className="secondary-button" onClick={() => navigate('details')}>
                     {language === 'en' ? 'Back' : 'رجوع'}
                   </button>
-                  <button type="button" className="primary-button" onClick={() => setBookingStep(2)}>
+                  <button type="button" className="primary-button" onClick={() => handleStepNavigation(2)}>
                     {language === 'en' ? 'Continue' : 'متابعة'}
                   </button>
                 </div>
@@ -3213,41 +3554,104 @@ function App() {
 
             {bookingStep === 2 && (
               <>
-                <div className="guest-form-grid">
-                  <label>
-                    <span>{language === 'en' ? 'Full name' : 'الاسم الكامل'}</span>
+                <div className="guest-form-grid" noValidate>
+                  <label htmlFor="guest-full-name">
+                    <span className="field-label-text">
+                      {language === 'en' ? 'Full name' : 'الاسم الكامل'}
+                      <span className="required-star" aria-hidden="true">*</span>
+                    </span>
                     <input
+                      id="guest-full-name"
+                      ref={guestNameRef}
+                      name="fullName"
                       type="text"
+                      autoComplete="name"
+                      required
+                      aria-required="true"
+                      aria-invalid={Boolean(guestErrors.fullName)}
+                      aria-describedby={guestErrors.fullName ? 'guest-fullname-error' : undefined}
+                      className={guestErrors.fullName ? 'has-error' : ''}
                       value={guestForm.fullName}
-                      onChange={(event) => setGuestForm((current) => ({ ...current, fullName: event.target.value }))}
-                      placeholder={language === 'en' ? 'Your name' : 'اسمك'}
+                      onChange={(event) => handleGuestFieldChange('fullName', event.target.value)}
+                      placeholder={language === 'en' ? 'Your full name' : 'الاسم الكامل'}
                     />
+                    {guestErrors.fullName && (
+                      <span id="guest-fullname-error" className="field-error-message" role="alert">
+                        <span className="material-symbols-outlined field-error-icon">error</span>
+                        <span>{guestErrors.fullName}</span>
+                      </span>
+                    )}
                   </label>
-                  <label>
-                    <span>{language === 'en' ? 'Phone' : 'رقم الهاتف'}</span>
+
+                  <label htmlFor="guest-phone">
+                    <span className="field-label-text">
+                      {language === 'en' ? 'Phone' : 'رقم الهاتف'}
+                      <span className="required-star" aria-hidden="true">*</span>
+                    </span>
                     <input
+                      id="guest-phone"
+                      ref={guestPhoneRef}
+                      name="phone"
                       type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      dir="ltr"
+                      required
+                      aria-required="true"
+                      aria-invalid={Boolean(guestErrors.phone)}
+                      aria-describedby={guestErrors.phone ? 'guest-phone-error' : undefined}
+                      className={`guest-input-phone ${guestErrors.phone ? 'has-error' : ''}`}
                       value={guestForm.phone}
-                      onChange={(event) => setGuestForm((current) => ({ ...current, phone: event.target.value }))}
-                      placeholder={language === 'en' ? '+966...' : '+966...'}
+                      onChange={(event) => handleGuestFieldChange('phone', event.target.value)}
+                      placeholder={language === 'en' ? '+20 1xx xxx xxxx' : '01xxxxxxxxx'}
                     />
+                    {guestErrors.phone && (
+                      <span id="guest-phone-error" className="field-error-message" role="alert">
+                        <span className="material-symbols-outlined field-error-icon">error</span>
+                        <span>{guestErrors.phone}</span>
+                      </span>
+                    )}
                   </label>
-                  <label>
-                    <span>{language === 'en' ? 'Email' : 'البريد الإلكتروني'}</span>
+
+                  <label htmlFor="guest-email">
+                    <span className="field-label-text">
+                      {language === 'en' ? 'Email' : 'البريد الإلكتروني'}
+                      <span className="required-star" aria-hidden="true">*</span>
+                    </span>
                     <input
+                      id="guest-email"
+                      ref={guestEmailRef}
+                      name="email"
                       type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      dir="ltr"
+                      required
+                      aria-required="true"
+                      aria-invalid={Boolean(guestErrors.email)}
+                      aria-describedby={guestErrors.email ? 'guest-email-error' : undefined}
+                      className={`guest-input-email ${guestErrors.email ? 'has-error' : ''}`}
                       value={guestForm.email}
-                      onChange={(event) => setGuestForm((current) => ({ ...current, email: event.target.value }))}
+                      onChange={(event) => handleGuestFieldChange('email', event.target.value)}
                       placeholder="name@example.com"
                     />
+                    {guestErrors.email && (
+                      <span id="guest-email-error" className="field-error-message" role="alert">
+                        <span className="material-symbols-outlined field-error-icon">error</span>
+                        <span>{guestErrors.email}</span>
+                      </span>
+                    )}
                   </label>
-                  <label className="full-width">
+
+                  <label htmlFor="guest-notes" className="full-width">
                     <span>{language === 'en' ? 'Notes' : 'ملاحظات'}</span>
                     <textarea
+                      id="guest-notes"
+                      name="notes"
                       rows="4"
                       value={guestForm.notes}
-                      onChange={(event) => setGuestForm((current) => ({ ...current, notes: event.target.value }))}
-                      placeholder={language === 'en' ? 'Any arrival notes or preferences' : 'أي ملاحظات أو تفضيلات الوصول'}
+                      onChange={(event) => handleGuestFieldChange('notes', event.target.value)}
+                      placeholder={language === 'en' ? 'Any arrival notes or preferences (optional)' : 'أي ملاحظات أو تفضيلات الوصول (اختياري)'}
                     />
                   </label>
                 </div>
@@ -3256,7 +3660,7 @@ function App() {
                   <button type="button" className="secondary-button" onClick={() => setBookingStep(1)}>
                     {language === 'en' ? 'Back' : 'رجوع'}
                   </button>
-                  <button type="button" className="primary-button" onClick={() => setBookingStep(3)}>
+                  <button type="button" className="primary-button" onClick={handleProceedToPayment}>
                     {language === 'en' ? 'Continue to payment' : 'متابعة للدفع'}
                   </button>
                 </div>
@@ -3414,6 +3818,19 @@ function App() {
                     </div>
                     <input type="radio" name="payment" checked={paymentMethod === 'card'} onChange={() => setPaymentMethod('card')} />
                   </label>
+
+                  {paymentMethod === 'card' && selectedProperty?.currency && selectedProperty.currency !== 'EGP' && (
+                    <div className="payment-subpanel">
+                      <div className="flex items-center gap-2 p-2.5 rounded-lg bg-sky-50 dark:bg-sky-950/40 text-sky-800 dark:text-sky-300 text-xs border border-sky-100 dark:border-sky-900">
+                        <span className="material-symbols-outlined text-base text-sky-600 shrink-0">currency_exchange</span>
+                        <span>
+                          {language === 'en'
+                            ? 'Card payments are processed securely in EGP via Paymob at official bank exchange rates.'
+                            : 'تتم معالجة الدفع بالبطاقة بأمان بالجنيه المصري (EGP) عبر بوابة Paymob طبقاً لسعر الصرف البنكي الرسمي.'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Cash on arrival */}
                   <label className={`payment-option ${paymentMethod === 'cash' ? 'selected' : ''}`}>

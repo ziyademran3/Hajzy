@@ -489,6 +489,7 @@ const normalizeProperty = (property) => {
     amenitiesEn: property.amenitiesEn || seed.amenitiesEn || [],
     bookingInfo: property.bookingInfo || seed.bookingInfo || '',
     ownerId: property.ownerId || seed.ownerId || null,
+    minNights: Number(property.minNights || property.min_nights || seed?.minNights || seed?.min_nights || 1),
   }
 }
 
@@ -509,6 +510,10 @@ const normalizeBooking = (booking) => {
     reference: booking.reference || '#REF-00000',
     paymentMethod: booking.paymentMethod || 'card',
     userId: booking.userId || null,
+    fullName: booking.fullName || booking.guestName || '',
+    phone: booking.phone || booking.guestPhone || '',
+    email: booking.email || booking.guestEmail || '',
+    notes: booking.notes || booking.guestNotes || '',
   }
 }
 

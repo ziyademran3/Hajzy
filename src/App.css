@@ -3462,6 +3462,7 @@ body::-webkit-scrollbar,
   margin-bottom: 18px;
 }
 
+.booking-progress-steps button,
 .booking-progress-steps span {
   display: flex;
   align-items: center;
@@ -3472,8 +3473,20 @@ body::-webkit-scrollbar,
   color: var(--muted);
   font-size: 0.68rem;
   font-weight: 700;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  text-align: center;
 }
 
+.booking-progress-steps button:hover:not(.active),
+.booking-progress-steps span:hover:not(.active) {
+  background: rgba(0, 67, 63, 0.08);
+  color: var(--text);
+}
+
+.booking-progress-steps button.active,
 .booking-progress-steps span.active {
   background: linear-gradient(135deg, rgba(0, 67, 63, 0.09), rgba(16, 185, 129, 0.08));
   color: var(--primary);
@@ -4382,22 +4395,118 @@ body::-webkit-scrollbar,
 .guest-form-grid label {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  color: #2f3d3a;
-  font-size: 0.72rem;
+  gap: 6px;
+  color: var(--text, #2f3d3a);
+  font-size: 0.75rem;
   font-weight: 700;
+  position: relative;
+}
+
+.guest-form-grid .field-label-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.guest-form-grid .required-star {
+  color: #ef4444;
+  font-size: 0.85rem;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .guest-form-grid input,
 .guest-form-grid textarea {
   width: 100%;
-  border: 1px solid rgba(0, 67, 63, 0.12);
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1.5px solid rgba(0, 67, 63, 0.14);
   border-radius: 12px;
   background: var(--bg-card);
-  padding: 11px 12px;
+  padding: 10px 11px;
   color: var(--text);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
+  line-height: 1.4;
   resize: vertical;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.guest-form-grid input:focus,
+.guest-form-grid textarea:focus {
+  outline: none;
+  border-color: var(--primary, #005a54);
+  box-shadow: 0 0 0 3px rgba(0, 67, 63, 0.12);
+}
+
+.guest-form-grid input[type="email"],
+.guest-form-grid input.guest-input-email {
+  direction: ltr !important;
+  text-align: start !important;
+  font-size: 0.81rem;
+  padding: 9.5px 10px;
+  letter-spacing: -0.01em;
+}
+
+.guest-form-grid input[type="tel"],
+.guest-form-grid input.guest-input-phone {
+  direction: ltr !important;
+  text-align: start !important;
+  font-size: 0.83rem;
+  letter-spacing: 0.02em;
+  font-feature-settings: "tnum";
+}
+
+.guest-form-grid input[type="email"]::placeholder,
+.guest-form-grid input[type="tel"]::placeholder {
+  direction: ltr !important;
+  text-align: start !important;
+  opacity: 0.55;
+  font-size: 0.8rem;
+}
+
+.guest-form-grid input.has-error,
+.guest-form-grid input[aria-invalid="true"],
+.guest-form-grid textarea.has-error,
+.guest-form-grid textarea[aria-invalid="true"] {
+  border-color: #ef4444 !important;
+  background-color: rgba(239, 68, 68, 0.02);
+}
+
+.guest-form-grid input.has-error:focus,
+.guest-form-grid input[aria-invalid="true"]:focus {
+  outline: none;
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+}
+
+.guest-form-grid .field-error-message {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #ef4444;
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+.guest-form-grid .field-error-icon {
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .guest-form-grid label {
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .guest-form-grid input,
+[data-theme="dark"] .guest-form-grid textarea {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .guest-form-grid .field-error-message {
+  color: #f87171;
 }
 
 .guest-form-grid .full-width {
