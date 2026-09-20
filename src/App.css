@@ -4346,12 +4346,17 @@ body::-webkit-scrollbar,
   border: none !important;
 }
 
+.checkout-shell {
+  padding-bottom: max(120px, calc(100px + env(safe-area-inset-bottom))) !important;
+}
+
 .checkout-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-top: 20px;
+  margin-top: 24px;
+  margin-bottom: 12px;
 }
 
 .checkout-actions .primary-button,
@@ -4361,9 +4366,17 @@ body::-webkit-scrollbar,
 
 .guest-form-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 14px;
   margin-top: 20px;
+  width: 100%;
+  min-width: 0;
+}
+
+@media (min-width: 540px) {
+  .guest-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .guest-form-grid label {
