@@ -28,7 +28,13 @@ import AiConciergeModal from './components/AiConciergeModal'
 import NeighborhoodExplorer from './components/NeighborhoodExplorer'
 import HostCalendar from './components/HostCalendar'
 import { useTheme } from './components/ThemeProvider'
-import { formatCurrency, formatDate } from './lib/formatters'
+import {
+  formatCurrency,
+  formatDate,
+  parseISODate,
+  formatISODate,
+  nightsBetween,
+} from './lib/formatters'
 import {
   createPaymobPaymentSession,
   fetchNotificationsApi,
@@ -222,8 +228,8 @@ const getDefaultBookingDates = () => {
   dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2)
 
   return {
-    checkIn: tomorrow.toISOString().slice(0, 10),
-    checkOut: dayAfterTomorrow.toISOString().slice(0, 10),
+    checkIn: formatISODate(tomorrow),
+    checkOut: formatISODate(dayAfterTomorrow),
   }
 }
 
@@ -1162,13 +1168,7 @@ function App() {
     }
   }, [filteredProperties, selectedMapPropertyId, showMapView])
 
-  const stayNights = Math.max(
-    1,
-    Math.round(
-      (new Date(bookingDates.checkOut).getTime() - new Date(bookingDates.checkIn).getTime()) /
-        (1000 * 60 * 60 * 24),
-    ),
-  )
+  const stayNights = nightsBetween(bookingDates?.checkIn, bookingDates?.checkOut)
 
   const AVAILABLE_PROMOS = {
     COAST20: { percent: 20, labelAr: 'خصم الساحل الحصري 20%', labelEn: '20% Coastal Exclusive Deal' },
@@ -3281,50 +3281,64 @@ function App() {
     )
   }
 
+  const today = new Date()
+  const todayStr = formatISODate(today)
   const monthDate = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1)
+  const currentYear = monthDate.getFullYear()
+  const currentMonth = monthDate.getMonth()
+
+  // Week starts on Saturday (السبت) in Arabic RTL standard
+  // (monthDate.getDay() + 1) % 7 correctly aligns Saturday to column index 0
+  const startWeekOffset = (monthDate.getDay() + 1) % 7
+  const firstVisibleDate = new Date(currentYear, currentMonth, 1 - startWeekOffset)
+
   const visibleDates = []
-  const startWeekOffset = (monthDate.getDay() + 6) % 7
-  const firstVisibleDate = new Date(monthDate)
-  firstVisibleDate.setDate(monthDate.getDate() - startWeekOffset)
-
   for (let index = 0; index < 42; index += 1) {
-    const current = new Date(firstVisibleDate)
-    current.setDate(firstVisibleDate.getDate() + index)
-    visibleDates.push(current)
+    const d = new Date(firstVisibleDate.getFullYear(), firstVisibleDate.getMonth(), firstVisibleDate.getDate() + index)
+    const isoString = formatISODate(d)
+    const isCurrentMonth = d.getMonth() === currentMonth
+    const isPast = isoString < todayStr
+    const isBooked = Array.isArray(selectedProperty?.bookedDates) && selectedProperty.bookedDates.includes(isoString)
+
+    visibleDates.push({
+      date: d,
+      dayNumber: d.getDate(),
+      isoString,
+      isCurrentMonth,
+      isPast,
+      isBooked,
+      isDisabled: !isCurrentMonth || isPast || isBooked,
+    })
   }
 
-  const isSameDay = (left, right) => left && right && left.toDateString() === right.toDateString()
-  const isWithinRange = (date, start, end) => {
-    if (!start || !end) return false
-    return date >= new Date(start) && date <= new Date(end)
-  }
+  const handleCalendarDateSelect = (dateString) => {
+    if (!dateString || typeof dateString !== 'string') return
+    if (dateString < todayStr) return
 
-  const handleCalendarDateSelect = (dateValue) => {
-    const nextDate = new Date(dateValue)
-    const nextDateString = nextDate.toISOString().slice(0, 10)
-    setCalendarMonth(new Date(nextDateString))
-
+    // 1. If no checkIn or both are chosen, first click sets checkIn and clears checkOut
     if (!bookingDates.checkIn || (bookingDates.checkIn && bookingDates.checkOut)) {
       setBookingDates((currentDates) => ({
         ...currentDates,
-        checkIn: nextDateString,
+        checkIn: dateString,
         checkOut: '',
       }))
       return
     }
 
-    if (new Date(nextDateString) < new Date(bookingDates.checkIn)) {
+    // 2. If second click is on or before checkIn, reset checkIn to this day
+    if (dateString <= bookingDates.checkIn) {
       setBookingDates((currentDates) => ({
         ...currentDates,
-        checkIn: nextDateString,
+        checkIn: dateString,
         checkOut: '',
       }))
       return
     }
 
+    // 3. Second click strictly after checkIn: sets checkOut (minimum 1 night)
     setBookingDates((currentDates) => ({
       ...currentDates,
-      checkOut: nextDateString,
+      checkOut: dateString,
     }))
   }
 
@@ -3433,14 +3447,14 @@ function App() {
     const isStep1Valid = Boolean(
       bookingDates?.checkIn &&
       bookingDates?.checkOut &&
-      new Date(bookingDates.checkOut) > new Date(bookingDates.checkIn)
+      nightsBetween(bookingDates.checkIn, bookingDates.checkOut) >= 1
     )
 
     if (!isStep1Valid) {
       showToast(
         language === 'en'
-          ? 'Please select valid check-in and check-out dates first.'
-          : 'يرجى تحديد تواريخ وصول ومغادرة صحيحة أولاً.'
+          ? 'Please select check-in and check-out dates.'
+          : 'اختر تاريخ الوصول والمغادرة'
       )
       setBookingStep(1)
       return
@@ -3506,14 +3520,14 @@ function App() {
     const isStep1Valid = Boolean(
       bookingDates?.checkIn &&
       bookingDates?.checkOut &&
-      new Date(bookingDates.checkOut) > new Date(bookingDates.checkIn)
+      nightsBetween(bookingDates.checkIn, bookingDates.checkOut) >= 1
     )
 
     if (!isStep1Valid) {
       showToast(
         language === 'en'
-          ? 'Please select valid check-in and check-out dates first.'
-          : 'يرجى تحديد تواريخ وصول ومغادرة صحيحة أولاً.'
+          ? 'Please select check-in and check-out dates.'
+          : 'اختر تاريخ الوصول والمغادرة'
       )
       setBookingStep(1)
       isSubmittingStep2Ref.current = false
@@ -3571,7 +3585,7 @@ function App() {
       const isStep1Valid = Boolean(
         bookingDates?.checkIn &&
         bookingDates?.checkOut &&
-        new Date(bookingDates.checkOut) > new Date(bookingDates.checkIn)
+        nightsBetween(bookingDates.checkIn, bookingDates.checkOut) >= 1
       )
       if (!isStep1Valid) {
         setBookingStep(1)
@@ -3585,207 +3599,289 @@ function App() {
       language === 'en' ? 'Guest info' : 'بيانات الضيف',
       language === 'en' ? 'Payment' : 'الدفع',
     ]
-    const calendarWeekdays = language === 'en' ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] : ['إثن', 'ثلاث', 'أرب', 'خم', 'جم', 'سب', 'حد']
+    const calendarWeekdays =
+      language === 'en'
+        ? ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri']
+        : ['سبت', 'أحد', 'إثن', 'ثلاث', 'أرب', 'خم', 'جم']
     const monthFormatter = new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'ar-EG', { month: 'long', year: 'numeric' })
     const minRequiredNights = Number(selectedProperty?.minNights || selectedProperty?.min_nights || 1)
+    const isPastMonthDisabled =
+      calendarMonth.getFullYear() <= today.getFullYear() &&
+      calendarMonth.getMonth() <= today.getMonth()
 
     return (
-      <div className="page-shell checkout-shell">
-        <section className="checkout-card">
-          <div className="checkout-image">
-            <img src={selectedProperty.image} alt={getPropertyTitle(selectedProperty)} onError={handleStayImageError} />
+      <ErrorBoundary
+        fallback={({ error, retry, reload }) => (
+          <div className="page-shell checkout-shell">
+            <section className="checkout-card" role="alert" style={{ textAlign: 'center', padding: '36px 20px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '3rem', color: '#f59e0b', marginBottom: '12px' }}>
+                warning
+              </span>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '8px' }}>
+                {language === 'en' ? 'An error occurred, please try again' : 'حدث خطأ، حاول مرة أخرى'}
+              </h2>
+              <p style={{ color: 'var(--muted)', fontSize: '0.85rem', marginBottom: '20px' }}>
+                {error?.message || (language === 'en' ? 'Please reload or retry.' : 'يرجى المحاولة مجدداً أو إعادة تحميل الصفحة.')}
+              </p>
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                <button type="button" className="secondary-button" onClick={retry}>
+                  {language === 'en' ? 'Try again' : 'إعادة المحاولة'}
+                </button>
+                <button type="button" className="primary-button" onClick={reload}>
+                  {language === 'en' ? 'Reload page' : 'إعادة تحميل'}
+                </button>
+              </div>
+            </section>
           </div>
-
-          <div className="checkout-body">
-            <div className="booking-progress-steps" role="tablist" aria-label={language === 'en' ? 'Booking steps' : 'خطوات الحجز'}>
-              {stepTitles.map((title, index) => {
-                const stepNum = index + 1
-                const isActive = bookingStep === stepNum
-                const isCompleted = bookingStep > stepNum
-                return (
-                  <button
-                    key={title}
-                    type="button"
-                    role="tab"
-                    aria-selected={isActive}
-                    className={[
-                      isActive ? 'active' : '',
-                      isCompleted ? 'completed' : '',
-                    ].filter(Boolean).join(' ')}
-                    onClick={() => handleStepNavigation(stepNum)}
-                  >
-                    {stepNum}. {title}
-                  </button>
-                )
-              })}
+        )}
+      >
+        <div className="page-shell checkout-shell">
+          <section className="checkout-card">
+            <div className="checkout-image">
+              <img src={selectedProperty.image} alt={getPropertyTitle(selectedProperty)} onError={handleStayImageError} />
             </div>
 
-            <div className="details-header compact">
-              <div>
-                <h2>{getPropertyTitle(selectedProperty)}</h2>
-                <p>{getPropertyLocation(selectedProperty)}</p>
-              </div>
-              <div className="rating-chip">
-                <span className="material-symbols-outlined">star</span>
-                <span>{selectedProperty.rating}</span>
-              </div>
-            </div>
-
-            {bookingStep === 1 && (
-              <>
-                <div className="info-grid">
-                  <div className="info-box">
-                    <span>{language === 'en' ? 'Check-in date' : 'تاريخ الوصول'}</span>
-                    <div
-                      className="date-picker-field"
-                      onClick={(e) => {
-                        try {
-                          e.currentTarget.querySelector('input[type="date"]')?.showPicker?.()
-                        } catch (err) {}
-                      }}
+            <div className="checkout-body">
+              <div className="booking-progress-steps" role="tablist" aria-label={language === 'en' ? 'Booking steps' : 'خطوات الحجز'}>
+                {stepTitles.map((title, index) => {
+                  const stepNum = index + 1
+                  const isActive = bookingStep === stepNum
+                  const isCompleted = bookingStep > stepNum
+                  return (
+                    <button
+                      key={title}
+                      type="button"
+                      role="tab"
+                      aria-selected={isActive}
+                      className={[
+                        isActive ? 'active' : '',
+                        isCompleted ? 'completed' : '',
+                      ].filter(Boolean).join(' ')}
+                      onClick={() => handleStepNavigation(stepNum)}
                     >
-                      <div className="date-picker-display">
-                        <span className="material-symbols-outlined date-icon">calendar_today</span>
-                        <span className="date-text">{formatDate(bookingDates.checkIn, language)}</span>
+                      {stepNum}. {title}
+                    </button>
+                  )
+                })}
+              </div>
+
+              <div className="details-header compact">
+                <div>
+                  <h2>{getPropertyTitle(selectedProperty)}</h2>
+                  <p>{getPropertyLocation(selectedProperty)}</p>
+                </div>
+                <div className="rating-chip">
+                  <span className="material-symbols-outlined">star</span>
+                  <span>{selectedProperty.rating}</span>
+                </div>
+              </div>
+
+              {bookingStep === 1 && (
+                <>
+                  <div className="info-grid">
+                    <div className="info-box">
+                      <span>{language === 'en' ? 'Check-in date' : 'تاريخ الوصول'}</span>
+                      <div
+                        className="date-picker-field"
+                        onClick={(e) => {
+                          try {
+                            e.currentTarget.querySelector('input[type="date"]')?.showPicker?.()
+                          } catch (err) {}
+                        }}
+                      >
+                        <div className="date-picker-display">
+                          <span className="material-symbols-outlined date-icon">calendar_today</span>
+                          <span className="date-text">{formatDate(bookingDates.checkIn, language)}</span>
+                        </div>
+                        <input
+                          type="date"
+                          className="date-picker-native-input"
+                          min={todayStr}
+                          value={bookingDates.checkIn || ''}
+                          onChange={(event) => {
+                            const val = event.target.value
+                            setBookingDates((currentDates) => {
+                              let nextCheckOut = currentDates.checkOut
+                              if (nextCheckOut && val >= nextCheckOut) {
+                                nextCheckOut = ''
+                              }
+                              return {
+                                ...currentDates,
+                                checkIn: val,
+                                checkOut: nextCheckOut,
+                              }
+                            })
+                            if (val) {
+                              const d = parseISODate(val)
+                              if (d) setCalendarMonth(new Date(d.getFullYear(), d.getMonth(), 1))
+                            }
+                          }}
+                          aria-label={language === 'en' ? 'Check-in date' : 'تاريخ الوصول'}
+                        />
                       </div>
-                      <input
-                        type="date"
-                        className="date-picker-native-input"
-                        value={bookingDates.checkIn}
+                    </div>
+                    <div className="info-box">
+                      <span>{language === 'en' ? 'Check-out date' : 'تاريخ المغادرة'}</span>
+                      <div
+                        className="date-picker-field"
+                        onClick={(e) => {
+                          try {
+                            e.currentTarget.querySelector('input[type="date"]')?.showPicker?.()
+                          } catch (err) {}
+                        }}
+                      >
+                        <div className="date-picker-display">
+                          <span className="material-symbols-outlined date-icon">calendar_today</span>
+                          <span className="date-text">{formatDate(bookingDates.checkOut, language)}</span>
+                        </div>
+                        <input
+                          type="date"
+                          className="date-picker-native-input"
+                          min={bookingDates.checkIn || todayStr}
+                          value={bookingDates.checkOut || ''}
+                          onChange={(event) => {
+                            const val = event.target.value
+                            setBookingDates((currentDates) => ({
+                              ...currentDates,
+                              checkOut: val,
+                            }))
+                            if (val) {
+                              const d = parseISODate(val)
+                              if (d) setCalendarMonth(new Date(d.getFullYear(), d.getMonth(), 1))
+                            }
+                          }}
+                          aria-label={language === 'en' ? 'Check-out date' : 'تاريخ المغادرة'}
+                        />
+                      </div>
+                    </div>
+                    <div className="info-box">
+                      <span>{language === 'en' ? 'Guests' : 'الضيوف'}</span>
+                      <select
+                        value={bookingDates.guests}
                         onChange={(event) =>
                           setBookingDates((currentDates) => ({
                             ...currentDates,
-                            checkIn: event.target.value,
-                            checkOut:
-                              currentDates.checkOut && new Date(event.target.value) > new Date(currentDates.checkOut)
-                                ? ''
-                                : currentDates.checkOut,
+                            guests: Number(event.target.value),
                           }))
                         }
-                        aria-label={language === 'en' ? 'Check-in date' : 'تاريخ الوصول'}
-                      />
+                      >
+                        <option value={1}>{language === 'en' ? '1 guest' : '1 ضيف'}</option>
+                        <option value={2}>{language === 'en' ? '2 guests' : '2 ضيوف'}</option>
+                        <option value={3}>{language === 'en' ? '3 guests' : '3 ضيوف'}</option>
+                        <option value={4}>{language === 'en' ? '4 guests' : '4 ضيوف'}</option>
+                      </select>
+                    </div>
+                    <div className="info-box">
+                      <span>{language === 'en' ? 'Nights' : 'عدد الليالي'}</span>
+                      <strong>
+                        {stayNights > 0
+                          ? language === 'en'
+                            ? `${stayNights} ${stayNights === 1 ? 'night' : 'nights'}`
+                            : `${stayNights} ${stayNights === 1 ? 'ليلة' : stayNights === 2 ? 'ليلتان' : stayNights <= 10 ? 'ليالٍ' : 'ليلة'}`
+                          : language === 'en'
+                            ? 'Select dates'
+                            : 'حدد التواريخ'}
+                      </strong>
+                      {minRequiredNights > 1 && (
+                        <small className={`block text-[11px] mt-0.5 ${stayNights > 0 && stayNights < minRequiredNights ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-500'}`}>
+                          {language === 'en' ? `Min. ${minRequiredNights} nights` : `الحد الأدنى: ${minRequiredNights} ليالٍ`}
+                        </small>
+                      )}
                     </div>
                   </div>
-                  <div className="info-box">
-                    <span>{language === 'en' ? 'Check-out date' : 'تاريخ المغادرة'}</span>
-                    <div
-                      className="date-picker-field"
-                      onClick={(e) => {
-                        try {
-                          e.currentTarget.querySelector('input[type="date"]')?.showPicker?.()
-                        } catch (err) {}
-                      }}
-                    >
-                      <div className="date-picker-display">
-                        <span className="material-symbols-outlined date-icon">calendar_today</span>
-                        <span className="date-text">{formatDate(bookingDates.checkOut, language)}</span>
-                      </div>
-                      <input
-                        type="date"
-                        className="date-picker-native-input"
-                        value={bookingDates.checkOut}
-                        onChange={(event) =>
-                          setBookingDates((currentDates) => ({
-                            ...currentDates,
-                            checkOut: event.target.value,
-                          }))
-                        }
-                        aria-label={language === 'en' ? 'Check-out date' : 'تاريخ المغادرة'}
-                      />
+
+                  {stayNights > 0 && stayNights < minRequiredNights && (
+                    <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-2 my-2">
+                      <span className="material-symbols-outlined text-base text-amber-600 shrink-0">info</span>
+                      <span>
+                        {language === 'en'
+                          ? `This property requires a minimum stay of ${minRequiredNights} nights.`
+                          : `يشترط هذا العقار حداً أدنى للإقامة قدره ${minRequiredNights} ${minRequiredNights === 2 ? 'ليلتان' : 'ليالٍ'}. يرجى تمديد موعد المغادرة للمتابعة.`}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="calendar-picker" dir={language === 'en' ? 'ltr' : 'rtl'}>
+                    <div className="calendar-header">
+                      <button
+                        type="button"
+                        className="calendar-arrow"
+                        disabled={isPastMonthDisabled}
+                        aria-disabled={isPastMonthDisabled}
+                        onClick={() => setCalendarMonth((currentMonth) => new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
+                        aria-label={language === 'en' ? 'Previous month' : 'الشهر السابق'}
+                      >
+                        <span className="material-symbols-outlined">
+                          {language === 'en' ? 'chevron_left' : 'chevron_right'}
+                        </span>
+                      </button>
+                      <strong>{monthFormatter.format(monthDate)}</strong>
+                      <button
+                        type="button"
+                        className="calendar-arrow"
+                        onClick={() => setCalendarMonth((currentMonth) => new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
+                        aria-label={language === 'en' ? 'Next month' : 'الشهر التالي'}
+                      >
+                        <span className="material-symbols-outlined">
+                          {language === 'en' ? 'chevron_right' : 'chevron_left'}
+                        </span>
+                      </button>
+                    </div>
+
+                    <div className="calendar-weekdays">
+                      {calendarWeekdays.map((day) => (
+                        <span key={day}>{day}</span>
+                      ))}
+                    </div>
+
+                    <div className="calendar-grid">
+                      {visibleDates.map((item) => {
+                        const isStart = Boolean(bookingDates.checkIn && item.isoString === bookingDates.checkIn)
+                        const isEnd = Boolean(bookingDates.checkOut && item.isoString === bookingDates.checkOut)
+                        const isSelected = isStart || isEnd
+                        const inRange = Boolean(
+                          bookingDates.checkIn &&
+                          bookingDates.checkOut &&
+                          item.isoString > bookingDates.checkIn &&
+                          item.isoString < bookingDates.checkOut
+                        )
+
+                        return (
+                          <button
+                            key={item.isoString}
+                            type="button"
+                            disabled={item.isDisabled}
+                            aria-disabled={item.isDisabled}
+                            aria-label={`${item.isoString}${isSelected ? ' Selected' : ''}${item.isDisabled ? ' Unavailable' : ''}`}
+                            className={[
+                              'calendar-day',
+                              item.isCurrentMonth ? '' : 'muted',
+                              item.isPast ? 'past' : '',
+                              item.isBooked ? 'booked' : '',
+                              isSelected ? 'selected' : '',
+                              isStart ? 'range-start' : '',
+                              isEnd ? 'range-end' : '',
+                              inRange ? 'in-range' : '',
+                            ].filter(Boolean).join(' ')}
+                            onClick={() => !item.isDisabled && handleCalendarDateSelect(item.isoString)}
+                          >
+                            {item.dayNumber}
+                          </button>
+                        )
+                      })}
                     </div>
                   </div>
-                  <div className="info-box">
-                    <span>{language === 'en' ? 'Guests' : 'الضيوف'}</span>
-                    <select
-                      value={bookingDates.guests}
-                      onChange={(event) =>
-                        setBookingDates((currentDates) => ({
-                          ...currentDates,
-                          guests: Number(event.target.value),
-                        }))
-                      }
-                    >
-                      <option value={1}>{language === 'en' ? '1 guest' : '1 ضيف'}</option>
-                      <option value={2}>{language === 'en' ? '2 guests' : '2 ضيوف'}</option>
-                      <option value={3}>{language === 'en' ? '3 guests' : '3 ضيوف'}</option>
-                      <option value={4}>{language === 'en' ? '4 guests' : '4 ضيوف'}</option>
-                    </select>
-                  </div>
-                  <div className="info-box">
-                    <span>{language === 'en' ? 'Nights' : 'عدد الليالي'}</span>
-                    <strong>{language === 'en' ? `${stayNights} nights` : `${stayNights} ليلة`}</strong>
-                    {minRequiredNights > 1 && (
-                      <small className={`block text-[11px] mt-0.5 ${stayNights < minRequiredNights ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-500'}`}>
-                        {language === 'en' ? `Min. ${minRequiredNights} nights` : `الحد الأدنى: ${minRequiredNights} ليالٍ`}
-                      </small>
-                    )}
-                  </div>
-                </div>
 
-                {stayNights < minRequiredNights && (
-                  <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-2 my-2">
-                    <span className="material-symbols-outlined text-base text-amber-600 shrink-0">info</span>
-                    <span>
-                      {language === 'en'
-                        ? `This property requires a minimum stay of ${minRequiredNights} nights.`
-                        : `يشترط هذا العقار حداً أدنى للإقامة قدره ${minRequiredNights} ${minRequiredNights === 2 ? 'ليلتان' : 'ليالٍ'}. يرجى تمديد موعد المغادرة للمتابعة.`}
-                    </span>
-                  </div>
-                )}
-
-                <div className="calendar-picker" dir={language === 'en' ? 'ltr' : 'rtl'}>
-                  <div className="calendar-header">
-                    <button type="button" className="calendar-arrow" onClick={() => setCalendarMonth((currentMonth) => new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}>
-                      <span className="material-symbols-outlined">chevron_left</span>
+                  <div className="checkout-actions">
+                    <button type="button" className="secondary-button" onClick={() => navigate('details')}>
+                      {language === 'en' ? 'Back' : 'رجوع'}
                     </button>
-                    <strong>{monthFormatter.format(monthDate)}</strong>
-                    <button type="button" className="calendar-arrow" onClick={() => setCalendarMonth((currentMonth) => new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}>
-                      <span className="material-symbols-outlined">chevron_right</span>
+                    <button type="button" className="primary-button" onClick={() => handleStepNavigation(2)}>
+                      {language === 'en' ? 'Continue' : 'متابعة'}
                     </button>
                   </div>
-
-                  <div className="calendar-weekdays">
-                    {calendarWeekdays.map((day) => (
-                      <span key={day}>{day}</span>
-                    ))}
-                  </div>
-
-                  <div className="calendar-grid">
-                    {visibleDates.map((date) => {
-                      const dateString = date.toISOString().slice(0, 10)
-                      const isCurrentMonth = date.getMonth() === monthDate.getMonth()
-                      const isSelected = isSameDay(date, new Date(bookingDates.checkIn)) || isSameDay(date, new Date(bookingDates.checkOut))
-                      const inRange = isWithinRange(date, bookingDates.checkIn, bookingDates.checkOut)
-
-                      return (
-                        <button
-                          key={dateString}
-                          type="button"
-                          className={[
-                            'calendar-day',
-                            isCurrentMonth ? '' : 'muted',
-                            isSelected ? 'selected' : '',
-                            inRange ? 'in-range' : '',
-                          ].filter(Boolean).join(' ')}
-                          onClick={() => handleCalendarDateSelect(dateString)}
-                        >
-                          {date.getDate()}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                <div className="checkout-actions">
-                  <button type="button" className="secondary-button" onClick={() => navigate('details')}>
-                    {language === 'en' ? 'Back' : 'رجوع'}
-                  </button>
-                  <button type="button" className="primary-button" onClick={() => handleStepNavigation(2)}>
-                    {language === 'en' ? 'Continue' : 'متابعة'}
-                  </button>
-                </div>
-              </>
-            )}
+                </>
+              )}
 
             {bookingStep === 2 && (
               <>
@@ -4235,7 +4331,8 @@ function App() {
           </div>
         </section>
       </div>
-    )
+    </ErrorBoundary>
+  )
   }
 
   const renderSuccessPage = () => {

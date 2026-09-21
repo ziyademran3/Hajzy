@@ -3619,20 +3619,52 @@ body::-webkit-scrollbar,
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
+  position: relative;
 }
 
-.calendar-day.muted {
-  opacity: 0.45;
+.calendar-day:disabled,
+.calendar-day.muted,
+.calendar-day.past {
+  opacity: 0.32 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.calendar-day.booked {
+  opacity: 0.45 !important;
+  text-decoration: line-through !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  background: rgba(239, 68, 68, 0.08) !important;
+  color: #ef4444 !important;
 }
 
 .calendar-day.in-range {
-  background: rgba(0, 67, 63, 0.08);
+  background: rgba(0, 67, 63, 0.1);
+  border-radius: 6px;
+  color: var(--primary, #00433f);
 }
 
 .calendar-day.selected {
   background: linear-gradient(135deg, #00433f 0%, #005a54 100%);
-  color: #fff;
-  box-shadow: 0 10px 20px rgba(0, 67, 63, 0.2);
+  color: #fff !important;
+  box-shadow: 0 8px 18px rgba(0, 67, 63, 0.25);
+  border-radius: 12px;
+  font-weight: 800;
+}
+
+.calendar-day.range-start,
+.calendar-day.range-end {
+  z-index: 2;
+}
+
+.calendar-arrow:disabled,
+.calendar-arrow[disabled] {
+  opacity: 0.25;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* ── Calendar Dark Mode ── */
@@ -3654,6 +3686,10 @@ body::-webkit-scrollbar,
   background: rgba(255, 255, 255, 0.14);
 }
 
+.app-shell[data-theme='dark'] .calendar-arrow:disabled {
+  opacity: 0.2;
+}
+
 .app-shell[data-theme='dark'] .calendar-weekdays span {
   color: #94a3b8;
 }
@@ -3667,19 +3703,22 @@ body::-webkit-scrollbar,
   background: rgba(255, 255, 255, 0.1);
 }
 
-.app-shell[data-theme='dark'] .calendar-day.muted {
-  color: #64748b;
-  opacity: 0.5;
+.app-shell[data-theme='dark'] .calendar-day:disabled,
+.app-shell[data-theme='dark'] .calendar-day.muted,
+.app-shell[data-theme='dark'] .calendar-day.past {
+  color: #475569 !important;
+  opacity: 0.3 !important;
+  background: transparent !important;
 }
 
 .app-shell[data-theme='dark'] .calendar-day.in-range {
-  background: rgba(0, 120, 110, 0.2);
+  background: rgba(0, 120, 110, 0.22);
   color: #5eead4;
 }
 
 .app-shell[data-theme='dark'] .calendar-day.selected {
   background: linear-gradient(135deg, #00796b 0%, #009688 100%);
-  color: #fff;
+  color: #fff !important;
   box-shadow: 0 10px 20px rgba(0, 150, 136, 0.3);
 }
 
@@ -4365,7 +4404,7 @@ body::-webkit-scrollbar,
 }
 
 .checkout-shell {
-  padding-bottom: max(120px, calc(100px + env(safe-area-inset-bottom))) !important;
+  padding-bottom: calc(130px + env(safe-area-inset-bottom, 20px) + 30px) !important;
 }
 
 .checkout-actions {
@@ -4373,8 +4412,8 @@ body::-webkit-scrollbar,
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-top: 24px;
-  margin-bottom: 12px;
+  margin-top: 28px;
+  margin-bottom: 24px;
 }
 
 .checkout-actions .primary-button,

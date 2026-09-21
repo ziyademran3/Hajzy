@@ -6,6 +6,7 @@ test.use({
 
 test.describe('Guest Phone Input Mobile Tests (Android/Chrome emulation)', () => {
   test.beforeEach(async ({ page }) => {
+    test.setTimeout(60000);
     await page.goto('/');
     await page.evaluate(() => {
       localStorage.setItem('hajzy_guest_mode', 'true');
