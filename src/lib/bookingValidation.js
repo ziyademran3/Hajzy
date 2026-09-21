@@ -4,7 +4,7 @@
 
 // Convert Eastern Arabic (٠-٩) and Persian (۰-۹) numerals to standard Latin digits (0-9)
 export const normalizeArabicDigits = (str = '') => {
-  return String(str)
+  return String(str ?? '')
     .replace(/[٠۰]/g, '0')
     .replace(/[١۱]/g, '1')
     .replace(/[٢۲]/g, '2')
@@ -18,12 +18,34 @@ export const normalizeArabicDigits = (str = '') => {
 }
 
 /**
- * Clean phone number: convert digits and remove spaces, dashes, parentheses
+ * Safely normalizes any phone number input:
+ * - Starts with const v = String(value ?? '')
+ * - Converts Arabic/Persian digits to standard Latin (0-9)
+ * - Removes spaces, dashes, parentheses, dots and unexpected characters
+ * - Preserves leading '+' for international numbers
+ * - Handles autofill values like "+20 102 468 8333", "010 2277 7320", "(+20) 102-468-8333"
+ * - Never throws an error on any input type
+ */
+export const normalizePhone = (value = '') => {
+  try {
+    const v = String(value ?? '')
+    if (!v) return ''
+    const converted = normalizeArabicDigits(v)
+    const trimmed = converted.trim()
+    const hasLeadingPlus = trimmed.startsWith('+')
+    const digitsOnly = trimmed.replace(/\D/g, '')
+    if (!digitsOnly) return ''
+    return hasLeadingPlus ? `+${digitsOnly}` : digitsOnly
+  } catch {
+    return ''
+  }
+}
+
+/**
+ * Clean phone number: alias to normalizePhone for backward compatibility
  */
 export const cleanPhoneNumber = (phone = '') => {
-  if (!phone) return ''
-  const converted = normalizeArabicDigits(phone)
-  return converted.replace(/[\s\-()]/g, '').trim()
+  return normalizePhone(phone)
 }
 
 /**
@@ -34,7 +56,7 @@ export const cleanPhoneNumber = (phone = '') => {
  */
 export const validateFullName = (name = '', language = 'ar') => {
   const isEn = language === 'en'
-  const trimmed = String(name || '').trim()
+  const trimmed = String(name ?? '').trim()
 
   if (!trimmed) {
     return {
@@ -63,12 +85,13 @@ export const validateFullName = (name = '', language = 'ar') => {
  * Validates phone number according to Egyptian mobile rules + international format
  * - Egyptian local mobile: 01[0125]\d{8} (11 digits, e.g. 01012345678)
  * - Egyptian international: (+20|0020)1[0125]\d{8}
+ * - Egyptian without plus prefix: 201[0125]\d{8}
  * - International guests: +[1-9]\d{7,14}
  * Normalizes to standard E.164 (e.g. +201012345678)
  */
 export const validatePhone = (phone = '', language = 'ar') => {
   const isEn = language === 'en'
-  const cleaned = cleanPhoneNumber(phone)
+  const cleaned = normalizePhone(phone)
 
   if (!cleaned) {
     return {
@@ -80,6 +103,7 @@ export const validatePhone = (phone = '', language = 'ar') => {
 
   const egLocalRegex = /^01[0125]\d{8}$/
   const egIntlRegex = /^(\+20|0020)1[0125]\d{8}$/
+  const egNoPlusRegex = /^201[0125]\d{8}$/
   const globalIntlRegex = /^\+[1-9]\d{7,14}$/
 
   let normalized = ''
@@ -93,6 +117,9 @@ export const validatePhone = (phone = '', language = 'ar') => {
     } else {
       normalized = cleaned
     }
+  } else if (egNoPlusRegex.test(cleaned)) {
+    // 201xxxxxxxxx -> +201xxxxxxxxx
+    normalized = `+${cleaned}`
   } else if (globalIntlRegex.test(cleaned)) {
     normalized = cleaned
   } else {

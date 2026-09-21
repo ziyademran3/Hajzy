@@ -46,7 +46,15 @@ import {
   checkAndGenerateArrivalReminders,
   formatRelativeTime,
 } from './lib/notificationService'
-import { validateGuestForm, validateFullName, validatePhone, validateEmail } from './lib/bookingValidation'
+import {
+  validateGuestForm,
+  validateFullName,
+  validatePhone,
+  validateEmail,
+  cleanPhoneNumber,
+  normalizePhone,
+} from './lib/bookingValidation'
+import ErrorBoundary from './components/ErrorBoundary'
 import {
   addBooking,
   addChatMessage,
@@ -288,14 +296,20 @@ function App() {
         const parsed = JSON.parse(stored)
         if (parsed && typeof parsed === 'object') {
           return {
-            fullName: parsed.fullName || '',
-            phone: parsed.phone || '',
-            email: parsed.email || '',
-            notes: parsed.notes || '',
+            fullName: String(parsed.fullName || ''),
+            phone: String(parsed.phone || ''),
+            email: String(parsed.email || ''),
+            notes: String(parsed.notes || ''),
           }
+        } else {
+          sessionStorage.removeItem('hajzy_booking_guest_info')
         }
       }
-    } catch {}
+    } catch {
+      try {
+        sessionStorage.removeItem('hajzy_booking_guest_info')
+      } catch {}
+    }
     return {
       fullName: '',
       phone: '',
@@ -3336,16 +3350,44 @@ function App() {
   }, [user])
 
   useEffect(() => {
-    if (guestForm.phone && !walletNumber) {
-      const clean = cleanPhoneNumber(guestForm.phone)
-      if (/^01[0125]\d{8}$/.test(clean)) {
-        setWalletNumber(clean)
-      } else if (/^(\+20|0020)1[0125]\d{8}$/.test(clean)) {
-        const local = clean.startsWith('0020') ? `0${clean.slice(4)}` : `0${clean.slice(3)}`
-        setWalletNumber(local)
+    try {
+      if (guestForm.phone && !walletNumber) {
+        const clean = normalizePhone(guestForm.phone)
+        if (/^01[0125]\d{8}$/.test(clean)) {
+          setWalletNumber(clean)
+        } else if (/^(\+20|0020)1[0125]\d{8}$/.test(clean)) {
+          const local = clean.startsWith('0020') ? `0${clean.slice(4)}` : `0${clean.slice(3)}`
+          setWalletNumber(local)
+        } else if (/^201[0125]\d{8}$/.test(clean)) {
+          setWalletNumber(`0${clean.slice(2)}`)
+        }
       }
+    } catch (err) {
+      console.error('Failed to sync wallet number from phone:', err)
     }
   }, [guestForm.phone, walletNumber])
+
+  const handleGuestFieldBlur = (field) => {
+    if (field === 'fullName') {
+      const valRes = validateFullName(guestForm.fullName, language)
+      setGuestErrors((prev) => ({
+        ...prev,
+        fullName: valRes.isValid ? '' : valRes.error,
+      }))
+    } else if (field === 'phone') {
+      const valRes = validatePhone(guestForm.phone, language)
+      setGuestErrors((prev) => ({
+        ...prev,
+        phone: valRes.isValid ? '' : valRes.error,
+      }))
+    } else if (field === 'email') {
+      const valRes = validateEmail(guestForm.email, language)
+      setGuestErrors((prev) => ({
+        ...prev,
+        email: valRes.isValid ? '' : valRes.error,
+      }))
+    }
+  }
 
   const handleGuestFieldChange = (field, value) => {
     const nextForm = { ...guestForm, [field]: value }
@@ -3354,7 +3396,8 @@ function App() {
       sessionStorage.setItem('hajzy_booking_guest_info', JSON.stringify(nextForm))
     } catch {}
 
-    if (guestFormTouched) {
+    // Only validate live during typing after first failed submit attempt or if the field already had an error
+    if (guestFormTouched || guestErrors[field]) {
       if (field === 'fullName') {
         const valRes = validateFullName(value, language)
         setGuestErrors((prev) => ({
@@ -3765,6 +3808,7 @@ function App() {
                       className={guestErrors.fullName ? 'has-error' : ''}
                       value={guestForm.fullName}
                       onChange={(event) => handleGuestFieldChange('fullName', event.target.value)}
+                      onBlur={() => handleGuestFieldBlur('fullName')}
                       placeholder={language === 'en' ? 'Your full name' : 'الاسم الكامل'}
                     />
                     {guestErrors.fullName && (
@@ -3793,8 +3837,10 @@ function App() {
                       aria-invalid={Boolean(guestErrors.phone)}
                       aria-describedby={guestErrors.phone ? 'guest-phone-error' : undefined}
                       className={`guest-input-phone ${guestErrors.phone ? 'has-error' : ''}`}
+                      style={{ textAlign: 'start' }}
                       value={guestForm.phone}
                       onChange={(event) => handleGuestFieldChange('phone', event.target.value)}
+                      onBlur={() => handleGuestFieldBlur('phone')}
                       placeholder={language === 'en' ? '+20 1xx xxx xxxx' : '01xxxxxxxxx'}
                     />
                     {guestErrors.phone && (
@@ -3823,8 +3869,10 @@ function App() {
                       aria-invalid={Boolean(guestErrors.email)}
                       aria-describedby={guestErrors.email ? 'guest-email-error' : undefined}
                       className={`guest-input-email ${guestErrors.email ? 'has-error' : ''}`}
+                      style={{ textAlign: 'start' }}
                       value={guestForm.email}
                       onChange={(event) => handleGuestFieldChange('email', event.target.value)}
+                      onBlur={() => handleGuestFieldBlur('email')}
                       placeholder="name@example.com"
                     />
                     {guestErrors.email && (
@@ -5131,7 +5179,13 @@ function App() {
         onBack={() => navigate('details', selectedProperty)}
       />
     )
-    if (activePage === 'checkout') return renderCheckoutPage()
+    if (activePage === 'checkout') {
+      return (
+        <ErrorBoundary>
+          {renderCheckoutPage()}
+        </ErrorBoundary>
+      )
+    }
     if (activePage === 'success') return renderSuccessPage()
     if (activePage === 'bookings') return renderBookingsPage()
 
