@@ -19,6 +19,7 @@ const DashboardPage = lazy(() => import('./pages/DashboardPage'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 const ChatPage = lazy(() => import('./pages/ChatPage'))
 const ReviewsPage = lazy(() => import('./pages/ReviewsPage'))
+const CityPage = lazy(() => import('./pages/CityPage'))
 import MapView from './components/MapView'
 import Logo from './components/Logo'
 import SplitPaymentModal from './components/SplitPaymentModal'
@@ -41,6 +42,7 @@ import {
   fetchBookings,
   fetchChatMessages,
   fetchProperties,
+  getCitySlug,
   hasSupabaseConnection,
   propertySeed,
   updateBooking,
@@ -84,6 +86,7 @@ const pageTitlesByLanguage = {
     dashboard: 'لوحة التحكم',
     account: 'حسابي',
     home: 'Hajzy',
+    city: 'إقامات المدينة',
     details: 'تفاصيل الشقة',
     checkout: 'تأكيد الحجز',
     success: 'تم التأكيد',
@@ -97,6 +100,7 @@ const pageTitlesByLanguage = {
     dashboard: 'Dashboard',
     account: 'My Account',
     home: 'Hajzy',
+    city: 'City Stays',
     details: 'Property details',
     checkout: 'Confirm booking',
     success: 'Confirmed',
@@ -209,6 +213,8 @@ function App() {
   const [selectedInvoiceBooking, setSelectedInvoiceBooking] = useState(null)
   const [activeBookingActionsTarget, setActiveBookingActionsTarget] = useState(null)
   const [activePage, setActivePage] = useState('home')
+  const [selectedCitySlug, setSelectedCitySlug] = useState('alexandria')
+  const homeScrollPositionRef = useRef(0)
   const [authRequired, setAuthRequired] = useState(() => {
     try {
       const savedUser = localStorage.getItem('hajzy_user') || localStorage.getItem('stitch_user')
@@ -409,6 +415,15 @@ function App() {
     const params = new URLSearchParams(window.location.search)
     const path = window.location.pathname
 
+    const cityParam = params.get('city')
+    const cityPathMatch = path.match(/\/city\/([a-zA-Z0-9_-]+)/)
+    const initialCity = cityParam || (cityPathMatch ? cityPathMatch[1] : null)
+    if (initialCity) {
+      const slug = getCitySlug(initialCity)
+      setSelectedCitySlug(slug)
+      setActivePage('city')
+    }
+
     if (path.includes('/verify-email')) {
       setCurrentAuthPage('verify')
       return
@@ -478,6 +493,43 @@ function App() {
       window.history.replaceState({}, document.title, window.location.pathname.replace('/payment-result', '') || '/')
     }
   }, [language])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const handlePopState = (e) => {
+      const state = e.state
+      const params = new URLSearchParams(window.location.search)
+      const path = window.location.pathname
+      const cityParam = params.get('city')
+      const cityPathMatch = path.match(/\/city\/([a-zA-Z0-9_-]+)/)
+      const targetCity = state?.citySlug || cityParam || (cityPathMatch ? cityPathMatch[1] : null)
+
+      if (state?.page === 'city' || targetCity) {
+        setSelectedCitySlug(getCitySlug(targetCity || 'alexandria'))
+        setActivePage('city')
+      } else if (state?.page) {
+        setActivePage(state.page)
+        if (state.page === 'home') {
+          window.requestAnimationFrame(() => {
+            window.scrollTo({ top: homeScrollPositionRef.current, left: 0, behavior: 'auto' })
+            document.documentElement.scrollTop = homeScrollPositionRef.current
+            document.body.scrollTop = homeScrollPositionRef.current
+          })
+        }
+      } else {
+        setActivePage('home')
+        window.requestAnimationFrame(() => {
+          window.scrollTo({ top: homeScrollPositionRef.current, left: 0, behavior: 'auto' })
+          document.documentElement.scrollTop = homeScrollPositionRef.current
+          document.body.scrollTop = homeScrollPositionRef.current
+        })
+      }
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
 
   // Do not forcibly override the theme on mount — let ThemeProvider and user preference manage it.
 
@@ -599,11 +651,30 @@ function App() {
     role: 'user',
   }
 
-  const navigate = (page, property = selectedProperty) => {
+  const navigate = (page, property = selectedProperty, citySlug = null) => {
     haptics.trigger('light')
+
+    // Save scroll position when leaving home
+    if (activePage === 'home' && page !== 'home') {
+      homeScrollPositionRef.current = window.scrollY || document.documentElement.scrollTop || 0
+    }
+
     if (property) {
       setSelectedProperty(property)
     }
+
+    if (page === 'city') {
+      const slug = getCitySlug(citySlug || selectedCitySlug || 'alexandria')
+      setSelectedCitySlug(slug)
+      try {
+        window.history.pushState({ page: 'city', citySlug: slug }, '', `?city=${slug}`)
+      } catch {}
+    } else if (page === 'home') {
+      try {
+        window.history.pushState({ page: 'home' }, '', window.location.pathname)
+      } catch {}
+    }
+
     if (page === 'profile') {
       setActivePage('account')
     } else {
@@ -615,14 +686,20 @@ function App() {
       setActivePage(page)
     }
 
-    // Pages share the document scroll container in the mobile WebView. Reset it
-    // after rendering so a newly opened checkout never inherits the previous
-    // page's position near the bottom.
-    window.requestAnimationFrame(() => {
-      window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
-      document.documentElement.scrollTop = 0
-      document.body.scrollTop = 0
-    })
+    // Restore scroll position when returning to home, otherwise scroll to top
+    if (page === 'home') {
+      window.requestAnimationFrame(() => {
+        window.scrollTo({ top: homeScrollPositionRef.current, left: 0, behavior: 'auto' })
+        document.documentElement.scrollTop = homeScrollPositionRef.current
+        document.body.scrollTop = homeScrollPositionRef.current
+      })
+    } else {
+      window.requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+        document.documentElement.scrollTop = 0
+        document.body.scrollTop = 0
+      })
+    }
   }
 
   const openAuthScreen = (page = 'login') => {
@@ -2061,49 +2138,74 @@ function App() {
   const getPropertyDetails = (p) => (!p ? [] : (language === 'en' && p.detailsEn) ? p.detailsEn : (p.details || []))
   const getPropertyAmenities = (p) => (!p ? [] : (language === 'en' && p.amenitiesEn) ? p.amenitiesEn : (p.amenities || []))
 
+  const getCityStats = (cityKey, slug, defaultCount, defaultMinPrice) => {
+    const matched = properties.filter((p) => {
+      const pSlug = p.cityId || p.citySlug || getCitySlug(p.city) || getCitySlug(p.cityEn)
+      return pSlug === slug || (p.city && p.city.includes(cityKey))
+    })
+    const count = matched.length
+    const prices = matched.map((p) => Number(p.priceValue || 0)).filter((p) => p > 0)
+    const minPrice = prices.length ? Math.min(...prices) : defaultMinPrice
+    return {
+      count: count > 0 ? count : defaultCount,
+      minPrice,
+    }
+  }
+
+  const alexStats = getCityStats('الإسكندرية', 'alexandria', 42, 3100)
+  const cairoStats = getCityStats('القاهرة', 'cairo', 68, 3600)
+  const gizaStats = getCityStats('الجيزة', 'giza', 29, 2950)
+  const hurghadaStats = getCityStats('الغردقة', 'hurghada', 35, 3400)
+  const sharmStats = getCityStats('شرم الشيخ', 'sharm-el-sheikh', 31, 3900)
+
   const destinationCards = [
     {
       cityKey: 'الإسكندرية',
+      slug: 'alexandria',
       city: language === 'en' ? 'Alexandria' : 'الإسكندرية',
       label: language === 'en' ? 'Sea breeze' : 'نسيم البحر',
-      price: language === 'en' ? 'From 3,100 EGP' : 'من 3,100 ج.م',
+      price: language === 'en' ? `From ${alexStats.minPrice.toLocaleString()} EGP` : `من ${alexStats.minPrice.toLocaleString()} ج.م`,
       image: CITY_PHOTOS['الإسكندرية'],
-      staysCount: 42,
+      staysCount: alexStats.count,
       badge: language === 'en' ? 'Trending' : 'الأكثر طلباً',
     },
     {
       cityKey: 'القاهرة',
+      slug: 'cairo',
       city: language === 'en' ? 'Cairo' : 'القاهرة',
       label: language === 'en' ? 'Nile & city' : 'النيل والمدينة',
-      price: language === 'en' ? 'From 3,600 EGP' : 'من 3,600 ج.م',
+      price: language === 'en' ? `From ${cairoStats.minPrice.toLocaleString()} EGP` : `من ${cairoStats.minPrice.toLocaleString()} ج.م`,
       image: CITY_PHOTOS['القاهرة'],
-      staysCount: 68,
+      staysCount: cairoStats.count,
       badge: language === 'en' ? 'Popular' : 'شائع',
     },
     {
       cityKey: 'الجيزة',
+      slug: 'giza',
       city: language === 'en' ? 'Giza' : 'الجيزة',
       label: language === 'en' ? 'Pyramids view' : 'إطلالة الأهرامات',
-      price: language === 'en' ? 'From 2,950 EGP' : 'من 2,950 ج.م',
+      price: language === 'en' ? `From ${gizaStats.minPrice.toLocaleString()} EGP` : `من ${gizaStats.minPrice.toLocaleString()} ج.م`,
       image: CITY_PHOTOS['الجيزة'],
-      staysCount: 29,
+      staysCount: gizaStats.count,
     },
     {
       cityKey: 'الغردقة',
+      slug: 'hurghada',
       city: language === 'en' ? 'Hurghada' : 'الغردقة',
       label: language === 'en' ? 'Red Sea luxury' : 'فخامة البحر الأحمر',
-      price: language === 'en' ? 'From 3,400 EGP' : 'من 3,400 ج.م',
+      price: language === 'en' ? `From ${hurghadaStats.minPrice.toLocaleString()} EGP` : `من ${hurghadaStats.minPrice.toLocaleString()} ج.م`,
       image: CITY_PHOTOS['الغردقة'],
-      staysCount: 35,
+      staysCount: hurghadaStats.count,
       badge: language === 'en' ? 'Beach' : 'شاطئ',
     },
     {
       cityKey: 'شرم الشيخ',
+      slug: 'sharm-el-sheikh',
       city: language === 'en' ? 'Sharm El-Sheikh' : 'شرم الشيخ',
       label: language === 'en' ? 'Bay & reefs' : 'الخلجان والشعاب',
-      price: language === 'en' ? 'From 3,900 EGP' : 'من 3,900 ج.م',
+      price: language === 'en' ? `From ${sharmStats.minPrice.toLocaleString()} EGP` : `من ${sharmStats.minPrice.toLocaleString()} ج.م`,
       image: CITY_PHOTOS['شرم الشيخ'],
-      staysCount: 31,
+      staysCount: sharmStats.count,
     },
   ]
 
@@ -2411,16 +2513,25 @@ function App() {
 
         <div className="mini-city-grid">
           {destinationCards.map((item) => (
-            <button
+            <a
               key={item.cityKey}
-              type="button"
+              href={`?city=${item.slug}`}
               className="mini-city-card"
-              onClick={() => {
-                setHomeQuickSearch((current) => ({ ...current, destination: item.cityKey }))
-                setActiveFilter(item.cityKey)
+              role="button"
+              tabIndex={0}
+              aria-label={`${item.city}, ${item.label}, ${item.staysCount} ${language === 'en' ? 'stays' : 'إقامة'}`}
+              onClick={(e) => {
+                e.preventDefault()
+                navigate('city', null, item.slug)
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  navigate('city', null, item.slug)
+                }
               }}
             >
-              <img src={item.image} alt={item.city} onError={handleStayImageError} />
+              <img src={item.image} alt={item.city} onError={handleStayImageError} loading="lazy" />
               <div className="city-card-copy">
                 <div className="flex items-center justify-between gap-1">
                   <span>{item.city}</span>
@@ -2433,7 +2544,7 @@ function App() {
                 <small>{item.label} • {item.staysCount} {language === 'en' ? 'stays' : 'إقامة'}</small>
                 <strong>{item.price}</strong>
               </div>
-            </button>
+            </a>
           ))}
         </div>
 
@@ -4895,6 +5006,23 @@ function App() {
     if (activePage === 'home') {
       return renderHomePage()
     }
+    if (activePage === 'city') {
+      return (
+        <CityPage
+          citySlug={selectedCitySlug}
+          properties={properties}
+          isLoading={isLoadingData}
+          language={language}
+          onBack={() => navigate('home')}
+          onSelectProperty={(prop) => navigate('details', prop)}
+          onBookProperty={(prop) => navigate('checkout', prop)}
+          isFavorite={isFavorite}
+          toggleFavorite={toggleFavorite}
+          formatCurrency={formatCurrency}
+          handleStayImageError={handleStayImageError}
+        />
+      )
+    }
     if (activePage === 'details') return renderDetailsPage()
     if (activePage === 'chat') return (
       <ChatPage
@@ -5509,6 +5637,7 @@ function App() {
           {bottomNavItems.map((item) => {
             const isItemActive =
               activePage === item.key ||
+              (item.key === 'home' && activePage === 'city') ||
               (item.key === 'account' && activePage === 'profile') ||
               (item.key === 'dashboard' && isOwner && activePage === 'owner')
 

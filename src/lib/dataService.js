@@ -26,6 +26,81 @@ export const sanitizePhotoUrl = (url) => {
   return cleanUrl
 }
 
+export const CITY_DEFINITIONS = {
+  alexandria: {
+    id: 'alexandria',
+    slug: 'alexandria',
+    nameAr: 'الإسكندرية',
+    nameEn: 'Alexandria',
+    subtitleAr: 'نسيم البحر',
+    subtitleEn: 'Sea breeze',
+    badgeAr: 'الأكثر طلباً',
+    badgeEn: 'Trending',
+    photo: photo('photo-1507525428034-b723cf961d3e'),
+  },
+  cairo: {
+    id: 'cairo',
+    slug: 'cairo',
+    nameAr: 'القاهرة',
+    nameEn: 'Cairo',
+    subtitleAr: 'النيل والمدينة',
+    subtitleEn: 'Nile & city',
+    badgeAr: 'شائع',
+    badgeEn: 'Popular',
+    photo: photo('photo-1568322445389-f64ac2515020'),
+  },
+  giza: {
+    id: 'giza',
+    slug: 'giza',
+    nameAr: 'الجيزة',
+    nameEn: 'Giza',
+    subtitleAr: 'إطلالة الأهرامات',
+    subtitleEn: 'Pyramids view',
+    badgeAr: '',
+    badgeEn: '',
+    photo: photo('photo-1553913861-c0fddf2619ee'),
+  },
+  hurghada: {
+    id: 'hurghada',
+    slug: 'hurghada',
+    nameAr: 'الغردقة',
+    nameEn: 'Hurghada',
+    subtitleAr: 'فخامة البحر الأحمر',
+    subtitleEn: 'Red Sea luxury',
+    badgeAr: 'شاطئ',
+    badgeEn: 'Beach',
+    photo: photo('photo-1544551763-46a013bb70d5'),
+  },
+  'sharm-el-sheikh': {
+    id: 'sharm-el-sheikh',
+    slug: 'sharm-el-sheikh',
+    nameAr: 'شرم الشيخ',
+    nameEn: 'Sharm El-Sheikh',
+    subtitleAr: 'الخلجان والشعاب',
+    subtitleEn: 'Bay & reefs',
+    badgeAr: '',
+    badgeEn: '',
+    photo: photo('photo-1571896349842-33c89424de2d'),
+  },
+}
+
+export const getCitySlug = (cityOrKey) => {
+  if (!cityOrKey) return ''
+  const normalized = String(cityOrKey).trim().toLowerCase()
+  if (CITY_DEFINITIONS[normalized]) return normalized
+  for (const [slug, def] of Object.entries(CITY_DEFINITIONS)) {
+    if (
+      def.nameAr.toLowerCase() === normalized ||
+      def.nameEn.toLowerCase() === normalized ||
+      slug === normalized ||
+      (slug === 'sharm-el-sheikh' && (normalized === 'sharm' || normalized.includes('شرم')))
+    ) {
+      return slug
+    }
+  }
+  return normalized
+}
+
 export const CITY_PHOTOS = {
   'الإسكندرية': photo('photo-1507525428034-b723cf961d3e'),
   'القاهرة': photo('photo-1568322445389-f64ac2515020'),
@@ -44,6 +119,7 @@ const stay = ({
   locationEn,
   city,
   cityEn,
+  cityId,
   neighborhood,
   coordinates,
   priceValue,
@@ -58,30 +134,35 @@ const stay = ({
   descriptionEn,
   amenities,
   amenitiesEn,
-}) => ({
-  id,
-  title,
-  titleEn,
-  location,
-  locationEn,
-  city,
-  cityEn,
-  neighborhood,
-  coordinates,
-  priceValue,
-  currency: 'EGP',
-  guests,
-  rating,
-  reviews,
-  image,
-  images: [image, ...images.filter((item) => item && item !== image)],
-  details,
-  detailsEn,
-  description,
-  descriptionEn,
-  amenities,
-  amenitiesEn,
-})
+}) => {
+  const resolvedCityId = cityId || getCitySlug(city) || getCitySlug(cityEn)
+  return {
+    id,
+    title,
+    titleEn,
+    location,
+    locationEn,
+    city,
+    cityEn,
+    cityId: resolvedCityId,
+    citySlug: resolvedCityId,
+    neighborhood,
+    coordinates,
+    priceValue,
+    currency: 'EGP',
+    guests,
+    rating,
+    reviews,
+    image,
+    images: [image, ...images.filter((item) => item && item !== image)],
+    details,
+    detailsEn,
+    description,
+    descriptionEn,
+    amenities,
+    amenitiesEn,
+  }
+}
 
 export const propertySeed = [
   stay({
@@ -464,14 +545,20 @@ const normalizeProperty = (property) => {
     .map(sanitizePhotoUrl)
     .filter(Boolean)
 
+  const city = property.city || seed.city || ''
+  const cityEn = property.cityEn || seed.cityEn || ''
+  const resolvedCityId = property.cityId || seed.cityId || property.citySlug || seed.citySlug || getCitySlug(city) || getCitySlug(cityEn)
+
   return {
     id: property.id || seed.id || `property-${Date.now()}`,
     title: property.title || seed.title,
     titleEn: property.titleEn || seed.titleEn || '',
     location: property.location || seed.location,
     locationEn: property.locationEn || seed.locationEn || '',
-    city: property.city || seed.city,
-    cityEn: property.cityEn || seed.cityEn || '',
+    city,
+    cityEn,
+    cityId: resolvedCityId,
+    citySlug: resolvedCityId,
     neighborhood: property.neighborhood || seed.neighborhood || property.location || seed.location,
     coordinates: property.coordinates || seed.coordinates || { lat: 30.0333, lng: 31.2333 },
     priceValue: Number(property.priceValue || seed.priceValue || 0),
