@@ -16,52 +16,9 @@ const getBucket = (isoDate) => {
   return 'أقدم'
 }
 
-// sample data
-const SAMPLE = [
-  {
-    id: 'n1',
-    type: 'confirm',
-    title: 'حجز مؤكد — شقة على البحر',
-    body: 'تم تأكيد حجزك من 10-09 إلى 15-09. الرقم المرجعي: 8231',
-    time: 'الآن',
-    read: false,
-    thumbnail: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=800&auto=format&fit=crop',
-    date: new Date().toISOString(),
-  },
-  {
-    id: 'n2',
-    type: 'offer',
-    title: 'عرض خاص 15% خصم',
-    body: 'خصم على إقامات في الغردقة خلال شهر نوفمبر.',
-    time: '2 ساعة مضت',
-    read: false,
-    thumbnail: null,
-    date: new Date().toISOString(),
-  },
-  {
-    id: 'n3',
-    type: 'alert',
-    title: 'تنبيه: فشل الدفع',
-    body: 'حدثت مشكلة في عملية الدفع لطلب #7722. الرجاء التحقق.',
-    time: 'أمس',
-    read: false,
-    thumbnail: null,
-    date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'n4',
-    type: 'message',
-    title: 'رسالة من المضيف',
-    body: 'مرحبا! هل تحتاج مساعدة في الوصول؟',
-    time: '3 أيام مضت',
-    read: true,
-    thumbnail: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800&auto=format&fit=crop',
-    date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-]
-
+// default empty state for notifications
 export default function NotificationPage() {
-  const [notifications, setNotifications] = useState(SAMPLE)
+  const [notifications, setNotifications] = useState([])
 
   const grouped = useMemo(() => {
     const map = {}

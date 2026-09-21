@@ -121,3 +121,23 @@ export function createPaymobPaymentSession({ amount, currency, propertyTitle, pa
     body: JSON.stringify({ amount, currency, propertyTitle, paymentMethod, returnUrl }),
   })
 }
+
+// Notifications API
+export function fetchNotificationsApi() {
+  return requestJson('/notifications', { method: 'GET' })
+}
+
+export function createNotificationApi(data) {
+  return requestJson('/notifications', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export function markAllNotificationsReadApi() {
+  return requestJson('/notifications/read-all', { method: 'PATCH' })
+}
+
+export function deleteNotificationApi(notificationId) {
+  return requestJson(`/notifications/${encodeURIComponent(notificationId)}`, { method: 'DELETE' })
+}

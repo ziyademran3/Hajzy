@@ -674,6 +674,71 @@ export async function onRequest(context) {
       }
     }
 
+    if (path === '/api/notifications' || path.startsWith('/api/notifications/')) {
+      let payload
+      try {
+        payload = await verifyJwt(bearer(request), jwtSecret)
+      } catch {
+        return json({ message: 'Invalid or expired token.' }, 401)
+      }
+      const userId = payload.userId
+      const kvKey = `notifs:${userId}`
+
+      const loadNotifs = async () => {
+        if (!env.HAJZY_AUTH) return []
+        const raw = await env.HAJZY_AUTH.get(kvKey)
+        if (!raw) return []
+        try { return JSON.parse(raw) } catch { return [] }
+      }
+
+      const saveNotifs = async (list) => {
+        if (!env.HAJZY_AUTH) return
+        await env.HAJZY_AUTH.put(kvKey, JSON.stringify(list))
+      }
+
+      if (path === '/api/notifications' && request.method === 'GET') {
+        const list = await loadNotifs()
+        return json({ notifications: list })
+      }
+
+      if (path === '/api/notifications' && request.method === 'POST') {
+        const { title, body, detail, type, bookingId, propertyId } = await readBody(request)
+        const notif = {
+          id: `notif_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          userId,
+          title: typeof title === 'object' ? title : { ar: String(title || ''), en: String(title || '') },
+          body: typeof (body || detail) === 'object' ? (body || detail) : { ar: String(body || detail || ''), en: String(body || detail || '') },
+          detail: typeof (body || detail) === 'object' ? (body || detail) : { ar: String(body || detail || ''), en: String(body || detail || '') },
+          type: type || 'info',
+          bookingId: bookingId || null,
+          propertyId: propertyId || null,
+          createdAt: new Date().toISOString(),
+          readAt: null,
+          read: false,
+        }
+        const list = await loadNotifs()
+        const updated = [notif, ...list].slice(0, 50)
+        await saveNotifs(updated)
+        return json({ notification: notif }, 201)
+      }
+
+      if (path === '/api/notifications/read-all' && (request.method === 'PATCH' || request.method === 'POST')) {
+        const list = await loadNotifs()
+        const now = new Date().toISOString()
+        const updated = list.map((n) => ({ ...n, readAt: n.readAt || now, read: true }))
+        await saveNotifs(updated)
+        return json({ message: 'All notifications marked as read.', notifications: updated })
+      }
+
+      if (path.startsWith('/api/notifications/') && request.method === 'DELETE') {
+        const notifId = path.replace('/api/notifications/', '').trim()
+        const list = await loadNotifs()
+        const updated = list.filter((n) => n.id !== notifId)
+        await saveNotifs(updated)
+        return json({ message: 'Notification deleted successfully.' })
+      }
+    }
+
     return json({ message: 'Not found.' }, 404)
   } catch (error) {
     console.error('Pages API error:', error)

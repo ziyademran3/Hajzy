@@ -29,7 +29,23 @@ import NeighborhoodExplorer from './components/NeighborhoodExplorer'
 import HostCalendar from './components/HostCalendar'
 import { useTheme } from './components/ThemeProvider'
 import { formatCurrency, formatDate } from './lib/formatters'
-import { createPaymobPaymentSession } from './lib/authApi'
+import {
+  createPaymobPaymentSession,
+  fetchNotificationsApi,
+  createNotificationApi,
+  markAllNotificationsReadApi,
+  deleteNotificationApi,
+} from './lib/authApi'
+import {
+  getUserNotifications,
+  saveUserNotifications,
+  createNotification,
+  markAllAsRead,
+  deleteNotification,
+  purgeLegacyMockNotifications,
+  checkAndGenerateArrivalReminders,
+  formatRelativeTime,
+} from './lib/notificationService'
 import { validateGuestForm, validateFullName, validatePhone, validateEmail } from './lib/bookingValidation'
 import {
   addBooking,
@@ -304,59 +320,19 @@ function App() {
   const [fawryRefCode] = useState('74920184')
   const [toast, setToast] = useState(null)
   const [_showNotifications, setShowNotifications] = useState(false)
-  const [notifications, setNotifications] = useState([
-    {
-      id: 'welcome-note',
-      title: {
-        ar: 'تم تأكيد حجزك',
-        en: 'Booking Confirmed',
-      },
-      detail: {
-        ar: 'إقامة فيستا الإسكندرية - الوصول غدًا في 15:00',
-        en: 'Alexandria Vista Stay - Arrival tomorrow at 15:00',
-      },
-      time: {
-        ar: 'الآن',
-        en: 'Just now',
-      },
-      type: 'success',
-      read: false,
-    },
-    {
-      id: 'price-drop-note',
-      title: {
-        ar: 'انخفض سعر إقامتك المفضلة',
-        en: 'Price drop on your favorite stay',
-      },
-      detail: {
-        ar: 'تم تخفيض سعر شاليه البحر الأحمر بنسبة 12%',
-        en: 'Red Sea Chalet price was reduced by 12%',
-      },
-      time: {
-        ar: 'منذ 2 س',
-        en: '2h ago',
-      },
-      type: 'info',
-      read: false,
-    },
-    {
-      id: 'reminder-note',
-      title: {
-        ar: 'تذكير الوصول',
-        en: 'Check-in Reminder',
-      },
-      detail: {
-        ar: 'يرجى تأكيد موعد الوصول قبل 24 ساعة',
-        en: 'Please confirm arrival time 24 hours prior',
-      },
-      time: {
-        ar: 'أمس',
-        en: 'Yesterday',
-      },
-      type: 'warning',
-      read: true,
-    },
-  ])
+  const [notifications, setNotifications] = useState(() => {
+    try {
+      purgeLegacyMockNotifications()
+      const savedUser = localStorage.getItem('hajzy_user') || localStorage.getItem('stitch_user')
+      if (savedUser) {
+        const parsed = JSON.parse(savedUser)
+        if (parsed?.id) return getUserNotifications(parsed.id)
+      }
+      return []
+    } catch {
+      return []
+    }
+  })
   const [selectedGalleryIndex, setSelectedGalleryIndex] = useState(0)
   const [homeQuickSearch, setHomeQuickSearch] = useState({
     destination: '',
@@ -598,6 +574,79 @@ function App() {
     const accountKey = user.id || String(user.email).trim().toLowerCase()
     localStorage.setItem(`hajzy_favorites_${accountKey}`, JSON.stringify(favorites))
   }, [favorites, user?.id, user?.email])
+
+  // Sync notifications when user logs in or logs out
+  useEffect(() => {
+    purgeLegacyMockNotifications()
+    if (user?.id) {
+      const local = getUserNotifications(user.id)
+      setNotifications(local)
+      fetchNotificationsApi()
+        .then((res) => {
+          if (res && Array.isArray(res.notifications)) {
+            setNotifications(res.notifications)
+            saveUserNotifications(user.id, res.notifications)
+          }
+        })
+        .catch(() => {})
+    } else {
+      setNotifications([])
+    }
+  }, [user?.id])
+
+  // Check arrival reminder for confirmed bookings within 24h
+  useEffect(() => {
+    if (user?.id && Array.isArray(bookings) && bookings.length > 0) {
+      const reminders = checkAndGenerateArrivalReminders(user.id, bookings)
+      if (reminders.length > 0) {
+        setNotifications(getUserNotifications(user.id))
+      }
+    }
+  }, [user?.id, bookings])
+
+  // Check price drops for user favorites
+  useEffect(() => {
+    if (!user?.id || !Array.isArray(favorites) || favorites.length === 0 || !Array.isArray(properties) || properties.length === 0) {
+      return
+    }
+    const priceKey = `hajzy_fav_prices_${user.id}`
+    let prevPrices = {}
+    try {
+      const raw = localStorage.getItem(priceKey)
+      if (raw) prevPrices = JSON.parse(raw)
+    } catch {}
+
+    const newPrices = { ...prevPrices }
+    favorites.forEach((favId) => {
+      const prop = properties.find((p) => String(p.id) === String(favId))
+      if (prop && typeof prop.priceValue === 'number') {
+        const oldPrice = prevPrices[favId]
+        if (typeof oldPrice === 'number' && prop.priceValue < oldPrice) {
+          const discountPercent = Math.round(((oldPrice - prop.priceValue) / oldPrice) * 100)
+          if (discountPercent > 0) {
+            addNotification(
+              {
+                ar: 'انخفض سعر إقامتك المفضلة',
+                en: 'Price drop on your favorite stay',
+              },
+              {
+                ar: `تم تخفيض سعر ${prop.title} بنسبة ${discountPercent}% (من ${oldPrice} إلى ${prop.priceValue} ${prop.currency || 'EGP'}).`,
+                en: `Price reduced for ${prop.titleEn || prop.title} by ${discountPercent}% (from ${oldPrice} to ${prop.priceValue} ${prop.currency || 'EGP'}).`,
+              },
+              'info',
+              null,
+              prop.id
+            )
+          }
+        }
+        newPrices[favId] = prop.priceValue
+      }
+    })
+
+    try {
+      localStorage.setItem(priceKey, JSON.stringify(newPrices))
+    } catch {}
+  }, [favorites, properties, user?.id])
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -927,29 +976,59 @@ function App() {
     showToast(t('searchApplied'))
   }
 
-  const addNotification = (title, detail, type = 'info', time = null) => {
+  const resolveCurrentUserId = () => {
+    let currentUserId = user?.id
+    if (!currentUserId && typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('hajzy_user') || localStorage.getItem('stitch_user')
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          if (parsed?.id) currentUserId = parsed.id
+        }
+      } catch {}
+    }
+    return currentUserId || 'guest'
+  }
+
+  const addNotification = (title, detail, type = 'info', bookingId = null, propertyId = null) => {
+    const currentUserId = resolveCurrentUserId()
+    const newNotif = createNotification(currentUserId, {
+      type,
+      title,
+      body: detail,
+      detail,
+      bookingId,
+      propertyId,
+    })
     setNotifications((currentNotifications) => [
-      {
-        id: Date.now().toString(),
-        title,
-        detail,
-        type,
-        time: time || { ar: 'الآن', en: 'Just now' },
-        read: false,
-      },
-      ...currentNotifications,
-    ].slice(0, 10))
+      newNotif,
+      ...currentNotifications.filter((n) => n.id !== newNotif.id),
+    ].slice(0, 50))
+    if (user?.id) {
+      createNotificationApi({ title, body: detail, type, bookingId, propertyId }).catch(() => {})
+    }
+    return newNotif
   }
 
   const markAllNotificationsRead = () => {
-    setNotifications((currentNotifications) => currentNotifications.map((notification) => ({ ...notification, read: true })))
+    const currentUserId = resolveCurrentUserId()
+    const updated = markAllAsRead(currentUserId)
+    setNotifications(updated)
+    if (user?.id) {
+      markAllNotificationsReadApi().catch(() => {})
+    }
   }
 
   const removeNotification = (notificationId) => {
-    setNotifications((currentNotifications) => currentNotifications.filter((notification) => notification.id !== notificationId))
+    const currentUserId = resolveCurrentUserId()
+    const updated = deleteNotification(currentUserId, notificationId)
+    setNotifications(updated)
+    if (user?.id) {
+      deleteNotificationApi(notificationId).catch(() => {})
+    }
   }
 
-  const unreadNotificationsCount = notifications.filter((notification) => !notification.read).length
+  const unreadNotificationsCount = notifications.filter((notification) => !notification.readAt && !notification.read).length
 
   const toggleAmenityFilter = (amenity) => {
     setHomeFilters((currentFilters) => {
@@ -1572,7 +1651,9 @@ function App() {
           ar: `تم حجز ${selectedProperty.title} بنجاح، موعد الوصول ${bookingDates.checkIn}، وإجمالي ${formatCurrency(grandTotal, selectedProperty.currency, 'ar')}.`,
           en: `Successfully booked ${selectedProperty.title_en || selectedProperty.title}, arrival on ${bookingDates.checkIn}, total ${formatCurrency(grandTotal, selectedProperty.currency, 'en')}.`,
         },
-        'success'
+        'booking_confirmed',
+        confirmedBooking.id,
+        selectedProperty.id
       )
       cacheBooking(confirmedBooking, selectedProperty)
       haptics.trigger('heavy')
@@ -4188,53 +4269,63 @@ function App() {
     )
   }
 
-  useEffect(() => {
-    if (activePage === 'notifications') {
-      markAllNotificationsRead()
-    }
-  }, [activePage])
-
   const renderNotificationsPage = () => {
+    const getNotificationIcon = (type) => {
+      if (type === 'success' || type === 'booking_confirmed') return 'check_circle'
+      if (type === 'warning' || type === 'checkin_reminder') return 'schedule'
+      if (type === 'price_drop') return 'trending_down'
+      return 'info'
+    }
+
     return (
       <div className="page-shell notifications-shell">
-        <div className="notification-toolbar">
-          <div className="notification-toolbar-info">
-            <span className="notification-count-tag">
-              {language === 'en'
-                ? `${notifications.length} ${notifications.length === 1 ? 'Notification' : 'Notifications'}`
-                : `${notifications.length} إشعارات`}
-            </span>
-          </div>
-          {notifications.length > 0 && (
+        {notifications.length > 0 && (
+          <div className="notification-toolbar">
+            <div className="notification-toolbar-info">
+              <span className="notification-count-tag">
+                {language === 'en'
+                  ? `${notifications.length} ${notifications.length === 1 ? 'Notification' : 'Notifications'}`
+                  : `${notifications.length} إشعارات`}
+              </span>
+            </div>
             <button type="button" className="secondary-button small-button" onClick={markAllNotificationsRead}>
               {language === 'en' ? 'Mark all as read' : 'تحديد الكل كمقروء'}
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="notification-list-page">
           {notifications.length === 0 ? (
             <div className="empty-notifications-state">
               <span className="material-symbols-outlined empty-icon">notifications_none</span>
-              <h3>{language === 'en' ? 'No notifications yet' : 'لا توجد إشعارات'}</h3>
+              <h3>{language === 'en' ? 'No notifications at the moment' : 'لا توجد إشعارات حالياً'}</h3>
               <p>
                 {language === 'en'
-                  ? 'We will notify you when there are updates on your bookings or offers.'
-                  : 'سنخطرك عند توفر تحديثات حول حجوزاتك أو العروض الجديدة.'}
+                  ? 'We will notify you here about booking confirmations and price updates.'
+                  : 'سنخبرك هنا بتأكيدات الحجز وتحديثات الأسعار.'}
               </p>
             </div>
           ) : (
             notifications.map((notification) => {
               const localizedTitle = getLocalizedNotificationText(notification.title, language)
-              const localizedDetail = getLocalizedNotificationText(notification.detail, language)
-              const localizedTime = getLocalizedNotificationText(notification.time, language)
+              const localizedDetail = getLocalizedNotificationText(notification.body || notification.detail, language)
+              const localizedTime = notification.createdAt
+                ? formatRelativeTime(notification.createdAt, language)
+                : getLocalizedNotificationText(notification.time, language)
+
+              const typeClass = notification.type === 'booking_confirmed' ? 'success'
+                : notification.type === 'checkin_reminder' ? 'warning'
+                : notification.type === 'price_drop' ? 'info'
+                : (notification.type || 'info')
+
+              const isRead = Boolean(notification.readAt || notification.read)
 
               return (
-                <div key={notification.id} className={`notification-item-page ${notification.type} ${notification.read ? 'read' : 'unread'}`}>
-                  {!notification.read && <span className="notification-dot" aria-hidden="true" />}
-                  <div className={`notification-icon-wrap ${notification.type}`}>
+                <div key={notification.id} className={`notification-item-page ${typeClass} ${isRead ? 'read' : 'unread'}`}>
+                  {!isRead && <span className="notification-dot" aria-hidden="true" />}
+                  <div className={`notification-icon-wrap ${typeClass}`}>
                     <span className="material-symbols-outlined">
-                      {notification.type === 'success' ? 'check_circle' : notification.type === 'warning' ? 'schedule' : 'info'}
+                      {getNotificationIcon(notification.type)}
                     </span>
                   </div>
                   <div className="notification-copy">
@@ -5593,7 +5684,9 @@ function App() {
               }}
             >
               <span className="material-symbols-outlined">notifications</span>
-              <span className="notification-badge">{unreadNotificationsCount}</span>
+              {unreadNotificationsCount > 0 && (
+                <span className="notification-badge">{unreadNotificationsCount}</span>
+              )}
             </button>
           </div>
         </div>

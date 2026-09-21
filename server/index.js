@@ -56,6 +56,8 @@ let nextPropertyId = 1
 const memoryBookings = new Map()
 let nextBookingId = 1
 
+const memoryNotifications = new Map()
+
 const normalizeMemoryUser = (user) => {
   if (!user) return null
 
@@ -314,6 +316,98 @@ const db = {
     }
     return memoryBookings.get(Number(id)) || null
   },
+
+  async getNotificationsForUser(userId) {
+    if (pgPool) {
+      const result = await pgPool.query('SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC', [userId])
+      return result.rows.map((row) => ({
+        id: row.id,
+        userId: row.user_id,
+        bookingId: row.booking_id,
+        propertyId: row.property_id,
+        type: row.type,
+        title: row.title,
+        body: row.body,
+        createdAt: row.created_at,
+        readAt: row.read_at,
+        read: Boolean(row.read_at),
+      }))
+    }
+    return Array.from(memoryNotifications.values())
+      .filter((n) => String(n.userId) === String(userId))
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+  },
+
+  async createNotification(payload) {
+    const id = payload.id || `notif_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+    const createdAt = payload.createdAt || new Date().toISOString()
+    const readAt = payload.readAt || null
+
+    if (pgPool) {
+      const result = await pgPool.query(
+        `INSERT INTO notifications (id, user_id, booking_id, property_id, type, title, body, created_at, read_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         RETURNING *`,
+        [id, payload.userId, payload.bookingId || null, payload.propertyId || null, payload.type || 'info', JSON.stringify(payload.title), JSON.stringify(payload.body || payload.detail), createdAt, readAt]
+      )
+      const row = result.rows[0]
+      return {
+        id: row.id,
+        userId: row.user_id,
+        bookingId: row.booking_id,
+        propertyId: row.property_id,
+        type: row.type,
+        title: row.title,
+        body: row.body,
+        createdAt: row.created_at,
+        readAt: row.read_at,
+        read: Boolean(row.read_at),
+      }
+    }
+
+    const item = {
+      id,
+      userId: payload.userId,
+      bookingId: payload.bookingId || null,
+      propertyId: payload.propertyId || null,
+      type: payload.type || 'info',
+      title: payload.title,
+      body: payload.body || payload.detail,
+      createdAt,
+      readAt,
+      read: Boolean(readAt),
+    }
+    memoryNotifications.set(id, item)
+    return item
+  },
+
+  async markAllNotificationsRead(userId) {
+    const now = new Date().toISOString()
+    if (pgPool) {
+      await pgPool.query('UPDATE notifications SET read_at = $1 WHERE user_id = $2 AND read_at IS NULL', [now, userId])
+      return this.getNotificationsForUser(userId)
+    }
+
+    for (const [id, item] of memoryNotifications.entries()) {
+      if (String(item.userId) === String(userId) && !item.readAt) {
+        memoryNotifications.set(id, { ...item, readAt: now, read: true })
+      }
+    }
+    return this.getNotificationsForUser(userId)
+  },
+
+  async deleteNotification(userId, notificationId) {
+    if (pgPool) {
+      await pgPool.query('DELETE FROM notifications WHERE id = $1 AND user_id = $2', [notificationId, userId])
+      return true
+    }
+    const item = memoryNotifications.get(notificationId)
+    if (item && String(item.userId) === String(userId)) {
+      memoryNotifications.delete(notificationId)
+      return true
+    }
+    return false
+  },
 }
 
 
@@ -420,6 +514,22 @@ async function initializeDatabase() {
         ) WHERE (status IN ('pending','confirmed','paid'));
       END IF;
     END$$;
+
+    -- notifications table
+    CREATE TABLE IF NOT EXISTS notifications (
+      id TEXT PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      booking_id INTEGER REFERENCES bookings(id) ON DELETE SET NULL,
+      property_id INTEGER REFERENCES properties(id) ON DELETE SET NULL,
+      type TEXT NOT NULL DEFAULT 'info',
+      title JSONB NOT NULL,
+      body JSONB NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      read_at TIMESTAMPTZ
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications (user_id);
+    CREATE INDEX IF NOT EXISTS idx_notifications_read_at ON notifications (read_at);
   `)
 }
 
@@ -1091,6 +1201,64 @@ app.get('/api/bookings/:id', authenticate, async (req, res) => {
   } catch (err) {
     console.error('get booking error:', err)
     return res.status(500).json({ message: 'Unable to fetch booking.' })
+  }
+})
+
+// Notifications endpoints
+app.get('/api/notifications', authenticate, async (req, res) => {
+  try {
+    const userId = req.auth?.userId
+    const notifications = await db.getNotificationsForUser(userId)
+    return res.json({ notifications })
+  } catch (err) {
+    console.error('get notifications error:', err)
+    return res.status(500).json({ message: 'Unable to fetch notifications.' })
+  }
+})
+
+app.post('/api/notifications', authenticate, async (req, res) => {
+  try {
+    const userId = req.auth?.userId
+    const { title, body, detail, type, bookingId, propertyId } = req.body || {}
+    if (!title || (!body && !detail)) {
+      return res.status(400).json({ message: 'title and body/detail are required.' })
+    }
+    const notif = await db.createNotification({
+      userId,
+      title,
+      body: body || detail,
+      detail: body || detail,
+      type: type || 'info',
+      bookingId,
+      propertyId,
+    })
+    return res.status(201).json({ notification: notif })
+  } catch (err) {
+    console.error('create notification error:', err)
+    return res.status(500).json({ message: 'Unable to create notification.' })
+  }
+})
+
+app.patch('/api/notifications/read-all', authenticate, async (req, res) => {
+  try {
+    const userId = req.auth?.userId
+    const notifications = await db.markAllNotificationsRead(userId)
+    return res.json({ message: 'All notifications marked as read.', notifications })
+  } catch (err) {
+    console.error('mark read error:', err)
+    return res.status(500).json({ message: 'Unable to mark notifications as read.' })
+  }
+})
+
+app.delete('/api/notifications/:id', authenticate, async (req, res) => {
+  try {
+    const userId = req.auth?.userId
+    const { id } = req.params
+    await db.deleteNotification(userId, id)
+    return res.json({ message: 'Notification deleted successfully.' })
+  } catch (err) {
+    console.error('delete notification error:', err)
+    return res.status(500).json({ message: 'Unable to delete notification.' })
   }
 })
 
