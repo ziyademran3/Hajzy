@@ -233,6 +233,29 @@ const getDefaultBookingDates = () => {
   }
 }
 
+const getFavoritesStorageKey = (currentUser) => {
+  try {
+    const userToUse = currentUser || JSON.parse(localStorage.getItem('hajzy_user') || 'null')
+    if (userToUse?.id || userToUse?.email) {
+      const accountKey = userToUse.id || String(userToUse.email).trim().toLowerCase()
+      return `hajzy_favorites_${accountKey}`
+    }
+  } catch {}
+  return 'hajzy_favorites_guest'
+}
+
+const loadStoredFavorites = (currentUser) => {
+  try {
+    const key = getFavoritesStorageKey(currentUser)
+    const saved = localStorage.getItem(key)
+    if (saved) {
+      const parsed = JSON.parse(saved)
+      if (Array.isArray(parsed)) return parsed
+    }
+  } catch {}
+  return []
+}
+
 function App() {
   const { t, i18n } = useTranslation()
   const { user, loading, login, signup, socialLogin, logout, updateProfile } = useAuth()
@@ -247,16 +270,17 @@ function App() {
   const homeScrollPositionRef = useRef(0)
   const [authRequired, setAuthRequired] = useState(() => {
     try {
-      const savedUser = localStorage.getItem('hajzy_user') || localStorage.getItem('stitch_user')
-      const isGuest = localStorage.getItem('hajzy_guest_mode') === 'true'
       const isForceLogin = localStorage.getItem('hajzy_force_login') === 'true'
       if (isForceLogin) return true
-      if (savedUser || isGuest) return false
     } catch {}
-    return true
+    return false
   })
   const [isGuestMode, setIsGuestMode] = useState(() => {
-    try { return localStorage.getItem('hajzy_guest_mode') === 'true' } catch { return false }
+    try {
+      const isForceLogin = localStorage.getItem('hajzy_force_login') === 'true'
+      if (isForceLogin) return false
+      return true
+    } catch { return true }
   })
   const [properties, setProperties] = useState([])
   const [bookings, setBookings] = useState([])
@@ -264,7 +288,8 @@ function App() {
   const [currentAuthPage, setCurrentAuthPage] = useState('login')
   const [searchTerm, setSearchTerm] = useState('')
   const [activeFilter, setActiveFilter] = useState('all')
-  const [favorites, setFavorites] = useState([])
+  const [favorites, setFavorites] = useState(() => loadStoredFavorites(user))
+  const isFavoritesInitializedRef = useRef(false)
   const [showDealModal, setShowDealModal] = useState(false)
   const [copiedDealCode, setCopiedDealCode] = useState(false)
   const [promoCodeInput, setPromoCodeInput] = useState('')
@@ -422,12 +447,47 @@ function App() {
 
     if (path.includes('/verify-email')) {
       setCurrentAuthPage('verify')
+      setAuthRequired(true)
       return
     }
 
     if (path.includes('/reset-password') && params.get('token')) {
       setCurrentAuthPage('reset')
+      setAuthRequired(true)
       return
+    }
+
+    if (path === '/login' || path.startsWith('/login')) {
+      setCurrentAuthPage('login')
+      setAuthRequired(true)
+      return
+    }
+
+    if (path === '/signup' || path.startsWith('/signup')) {
+      setCurrentAuthPage('signup')
+      setAuthRequired(true)
+      return
+    }
+
+    if (path === '/search' || path.startsWith('/search')) {
+      setActivePage('home')
+      setAuthRequired(false)
+      const searchDest = params.get('destination')
+      const searchIn = params.get('checkIn') || params.get('check_in')
+      const searchOut = params.get('checkOut') || params.get('check_out')
+      const searchGuests = params.get('guests')
+      if (searchDest || searchIn || searchOut || searchGuests) {
+        setHomeQuickSearch((prev) => ({
+          ...prev,
+          ...(searchDest ? { destination: searchDest } : {}),
+          ...(searchIn ? { checkIn: searchIn } : {}),
+          ...(searchOut ? { checkOut: searchOut } : {}),
+          ...(searchGuests ? { guests: Number(searchGuests) || 2 } : {}),
+        }))
+      }
+      setTimeout(() => {
+        document.getElementById('home-search-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, 50)
     }
 
     const isPaymentReturn = path.includes('/payment-result') ||
@@ -575,24 +635,20 @@ function App() {
   // customer back to the top of the page.
 
   useEffect(() => {
-    if (!user?.id && !user?.email) {
-      setFavorites([])
-      return
-    }
-
-    const accountKey = user.id || String(user.email).trim().toLowerCase()
-    try {
-      const savedFavorites = localStorage.getItem(`hajzy_favorites_${accountKey}`)
-      setFavorites(savedFavorites ? JSON.parse(savedFavorites) : [])
-    } catch {
-      setFavorites([])
-    }
+    const loaded = loadStoredFavorites(user)
+    setFavorites(loaded)
+    isFavoritesInitializedRef.current = true
   }, [user?.id, user?.email])
 
   useEffect(() => {
-    if (!user?.id && !user?.email) return
-    const accountKey = user.id || String(user.email).trim().toLowerCase()
-    localStorage.setItem(`hajzy_favorites_${accountKey}`, JSON.stringify(favorites))
+    if (!isFavoritesInitializedRef.current) {
+      isFavoritesInitializedRef.current = true
+      return
+    }
+    try {
+      const storageKey = getFavoritesStorageKey(user)
+      localStorage.setItem(storageKey, JSON.stringify(favorites))
+    } catch {}
   }, [favorites, user?.id, user?.email])
 
   // Sync notifications when user logs in or logs out
@@ -791,7 +847,7 @@ function App() {
     if (authUser) {
       setAuthRequired(false)
       setCurrentAuthPage('login')
-      setActivePage('home')
+      setActivePage(authUser.role === 'owner' ? 'owner' : 'dashboard')
       return authUser
     }
     return null
@@ -1533,15 +1589,6 @@ function App() {
     }
 
     if (isProcessingPayment || isBookingSubmittingRef.current) {
-      return
-    }
-
-    if (paymentMethod === 'card' && !localStorage.getItem('hajzy_auth_token')) {
-      showToast(
-        language === 'en'
-          ? 'For secure card payments, sign out and sign in with your registered email and password.'
-          : 'لإتمام الدفع بالبطاقة، سجّل الخروج ثم سجّل الدخول بالبريد الإلكتروني وكلمة المرور المسجلين.'
-      )
       return
     }
 
@@ -2428,11 +2475,15 @@ function App() {
             </div>
 
             <div className="search-panel-row full-width-row">
-              <label className="search-field">
+              <label htmlFor="destination" className="search-field">
                 <span>{language === 'en' ? 'Destination' : 'الوجهة'}</span>
                 <div className="input-with-icon">
                   <span className="field-icon material-symbols-outlined">location_on</span>
                   <select
+                    id="destination"
+                    name="destination"
+                    data-testid="search-destination"
+                    aria-label={language === 'en' ? 'Destination' : 'الوجهة'}
                     value={homeQuickSearch.destination}
                     onChange={(event) => {
                       setHomeQuickSearch((current) => ({ ...current, destination: event.target.value }))
@@ -2447,56 +2498,80 @@ function App() {
               </label>
             </div>
 
-            <div className="search-panel-row compact">
-              <label className="search-field">
-                <span>{language === 'en' ? 'Check-in' : 'تاريخ الوصول'}</span>
-                <div className="input-with-icon">
-                  <span className="field-icon material-symbols-outlined">calendar_month</span>
-                  <input
-                    type="date"
-                    value={homeQuickSearch.checkIn}
-                    onChange={(event) => handleQuickSearchDateChange('checkIn', event.target.value)}
-                  />
-                </div>
-              </label>
-              <label className="search-field">
-                <span>{language === 'en' ? 'Check-out' : 'تاريخ المغادرة'}</span>
-                <div className="input-with-icon">
-                  <span className="field-icon material-symbols-outlined">calendar_month</span>
-                  <input
-                    type="date"
-                    value={homeQuickSearch.checkOut}
-                    onChange={(event) => handleQuickSearchDateChange('checkOut', event.target.value)}
-                  />
-                </div>
-              </label>
-            </div>
+            <form
+              id="home-search-form"
+              role="search"
+              aria-label={language === 'en' ? 'Search availability' : 'البحث عن الإتاحة'}
+              data-testid="search-form"
+              onSubmit={(event) => {
+                event.preventDefault()
+                runHomeSearch()
+              }}
+            >
+              <div className="search-panel-row compact">
+                <label htmlFor="check-in" className="search-field">
+                  <span>{language === 'en' ? 'Check-in' : 'تاريخ الوصول'}</span>
+                  <div className="input-with-icon">
+                    <span className="field-icon material-symbols-outlined">calendar_month</span>
+                    <input
+                      id="check-in"
+                      name="checkIn"
+                      data-testid="search-checkin"
+                      aria-label={language === 'en' ? 'Check-in' : 'تاريخ الوصول'}
+                      type="date"
+                      value={homeQuickSearch.checkIn}
+                      onChange={(event) => handleQuickSearchDateChange('checkIn', event.target.value)}
+                    />
+                  </div>
+                </label>
+                <label htmlFor="check-out" className="search-field">
+                  <span>{language === 'en' ? 'Check-out' : 'تاريخ المغادرة'}</span>
+                  <div className="input-with-icon">
+                    <span className="field-icon material-symbols-outlined">calendar_month</span>
+                    <input
+                      id="check-out"
+                      name="checkOut"
+                      data-testid="search-checkout"
+                      aria-label={language === 'en' ? 'Check-out' : 'تاريخ المغادرة'}
+                      type="date"
+                      value={homeQuickSearch.checkOut}
+                      onChange={(event) => handleQuickSearchDateChange('checkOut', event.target.value)}
+                    />
+                  </div>
+                </label>
+              </div>
 
-            {quickSearchDateError && <div className="field-error-banner">{quickSearchDateError}</div>}
+              {quickSearchDateError && <div className="field-error-banner">{quickSearchDateError}</div>}
 
-            <div className="search-panel-row compact">
-              <label className="search-field">
-                <span>{language === 'en' ? 'Guests' : 'عدد الضيوف'}</span>
-                <div className="input-with-icon compact-icon">
-                  <span className="field-icon material-symbols-outlined">group</span>
-                  <select
-                    value={homeQuickSearch.guests}
-                    onChange={(event) => setHomeQuickSearch((current) => ({ ...current, guests: Number(event.target.value) }))}
-                  >
-                    {[1, 2, 3, 4, 5, 6].map((guest) => (
-                      <option key={guest} value={guest}>{guest} {language === 'en' ? (guest === 1 ? 'guest' : 'guests') : 'ضيف'}</option>
-                    ))}
-                  </select>
-                </div>
-              </label>
-              <button
-                type="button"
-                className="primary-button search-submit-button"
-                onClick={runHomeSearch}
-              >
-                {t('search')}
-              </button>
-            </div>
+              <div className="search-panel-row compact">
+                <label htmlFor="guests" className="search-field">
+                  <span>{language === 'en' ? 'Guests' : 'عدد الضيوف'}</span>
+                  <div className="input-with-icon compact-icon">
+                    <span className="field-icon material-symbols-outlined">group</span>
+                    <select
+                      id="guests"
+                      name="guests"
+                      data-testid="search-guests"
+                      aria-label={language === 'en' ? 'Guests' : 'عدد الضيوف'}
+                      value={homeQuickSearch.guests}
+                      onChange={(event) => setHomeQuickSearch((current) => ({ ...current, guests: Number(event.target.value) }))}
+                    >
+                      {[1, 2, 3, 4, 5, 6].map((guest) => (
+                        <option key={guest} value={guest}>{guest} {language === 'en' ? (guest === 1 ? 'guest' : 'guests') : 'ضيف'}</option>
+                      ))}
+                    </select>
+                  </div>
+                </label>
+                <button
+                  type="submit"
+                  className="primary-button search-submit-button"
+                  data-testid="search-submit"
+                  aria-label={language === 'en' ? 'Search' : 'بحث'}
+                >
+                  {t('search')}
+                </button>
+              </div>
+            </form>
           </div>
 
           {showFilterPanel && (
@@ -2766,8 +2841,11 @@ function App() {
             <article
               key={property.id}
               className="property-card property-card-modern"
+              data-testid="property-card"
+              data-property-id={property.id}
+              aria-label={getPropertyTitle(property)}
               onClick={(event) => {
-                if (event.target.closest('button')) return
+                if (event.target.closest('button') || event.target.closest('a')) return
                 navigate('details', property)
               }}
             >
@@ -2795,7 +2873,19 @@ function App() {
                 </div>
 
                 <div className="title-block">
-                  <h3>{getPropertyTitle(property)}</h3>
+                  <h3>
+                    <a
+                      href={`#property-${property.id}`}
+                      className="property-link"
+                      data-testid="property-link"
+                      onClick={(event) => {
+                        event.preventDefault()
+                        navigate('details', property)
+                      }}
+                    >
+                      {getPropertyTitle(property)}
+                    </a>
+                  </h3>
                   <p>
                     <span className="material-symbols-outlined">location_on</span>
                     {getPropertyLocation(property)}
@@ -2820,7 +2910,12 @@ function App() {
                     <span>{language === 'en' ? ' / night' : ' / ليلة'}</span>
                   </div>
 
-                  <button className="primary-button" onClick={() => navigate('details', property)}>
+                  <button
+                    type="button"
+                    className="primary-button"
+                    data-testid="book-now-button"
+                    onClick={() => navigate('details', property)}
+                  >
                     {language === 'en' ? 'Book now' : 'احجز الآن'}
                   </button>
                 </div>
@@ -2911,7 +3006,7 @@ function App() {
     const mapCenter = selectedProperty.coordinates || { lat: 30.0333, lng: 31.2333 }
 
     return (
-      <div className="page-shell detail-shell">
+      <div className="page-shell detail-shell" data-testid="property-details-view">
         <section className="gallery-hero">
           <button
             type="button"
@@ -3018,7 +3113,12 @@ function App() {
               <small>{language === 'en' ? 'Price per night' : 'السعر لكل ليلة'}</small>
               <strong>{formatCurrency(selectedProperty.priceValue, selectedProperty.currency, language)}</strong>
             </div>
-            <button className="primary-button" onClick={() => navigate('checkout')}>
+            <button
+              type="button"
+              className="primary-button"
+              data-testid="details-book-now"
+              onClick={() => navigate('checkout')}
+            >
               {language === 'en' ? 'Book now' : 'احجز الآن'}
             </button>
           </div>
@@ -3876,7 +3976,12 @@ function App() {
                     <button type="button" className="secondary-button" onClick={() => navigate('details')}>
                       {language === 'en' ? 'Back' : 'رجوع'}
                     </button>
-                    <button type="button" className="primary-button" onClick={() => handleStepNavigation(2)}>
+                    <button
+                      type="button"
+                      className="primary-button"
+                      data-testid="checkout-step1-continue"
+                      onClick={() => handleStepNavigation(2)}
+                    >
                       {language === 'en' ? 'Continue' : 'متابعة'}
                     </button>
                   </div>
@@ -3893,6 +3998,7 @@ function App() {
                     </span>
                     <input
                       id="guest-full-name"
+                      data-testid="guest-fullname"
                       ref={guestNameRef}
                       name="fullName"
                       type="text"
@@ -3922,6 +4028,7 @@ function App() {
                     </span>
                     <input
                       id="guest-phone"
+                      data-testid="guest-phone"
                       ref={guestPhoneRef}
                       name="phone"
                       type="tel"
@@ -3954,6 +4061,7 @@ function App() {
                     </span>
                     <input
                       id="guest-email"
+                      data-testid="guest-email"
                       ref={guestEmailRef}
                       name="email"
                       type="email"
@@ -3996,7 +4104,12 @@ function App() {
                   <button type="button" className="secondary-button" onClick={() => setBookingStep(1)}>
                     {language === 'en' ? 'Back' : 'رجوع'}
                   </button>
-                  <button type="button" className="primary-button" onClick={handleProceedToPayment}>
+                  <button
+                    type="button"
+                    className="primary-button"
+                    data-testid="checkout-step2-continue"
+                    onClick={handleProceedToPayment}
+                  >
                     {language === 'en' ? 'Continue to payment' : 'متابعة للدفع'}
                   </button>
                 </div>
@@ -4058,7 +4171,13 @@ function App() {
                         <small className="block text-slate-500">{language === 'en' ? 'Instant bank-to-bank transfer via IPA / Phone' : 'تحويل لحظي مباشر عبر عنوان الدفع IPA أو الهاتف'}</small>
                       </div>
                     </div>
-                    <input type="radio" name="payment" checked={paymentMethod === 'instapay'} onChange={() => setPaymentMethod('instapay')} />
+                    <input
+                      type="radio"
+                      name="payment"
+                      data-testid="payment-instapay"
+                      checked={paymentMethod === 'instapay'}
+                      onChange={() => setPaymentMethod('instapay')}
+                    />
                   </label>
 
                   {paymentMethod === 'instapay' && (
@@ -4068,6 +4187,7 @@ function App() {
                       </label>
                       <input
                         type="text"
+                        data-testid="instapay-handle"
                         value={instapayHandle}
                         onChange={(e) => setInstapayHandle(e.target.value)}
                         placeholder="username@instapay"
@@ -4089,7 +4209,13 @@ function App() {
                         <small className="block text-slate-500">{language === 'en' ? 'Vodafone, Orange, Etisalat, WE Cash' : 'فودافون، أورنج، اتصالات، وي كاش'}</small>
                       </div>
                     </div>
-                    <input type="radio" name="payment" checked={paymentMethod === 'wallet'} onChange={() => setPaymentMethod('wallet')} />
+                    <input
+                      type="radio"
+                      name="payment"
+                      data-testid="payment-wallet"
+                      checked={paymentMethod === 'wallet'}
+                      onChange={() => setPaymentMethod('wallet')}
+                    />
                   </label>
 
                   {paymentMethod === 'wallet' && (
@@ -4099,6 +4225,7 @@ function App() {
                       </label>
                       <input
                         type="tel"
+                        data-testid="wallet-number"
                         value={walletNumber}
                         onChange={(e) => setWalletNumber(e.target.value)}
                         placeholder="010XXXXXXXX"
@@ -4119,7 +4246,13 @@ function App() {
                         <small className="block text-slate-500">{language === 'en' ? 'Pay at any Fawry retail kiosk nationwide' : 'الدفع في أي ماكينة فوري بكود مرجعي'}</small>
                       </div>
                     </div>
-                    <input type="radio" name="payment" checked={paymentMethod === 'fawry'} onChange={() => setPaymentMethod('fawry')} />
+                    <input
+                      type="radio"
+                      name="payment"
+                      data-testid="payment-fawry"
+                      checked={paymentMethod === 'fawry'}
+                      onChange={() => setPaymentMethod('fawry')}
+                    />
                   </label>
 
                   {paymentMethod === 'fawry' && (
@@ -4152,7 +4285,13 @@ function App() {
                         <small className="block text-slate-500">Visa, MasterCard, Meeza</small>
                       </div>
                     </div>
-                    <input type="radio" name="payment" checked={paymentMethod === 'card'} onChange={() => setPaymentMethod('card')} />
+                    <input
+                      type="radio"
+                      name="payment"
+                      data-testid="payment-card"
+                      checked={paymentMethod === 'card'}
+                      onChange={() => setPaymentMethod('card')}
+                    />
                   </label>
 
                   {paymentMethod === 'card' && selectedProperty?.currency && selectedProperty.currency !== 'EGP' && (
@@ -4322,7 +4461,13 @@ function App() {
                   <button type="button" className="secondary-button" onClick={() => setBookingStep(2)}>
                     {language === 'en' ? 'Back' : 'رجوع'}
                   </button>
-                  <button className="primary-button" onClick={handleBookingConfirm} disabled={isProcessingPayment}>
+                  <button
+                    type="button"
+                    className="primary-button"
+                    data-testid="confirm-booking-button"
+                    onClick={handleBookingConfirm}
+                    disabled={isProcessingPayment}
+                  >
                     {isProcessingPayment ? (language === 'en' ? 'Processing payment...' : 'جارٍ تجهيز الدفع...') : activeText.confirmPayment}
                   </button>
                 </div>
@@ -4339,10 +4484,10 @@ function App() {
     const currentBooking = lastBooking ?? bookings[0]
 
     return (
-      <div className="page-shell success-shell">
+      <div className="page-shell success-shell" data-testid="booking-success-view">
         <div className="success-card">
           <div className="success-icon" aria-hidden="true"></div>
-          <h2>{language === 'en' ? 'Booking confirmed successfully' : 'تم تأكيد الحجز بنجاح'}</h2>
+          <h2 data-testid="booking-confirmation-heading">{language === 'en' ? 'Booking confirmed successfully' : 'تم تأكيد الحجز بنجاح'}</h2>
           <p>{language === 'en' ? 'Thank you for choosing the right stay. We look forward to welcoming you.' : 'شكراً لاختيارك الشقة المناسبة. نتطلع للترحيب بك.'}</p>
 
           <div className="reference-row">
@@ -5028,6 +5173,7 @@ function App() {
         onSwitchToSignup={() => setCurrentAuthPage('signup')}
         onSwitchToForgotPassword={() => setCurrentAuthPage('forgot')}
         onSocialLogin={handleSocialLogin}
+        onContinueAsGuest={handleMarketingBrowseGuest}
       />
     )
   }
