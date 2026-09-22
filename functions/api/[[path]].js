@@ -113,15 +113,48 @@ async function verifyJwt(token, secret) {
   return payload
 }
 
+const SEEDED_ACCOUNTS = [
+  {
+    id: 'owner-demo',
+    fullName: 'مالك العقارات',
+    email: 'hajzy2005@gmail.com',
+    role: 'owner',
+    password: 'Ziad@Hajzy@2005',
+    emailVerified: true,
+  },
+  {
+    id: 'demo-user',
+    fullName: 'مستخدم تجريبي',
+    email: 'user@hajzy.com',
+    role: 'user',
+    password: 'TestPass123!',
+    emailVerified: true,
+  },
+  {
+    id: 'test-user',
+    fullName: 'Test Guest',
+    email: 'test@example.com',
+    role: 'user',
+    password: 'TestPass123!',
+    emailVerified: true,
+  },
+]
+
 function authStore(env) {
   const kv = env.HAJZY_AUTH
-  if (!kv) return null
   return {
     async getByEmail(email) {
-      const raw = await kv.get(`email:${email}`)
+      const normalized = String(email || '').trim().toLowerCase()
+      const seeded = SEEDED_ACCOUNTS.find((u) => u.email.toLowerCase() === normalized)
+      if (seeded) return seeded
+      if (!kv) return null
+      const raw = await kv.get(`email:${normalized}`)
       return raw ? JSON.parse(raw) : null
     },
     async getById(id) {
+      const seeded = SEEDED_ACCOUNTS.find((u) => u.id === id)
+      if (seeded) return seeded
+      if (!kv) return null
       const raw = await kv.get(`id:${id}`)
       return raw ? JSON.parse(raw) : null
     },
@@ -447,6 +480,7 @@ function publicUser(user) {
     email: user.email,
     emailVerified: Boolean(user.emailVerified),
     avatar_url: user.avatarUrl || null,
+    role: user.role || 'user',
   }
 }
 
@@ -507,7 +541,11 @@ export async function onRequest(context) {
       const { email, password } = await readBody(request)
       if (!email || !password) return json({ message: 'Email and password are required.' }, 400)
       const user = await db.getByEmail(String(email).trim().toLowerCase())
-      if (!user || !(await verifyPassword(password, user.passwordHash))) {
+      const passwordValid = user && (
+        (user.password && user.password === password) ||
+        (user.passwordHash && (await verifyPassword(password, user.passwordHash)))
+      )
+      if (!user || !passwordValid) {
         return json({ message: 'Invalid email or password.' }, 401)
       }
       const token = await signJwt(

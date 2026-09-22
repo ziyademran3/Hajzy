@@ -313,6 +313,6 @@ with check (auth.uid() is not null);
 -- 6. بيانات تجريبية أولية (Seed Data)
 insert into profiles (id, name, email, role)
 values
-  ('owner-demo', 'مالك تجريبي', 'owner@hajzy.com', 'owner'),
+  ('owner-demo', 'مالك تجريبي', 'hajzy2005@gmail.com', 'owner'),
   ('demo-user', 'مستخدم تجريبي', 'user@hajzy.com', 'user')
 on conflict (id) do nothing;
