@@ -307,6 +307,7 @@ function App() {
   const [ownerNotice, setOwnerNotice] = useState('')
   const [ownerEditingId, setOwnerEditingId] = useState(null)
   const [bookingFilter, setBookingFilter] = useState('upcoming')
+  const [showReviewsTooltip, setShowReviewsTooltip] = useState(false)
   const [language, setLanguage] = useState(() => {
     if (typeof window === 'undefined') {
       return 'ar'
@@ -1739,13 +1740,17 @@ function App() {
   const pendingOwnerBookingsCount = ownerBookings.filter((b) => b.status === 'pending').length
 
   const renderOwnerPage = () => (
-    <div className="page-shell owner-shell space-y-6">
-      <div className="owner-dashboard-header flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-2">
+    <div className="page-shell owner-shell">
+      <div className="owner-dashboard-header flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-1">
         <div>
           <span className="owner-dashboard-kicker">Owner Portal</span>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">لوحة تحكم المالك</h2>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+            {language === 'en' ? 'Owner Dashboard' : 'لوحة تحكم المالك'}
+          </h2>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            مرحباً بك، {user?.name || user?.fullName || 'المالك'} • إدارة العقارات والطلبات والأرباح في مكان واحد
+            {language === 'en'
+              ? `Welcome back, ${user?.name || user?.fullName || 'Owner'} • Manage stays, bookings and revenue`
+              : `مرحباً بك، ${user?.name || user?.fullName || 'المالك'} • إدارة العقارات والطلبات والأرباح في مكان واحد`}
           </p>
         </div>
         <div className="owner-header-actions flex items-center gap-2 flex-wrap">
@@ -1755,7 +1760,7 @@ function App() {
             onClick={() => document.getElementById('owner-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           >
             <span className="material-symbols-outlined text-base">add_circle</span>
-            <span>إضافة شقة جديدة</span>
+            <span>{language === 'en' ? 'Add New Property' : 'إضافة شقة جديدة'}</span>
           </button>
           <button
             type="button"
@@ -1763,118 +1768,120 @@ function App() {
             onClick={() => navigate('owner-settings')}
           >
             <span className="material-symbols-outlined text-base text-emerald-600 dark:text-emerald-400">tune</span>
-            <span>إعدادات المالك</span>
+            <span>{language === 'en' ? 'Owner Settings' : 'إعدادات المالك'}</span>
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="owner-summary-card accent">
-          <div className="owner-card-topline">
-            <p>إجمالي العقارات</p>
-            <span className="owner-stat-icon material-symbols-outlined">apartment</span>
+      <div className="owner-summary-grid-wrap">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+          <div className="owner-summary-card accent">
+            <div className="owner-card-topline">
+              <p>{language === 'en' ? 'Total Properties' : 'إجمالي العقارات'}</p>
+              <span className="owner-stat-icon material-symbols-outlined">apartment</span>
+            </div>
+            <strong>{ownerProperties.length}</strong>
+            <small>+{Math.max(1, Math.round(ownerProperties.length * 0.3))} {language === 'en' ? 'this month' : 'هذا الشهر'}</small>
           </div>
-          <strong>{ownerProperties.length}</strong>
-          <small>+{Math.max(1, Math.round(ownerProperties.length * 0.3))} هذا الشهر</small>
-        </div>
 
-        <div
-          onClick={() => setBookingFilter('pending')}
-          className="owner-summary-card warn cursor-pointer hover:shadow-md transition"
-        >
-          <div className="owner-card-topline">
-            <p>الطلبات المعلقة</p>
-            <span className="owner-stat-icon material-symbols-outlined">pending_actions</span>
+          <div
+            onClick={() => setBookingFilter('pending')}
+            className="owner-summary-card warn cursor-pointer hover:shadow-md transition"
+          >
+            <div className="owner-card-topline">
+              <p>{language === 'en' ? 'Pending Requests' : 'الطلبات المعلقة'}</p>
+              <span className="owner-stat-icon material-symbols-outlined">pending_actions</span>
+            </div>
+            <strong>{pendingOwnerBookingsCount}</strong>
+            <small>{pendingOwnerBookingsCount ? `${pendingOwnerBookingsCount} ${language === 'en' ? 'need review' : 'تحتاج مراجعة'}` : (language === 'en' ? 'No pending requests' : 'لا توجد طلبات معلقة')}</small>
           </div>
-          <strong>{pendingOwnerBookingsCount}</strong>
-          <small>{pendingOwnerBookingsCount ? `${pendingOwnerBookingsCount} تحتاج مراجعة` : 'لا توجد طلبات معلقة'}</small>
-        </div>
 
-        <div className="owner-summary-card success">
-          <div className="owner-card-topline">
-            <p>إجمالي الإيرادات</p>
-            <span className="owner-stat-icon material-symbols-outlined">payments</span>
+          <div className="owner-summary-card success">
+            <div className="owner-card-topline">
+              <p>{language === 'en' ? 'Total Revenue' : 'إجمالي الإيرادات'}</p>
+              <span className="owner-stat-icon material-symbols-outlined">payments</span>
+            </div>
+            <strong>{formatCurrency(ownerRevenue)}</strong>
+            <small>+18.4% {language === 'en' ? 'vs last week' : 'مقارنة بالأسبوع الماضي'}</small>
           </div>
-          <strong>{formatCurrency(ownerRevenue)}</strong>
-          <small>+18.4% مقارنة بالأسبوع الماضي</small>
-        </div>
 
-        <div className="owner-summary-card accent">
-          <div className="owner-card-topline">
-            <p>تقييم المضيف</p>
-            <span className="owner-stat-icon material-symbols-outlined text-amber-500">star</span>
+          <div className="owner-summary-card accent">
+            <div className="owner-card-topline">
+              <p>{language === 'en' ? 'Host Rating' : 'تقييم المضيف'}</p>
+              <span className="owner-stat-icon material-symbols-outlined text-amber-500">star</span>
+            </div>
+            <strong>4.9 ★</strong>
+            <small>{language === 'en' ? 'Guest satisfaction (12+ reviews)' : 'متوسط رضا الضيوف (12+ تقييم)'}</small>
           </div>
-          <strong>4.9 ★</strong>
-          <small>متوسط رضا الضيوف (12+ تقييم)</small>
         </div>
       </div>
 
-      <div className="owner-action-rail flex flex-wrap gap-2 pt-1">
-        <button type="button" className="secondary-button small-button inline-flex items-center gap-1" onClick={() => document.getElementById('owner-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
-          <span className="material-symbols-outlined text-sm">add</span>
-          <span>إضافة عقار</span>
+      <div className="owner-action-rail" role="toolbar" aria-label={language === 'en' ? 'Quick actions' : 'إجراءات سريعة'}>
+        <button type="button" className="secondary-button small-button" onClick={() => document.getElementById('owner-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+          <span className="material-symbols-outlined">add</span>
+          <span>{language === 'en' ? 'Add Property' : 'إضافة عقار'}</span>
         </button>
-        <button type="button" className="secondary-button small-button inline-flex items-center gap-1" onClick={() => setBookingFilter('pending')}>
-          <span className="material-symbols-outlined text-sm">pending_actions</span>
-          <span>مراجعة الطلبات ({pendingOwnerBookingsCount})</span>
+        <button type="button" className="secondary-button small-button" onClick={() => setBookingFilter('pending')}>
+          <span className="material-symbols-outlined">pending_actions</span>
+          <span>{language === 'en' ? `Review Requests (${pendingOwnerBookingsCount})` : `مراجعة الطلبات (${pendingOwnerBookingsCount})`}</span>
         </button>
-        <button type="button" className="secondary-button small-button inline-flex items-center gap-1" onClick={() => setBookingFilter('all')}>
-          <span className="material-symbols-outlined text-sm">list_alt</span>
-          <span>كل الحجوزات ({ownerBookings.length})</span>
+        <button type="button" className="secondary-button small-button" onClick={() => setBookingFilter('all')}>
+          <span className="material-symbols-outlined">list_alt</span>
+          <span>{language === 'en' ? `All Bookings (${ownerBookings.length})` : `كل الحجوزات (${ownerBookings.length})`}</span>
         </button>
-        <button type="button" className="secondary-button small-button inline-flex items-center gap-1" onClick={() => handleOwnerQuickAction('report')}>
-          <span className="material-symbols-outlined text-sm">download</span>
-          <span>تصدير تقرير</span>
+        <button type="button" className="secondary-button small-button" onClick={() => handleOwnerQuickAction('report')}>
+          <span className="material-symbols-outlined">download</span>
+          <span>{language === 'en' ? 'Export Report' : 'تصدير تقرير'}</span>
         </button>
-        <button type="button" className="secondary-button small-button inline-flex items-center gap-1" onClick={() => navigate('owner-settings')}>
-          <span className="material-symbols-outlined text-sm">settings</span>
-          <span>إعدادات التشغيل</span>
+        <button type="button" className="secondary-button small-button" onClick={() => navigate('owner-settings')}>
+          <span className="material-symbols-outlined">settings</span>
+          <span>{language === 'en' ? 'Operations Settings' : 'إعدادات التشغيل'}</span>
         </button>
       </div>
 
       <div className="owner-feature-banner">
         <div>
-          <span className="owner-feature-kicker">الدفع الفوري</span>
-          <h3>أعلى طلب هذا الأسبوع</h3>
+          <span className="owner-feature-kicker">{language === 'en' ? 'Instant Payout' : 'الدفع الفوري'}</span>
+          <h3>{language === 'en' ? 'Top demand this week' : 'أعلى طلب هذا الأسبوع'}</h3>
         </div>
         <div className="owner-feature-pills">
-          <span>إشغال 78%</span>
-          <span>حجوزات مؤكدة 84%</span>
-          <span>تقييم 4.9</span>
+          <span>{language === 'en' ? 'Occupancy 78%' : 'إشغال 78%'}</span>
+          <span>{language === 'en' ? 'Confirmed 84%' : 'حجوزات مؤكدة 84%'}</span>
+          <span>{language === 'en' ? 'Rating 4.9' : 'تقييم 4.9'}</span>
         </div>
       </div>
 
       <div className="owner-overview">
         <div className="owner-overview-card wide">
           <div className="owner-overview-header">
-            <h3>نظرة سريعة</h3>
-            <span className="status-pill">محدث الآن</span>
+            <h3>{language === 'en' ? 'Quick Overview' : 'نظرة سريعة'}</h3>
+            <span className="status-pill">{language === 'en' ? 'Updated' : 'محدث الآن'}</span>
           </div>
           <div className="owner-metrics-grid">
             <div>
-              <span>متوسط الإشغال</span>
+              <span>{language === 'en' ? 'Avg Occupancy' : 'متوسط الإشغال'}</span>
               <strong>78%</strong>
             </div>
             <div>
-              <span>أعلى مدينة</span>
-              <strong>الإسكندرية</strong>
+              <span>{language === 'en' ? 'Top Destination' : 'أعلى مدينة'}</span>
+              <strong>{language === 'en' ? 'Alexandria' : 'الإسكندرية'}</strong>
             </div>
             <div>
-              <span>إيراد هذا الشهر</span>
+              <span>{language === 'en' ? 'Monthly Revenue' : 'إيراد هذا الشهر'}</span>
               <strong>{formatCurrency(ownerRevenue)}</strong>
             </div>
           </div>
           <div className="owner-progress-list">
             <div>
               <div className="label-row">
-                <span>الطلبات المؤكدة</span>
+                <span>{language === 'en' ? 'Confirmed Requests' : 'الطلبات المؤكدة'}</span>
                 <strong>84%</strong>
               </div>
               <div className="progress-bar"><span style={{ width: '84%' }}></span></div>
             </div>
             <div>
               <div className="label-row">
-                <span>الإشغال هذا الشهر</span>
+                <span>{language === 'en' ? 'Monthly Occupancy' : 'الإشغال هذا الشهر'}</span>
                 <strong>71%</strong>
               </div>
               <div className="progress-bar"><span style={{ width: '71%' }}></span></div>
@@ -1883,18 +1890,57 @@ function App() {
         </div>
 
         <div className="owner-overview-card">
-          <div className="owner-overview-header">
-            <h3>التقييمات</h3>
-            <span className="status-pill neutral">+12%</span>
+          <div className="owner-overview-header relative">
+            <h3>{language === 'en' ? 'Reviews' : 'التقييمات'}</h3>
+            <div className="relative inline-flex items-center gap-1.5">
+              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium hidden sm:inline">
+                {language === 'en' ? 'vs last month' : 'مقارنة بالشهر الماضي'}
+              </span>
+              <button
+                type="button"
+                className="status-pill neutral cursor-pointer inline-flex items-center gap-1 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-700 transition"
+                onClick={() => setShowReviewsTooltip((prev) => !prev)}
+                title={language === 'en' ? '+12% increase in guest reviews count compared to last month' : '+12% زيادة في عدد تقييمات الضيوف مقارنة بالشهر الماضي'}
+                aria-label={language === 'en' ? '+12% vs last month' : '+12% مقارنة بالشهر الماضي'}
+              >
+                <span>+12%</span>
+                <span className="material-symbols-outlined text-[13px] text-slate-400">info</span>
+              </button>
+
+              {showReviewsTooltip && (
+                <div className="absolute top-full mt-2 ltr:right-0 rtl:left-0 z-30 w-56 p-2.5 rounded-xl bg-slate-900 text-white text-[11px] leading-relaxed shadow-xl border border-slate-700 animate-fadeIn">
+                  <div className="flex items-start justify-between gap-1 mb-1">
+                    <strong className="text-emerald-400 font-bold">
+                      {language === 'en' ? '+12% Reviews Growth' : '+12% نمو التقييمات'}
+                    </strong>
+                    <button
+                      type="button"
+                      className="text-slate-400 hover:text-white"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowReviewsTooltip(false)
+                      }}
+                    >
+                      <span className="material-symbols-outlined text-xs">close</span>
+                    </button>
+                  </div>
+                  <p className="m-0 text-slate-300">
+                    {language === 'en'
+                      ? '12% increase in the number of guest reviews compared to the previous 30-day period.'
+                      : 'زيادة بنسبة 12% في إجمالي عدد تقييمات الضيوف مقارنة بفترة الـ 30 يوماً السابقة.'}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
           <div className="rating-score-box">
             <strong>4.9</strong>
-            <span>متوسط تقييم الضيوف</span>
+            <span>{language === 'en' ? 'Average Guest Rating' : 'متوسط تقييم الضيوف'}</span>
           </div>
           <ul className="mini-score-list">
-            <li><span>الصفاء</span><strong>4.9</strong></li>
-            <li><span>الموقع</span><strong>4.8</strong></li>
-            <li><span>التواصل</span><strong>5.0</strong></li>
+            <li><span>{language === 'en' ? 'Cleanliness' : 'الصفاء'}</span><strong>4.9</strong></li>
+            <li><span>{language === 'en' ? 'Location' : 'الموقع'}</span><strong>4.8</strong></li>
+            <li><span>{language === 'en' ? 'Communication' : 'التواصل'}</span><strong>5.0</strong></li>
           </ul>
         </div>
       </div>

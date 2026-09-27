@@ -67,43 +67,56 @@ export default function HostCalendar({
         </div>
       </div>
 
-      <div className="calendar-month-grid mt-4">
-        <div className="calendar-weekdays-row">
-          {weekdays.map((dayName) => (
-            <span key={dayName} className="weekday-title">
-              {dayName}
-            </span>
-          ))}
-        </div>
+      {/* Mobile scroll indicator banner */}
+      <div className="calendar-scroll-hint sm:hidden flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 bg-slate-50/80 dark:bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-200/60 dark:border-slate-700/60 mt-3 mb-2">
+        <span className="inline-flex items-center gap-1 font-medium">
+          <span className="material-symbols-outlined text-sm text-emerald-600 dark:text-emerald-400">swipe</span>
+          {isArabic ? 'اسحب الجدول أفقياً لعرض باقي الأيام' : 'Swipe horizontally to view all days'}
+        </span>
+        <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 font-mono">
+          {isArabic ? 'أحد ⟵ سبت' : 'Sun ⟶ Sat'}
+        </span>
+      </div>
 
-        <div className="calendar-days-grid">
-          {daysInMonth.map((day) => {
-            const isBooked = bookedDays.includes(day)
-            const isBlocked = blockedDays.includes(day)
-            const isWeekend = (day % 7 === 5) || (day % 7 === 6)
-            const dailyPrice = isWeekend ? Math.round(basePrice * (1 + weekendSurge / 100)) : basePrice
+      <div className="calendar-scroll-wrap">
+        <div className="calendar-month-grid mt-1">
+          <div className="calendar-weekdays-row">
+            {weekdays.map((dayName) => (
+              <span key={dayName} className="weekday-title">
+                {dayName}
+              </span>
+            ))}
+          </div>
 
-            return (
-              <button
-                key={day}
-                type="button"
-                className={`calendar-day-cell ${isBooked ? 'booked' : isBlocked ? 'blocked' : 'available'} ${isWeekend ? 'weekend' : ''}`}
-                onClick={() => toggleBlockDay(day)}
-                title={
-                  isBooked
-                    ? (isArabic ? 'محجوز من ضيف' : 'Booked by guest')
-                    : isBlocked
-                    ? (isArabic ? 'اضغط لإلغاء الحظر' : 'Click to unblock')
-                    : (isArabic ? 'اضغط لحظر اليوم' : 'Click to block date')
-                }
-              >
-                <span className="day-number">{day}</span>
-                <span className="day-price">
-                  {isBlocked ? (isArabic ? 'مغلق' : 'Blocked') : `${dailyPrice.toLocaleString()}`}
-                </span>
-              </button>
-            )
-          })}
+          <div className="calendar-days-grid">
+            {daysInMonth.map((day) => {
+              const isBooked = bookedDays.includes(day)
+              const isBlocked = blockedDays.includes(day)
+              const isWeekend = (day % 7 === 5) || (day % 7 === 6)
+              const dailyPrice = isWeekend ? Math.round(basePrice * (1 + weekendSurge / 100)) : basePrice
+
+              return (
+                <button
+                  key={day}
+                  type="button"
+                  className={`calendar-day-cell ${isBooked ? 'booked' : isBlocked ? 'blocked' : 'available'} ${isWeekend ? 'weekend' : ''}`}
+                  onClick={() => toggleBlockDay(day)}
+                  title={
+                    isBooked
+                      ? (isArabic ? 'محجوز من ضيف' : 'Booked by guest')
+                      : isBlocked
+                      ? (isArabic ? 'اضغط لإلغاء الحظر' : 'Click to unblock')
+                      : (isArabic ? 'اضغط لحظر اليوم' : 'Click to block date')
+                  }
+                >
+                  <span className="day-number">{day}</span>
+                  <span className="day-price">
+                    {isBlocked ? (isArabic ? 'مغلق' : 'Blocked') : `${dailyPrice.toLocaleString()}`}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
 

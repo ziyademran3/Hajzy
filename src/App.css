@@ -265,7 +265,7 @@ body::-webkit-scrollbar,
   z-index: 50;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  background: rgba(249, 251, 248, 0.86);
+  background: rgba(249, 251, 248, 0.96);
   border-bottom: 1px solid rgba(15, 118, 110, 0.08);
   box-shadow: 0 4px 20px rgba(0, 67, 63, 0.04);
 }
@@ -2647,8 +2647,10 @@ body::-webkit-scrollbar,
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(239, 246, 244, 0.96));
   border: 1px solid rgba(0, 67, 63, 0.08);
   border-radius: 22px;
-  padding: 16px 16px 14px;
+  padding: 14px 12px 12px;
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+  min-width: 0;
 }
 
 .owner-summary-card.accent {
@@ -2667,8 +2669,21 @@ body::-webkit-scrollbar,
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.owner-card-topline p {
+  margin: 0;
+  color: #4b5e5b;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .owner-summary p {
@@ -2683,12 +2698,23 @@ body::-webkit-scrollbar,
 .owner-stat-icon {
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
   background: rgba(15, 118, 110, 0.10);
   color: #0f766e;
-  font-size: 1.1rem;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.owner-summary-card strong {
+  display: block;
+  color: var(--text);
+  font-size: clamp(1.1rem, 3vw, 1.9rem);
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .owner-summary strong {
@@ -2698,12 +2724,55 @@ body::-webkit-scrollbar,
   line-height: 1.1;
 }
 
+.owner-summary-card small {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .owner-summary small {
   display: block;
   margin-top: 8px;
   color: var(--muted);
   font-size: 0.68rem;
   font-weight: 700;
+}
+
+.owner-summary-grid-wrap {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 640px) {
+  .owner-summary-card {
+    border-radius: 16px;
+    padding: 10px 10px 10px;
+  }
+  .owner-stat-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+  }
+  .owner-card-topline {
+    margin-bottom: 8px;
+    gap: 4px;
+  }
+  .owner-card-topline p {
+    font-size: 0.58rem;
+  }
+  .owner-summary-card strong {
+    font-size: clamp(1rem, 2.5vw, 1.5rem);
+  }
+  .owner-summary-card small {
+    font-size: 0.58rem;
+    margin-top: 4px;
+  }
 }
 
 .owner-feature-banner {
@@ -2935,18 +3004,67 @@ body::-webkit-scrollbar,
 }
 
 .owner-action-rail {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 18px;
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 4px 2px 8px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.owner-action-rail::-webkit-scrollbar {
+  display: none;
 }
 
 .owner-action-rail .secondary-button {
-  flex: 1;
-  min-width: 120px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  min-width: max-content;
+  min-height: 38px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border-radius: 9999px;
   background: var(--bg-card);
-  border-color: rgba(15, 118, 110, 0.12);
-  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.02);
+  border: 1px solid rgba(15, 118, 110, 0.16);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+  transition: all 0.2s ease;
+}
+
+.owner-action-rail .secondary-button:hover {
+  background: rgba(15, 118, 110, 0.08);
+  border-color: #0f766e;
+}
+
+.owner-action-rail .secondary-button .material-symbols-outlined {
+  font-size: 1.15rem;
+  line-height: 1;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.owner-action-rail .secondary-button span {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .owner-action-rail {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .owner-action-rail .secondary-button {
+    flex: 1 1 auto;
+    border-radius: 14px;
+    justify-content: center;
+  }
 }
 
 .owner-operational-panel {
@@ -6607,9 +6725,11 @@ input {
   position: fixed;
   inset: 0 0 auto 0;
   z-index: 50;
-  backdrop-filter: blur(12px);
-  background: rgba(247, 250, 245, 0.78);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background: rgba(247, 250, 245, 0.96);
   border-bottom: 1px solid rgba(111, 121, 119, 0.12);
+  box-shadow: 0 4px 20px rgba(0, 67, 63, 0.04);
 }
 
 .topbar-inner {
@@ -7817,10 +7937,37 @@ body[data-theme='dark'] .app-shell {
   gap: 12px;
 }
 
+.calendar-scroll-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(15, 118, 110, 0.25) transparent;
+  padding: 4px 2px 8px;
+}
+
+.calendar-scroll-wrap::-webkit-scrollbar {
+  height: 4px;
+}
+
+.calendar-scroll-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.calendar-scroll-wrap::-webkit-scrollbar-thumb {
+  background: rgba(15, 118, 110, 0.25);
+  border-radius: 4px;
+}
+
+.calendar-month-grid {
+  min-width: 320px;
+  width: 100%;
+}
+
 .calendar-weekdays-row {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
   text-align: center;
   font-size: 0.72rem;
   font-weight: 700;
@@ -7830,22 +7977,23 @@ body[data-theme='dark'] .app-shell {
 
 .calendar-days-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
 }
 
 .calendar-day-cell {
-  aspect-ratio: 1;
+  min-height: 48px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 4px;
+  padding: 4px 2px;
   border-radius: 12px;
   border: 1px solid #e2e8f0;
   background: var(--bg-card);
   cursor: pointer;
   transition: all 0.2s;
+  box-sizing: border-box;
 }
 
 .calendar-day-cell.available {
@@ -7878,11 +8026,39 @@ body[data-theme='dark'] .app-shell {
   font-size: 0.8rem;
   font-weight: 700;
   color: #1e293b;
+  line-height: 1.2;
 }
 
 .day-price {
-  font-size: 0.62rem;
+  font-size: 0.6rem;
   color: var(--muted);
+  white-space: nowrap;
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 640px) {
+  .host-calendar-manager-card {
+    padding: 14px 10px;
+    border-radius: 16px;
+  }
+  .calendar-weekdays-row {
+    gap: 3px;
+    font-size: 0.68rem;
+  }
+  .calendar-days-grid {
+    gap: 3px;
+  }
+  .calendar-day-cell {
+    min-height: 44px;
+    padding: 3px 1px;
+    border-radius: 8px;
+  }
+  .day-number {
+    font-size: 0.74rem;
+  }
+  .day-price {
+    font-size: 0.56rem;
+  }
 }
 
 /* ==========================================================================

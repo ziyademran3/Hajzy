@@ -339,8 +339,10 @@ export default function CityPage({
             <article
               key={property.id}
               className="property-card property-card-modern bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer group"
+              data-testid="property-card"
+              data-property-id={property.id}
               onClick={(event) => {
-                if (event.target.closest('button')) return
+                if (event.target.closest('button') || event.target.closest('a')) return
                 // Clicking the card opens confirmation/checkout directly
                 onBookProperty(property)
               }}
@@ -404,7 +406,18 @@ export default function CityPage({
 
                   <div className="title-block mb-3">
                     <h3 className="text-base font-black text-slate-900 dark:text-white line-clamp-1 group-hover:text-emerald-600 transition-colors">
-                      {getTitle(property)}
+                      <a
+                        href={`#property-${property.id}`}
+                        className="property-link"
+                        data-testid="property-link"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          onSelectProperty(property)
+                        }}
+                      >
+                        {getTitle(property)}
+                      </a>
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
                       <span className="material-symbols-outlined text-sm text-slate-400">location_on</span>
@@ -455,6 +468,7 @@ export default function CityPage({
                     <button
                       type="button"
                       className="secondary-button small-button px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                      data-testid="property-details-button"
                       onClick={(e) => {
                         e.stopPropagation()
                         onSelectProperty(property)
@@ -468,6 +482,7 @@ export default function CityPage({
                     <button
                       type="button"
                       className="primary-button small-button px-4 py-2 rounded-xl text-xs font-black shadow-sm bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white transition active:scale-95 cursor-pointer"
+                      data-testid="book-now-button"
                       onClick={(e) => {
                         e.stopPropagation()
                         onBookProperty(property)
