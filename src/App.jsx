@@ -388,8 +388,8 @@ function App() {
   const [selectedMapPropertyId, setSelectedMapPropertyId] = useState(null)
   const [showFilterPanel, setShowFilterPanel] = useState(false)
   const [homeFilters, setHomeFilters] = useState({
-    maxPrice: 8000,
-    ratingMin: 4.5,
+    maxPrice: 35000,
+    ratingMin: 0,
     type: 'all',
     bedrooms: 'any',
     amenities: [],
@@ -1146,17 +1146,19 @@ function App() {
 
       const matchesGuests = Number(property.guests || 2) >= Number(homeQuickSearch.guests || 1)
       const matchesDates = !homeQuickSearch.checkIn || !homeQuickSearch.checkOut || true
-      const matchesPrice = Number(property.priceValue || 0) <= Number(homeFilters.maxPrice || 8000)
-      const matchesRating = Number(property.rating || 0) >= Number(homeFilters.ratingMin || 0)
+      const matchesPrice = !homeFilters.maxPrice || Number(property.priceValue || 0) <= Number(homeFilters.maxPrice)
+      const matchesRating = !homeFilters.ratingMin || Number(property.rating || 0) >= Number(homeFilters.ratingMin)
       const matchesType =
+        !homeFilters.type ||
         homeFilters.type === 'all' ||
         (() => {
-          const typeText = `${property.title || ''} ${property.titleEn || ''} ${(property.details || []).join(' ')} ${(property.detailsEn || []).join(' ')}`.toLowerCase()
-          if (homeFilters.type === 'apartment') return typeText.includes('شقة') || typeText.includes('suite') || typeText.includes('appartment') || typeText.includes('flat')
-          if (homeFilters.type === 'villa') return typeText.includes('فيلا') || typeText.includes('villa') || typeText.includes(' chalet ') || typeText.includes('شاليه')
-          if (homeFilters.type === 'hotel') return typeText.includes('فندق') || typeText.includes('hotel') || typeText.includes('جناح')
-          if (homeFilters.type === 'resort') return typeText.includes('شاطئ') || typeText.includes('شرم') || typeText.includes('resort') || typeText.includes('بحر')
-          return true
+          const type = String(homeFilters.type).toLowerCase()
+          const typeText = `${property.type || ''} ${property.title || ''} ${property.titleEn || ''} ${(property.details || []).join(' ')} ${(property.detailsEn || []).join(' ')}`.toLowerCase()
+          if (type === 'apartment' || type === 'شقة') return typeText.includes('شقة') || typeText.includes('suite') || typeText.includes('appartment') || typeText.includes('flat') || typeText.includes('apartment')
+          if (type === 'villa' || type === 'فيلا' || type === 'chalet' || type === 'شاليه') return typeText.includes('فيلا') || typeText.includes('villa') || typeText.includes('chalet') || typeText.includes('شاليه')
+          if (type === 'hotel' || type === 'فندق') return typeText.includes('فندق') || typeText.includes('hotel') || typeText.includes('جناح')
+          if (type === 'resort' || type === 'منتجع') return typeText.includes('شاطئ') || typeText.includes('شرم') || typeText.includes('resort') || typeText.includes('بحر') || typeText.includes('منتجع')
+          return typeText.includes(type)
         })()
       const matchesBedrooms =
         homeFilters.bedrooms === 'any' ||
@@ -1171,12 +1173,12 @@ function App() {
           return true
         })()
       const amenityAliases = {
-        'Wi‑Fi': ['wifi', 'wi-fi', 'wi‑fi', 'واي فاي'],
-        Parking: ['parking', 'موقف', 'مواقف'],
-        Pool: ['pool', 'مسبح'],
-        'Sea View': ['sea view', 'sea', 'إطلالة بحر', 'بحرية'],
-        Breakfast: ['breakfast', 'إفطار'],
-        'Air Conditioning': ['air conditioning', 'air', 'تكييف'],
+        'Wi‑Fi': ['wifi', 'wi-fi', 'wi‑fi', 'واي فاي', 'انترنت', 'إنترنت'],
+        Parking: ['parking', 'موقف', 'مواقف', 'جراج'],
+        Pool: ['pool', 'مسبح', 'حمام سباحة'],
+        'Sea View': ['sea view', 'sea', 'إطلالة بحر', 'بحرية', 'على البحر'],
+        Breakfast: ['breakfast', 'إفطار', 'فطور'],
+        'Air Conditioning': ['air conditioning', 'air', 'تكييف', 'مكيف'],
       }
       const matchesAmenities =
         homeFilters.amenities.length === 0 ||
@@ -2471,7 +2473,7 @@ function App() {
                 <span className="search-panel-kicker">{language === 'en' ? 'Find your stay' : 'ابحث عن الإقامة'}</span>
                 <h3>{language === 'en' ? 'Where are you going?' : 'إلى أين تريد الذهاب؟'}</h3>
               </div>
-              <button type="button" className="secondary-button small-button" onClick={() => setShowFilterPanel((open) => !open)}>
+              <button type="button" className="secondary-button small-button" data-testid="filter-toggle-button" onClick={() => setShowFilterPanel((open) => !open)}>
                 <span className="material-symbols-outlined">tune</span>
                 {language === 'en' ? 'Filters' : 'تصفية'}
               </button>
@@ -2586,8 +2588,8 @@ function App() {
                     <input
                       type="range"
                       min="1000"
-                      max="10000"
-                      step="250"
+                      max="50000"
+                      step="500"
                       value={homeFilters.maxPrice}
                       onChange={(event) => setHomeFilters((current) => ({ ...current, maxPrice: Number(event.target.value) }))}
                     />
@@ -2598,9 +2600,11 @@ function App() {
                   <label>
                     <span>{language === 'en' ? 'Minimum rating' : 'التقييم الأدنى'}</span>
                     <select
+                      data-testid="filter-rating-select"
                       value={homeFilters.ratingMin}
                       onChange={(event) => setHomeFilters((current) => ({ ...current, ratingMin: Number(event.target.value) }))}
                     >
+                      <option value={0}>{language === 'en' ? 'All (Any rating)' : 'الكل (أي تقييم)'}</option>
                       <option value={4}>4.0+</option>
                       <option value={4.5}>4.5+</option>
                       <option value={4.7}>4.7+</option>
