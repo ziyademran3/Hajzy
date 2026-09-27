@@ -703,10 +703,13 @@ export async function onRequest(context) {
         const { currentPassword, newPassword } = await readBody(request)
         if (!currentPassword || !newPassword) return json({ message: 'currentPassword and newPassword are required.' }, 400)
         if (newPassword.length < 8) return json({ message: 'New password must be at least 8 characters long.' }, 400)
-        if (!(await verifyPassword(currentPassword, user.passwordHash))) {
+        const isCurrentValid = (user.password && user.password === currentPassword) ||
+          (user.passwordHash && (await verifyPassword(currentPassword, user.passwordHash)))
+        if (!isCurrentValid) {
           return json({ message: 'Current password is incorrect.' }, 401)
         }
         user.passwordHash = await hashPassword(newPassword)
+        if (user.password) delete user.password
         await db.save(user)
         return json({ message: 'Password changed successfully.' })
       }

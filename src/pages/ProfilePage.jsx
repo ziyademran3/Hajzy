@@ -417,6 +417,7 @@ export default function ProfilePage({
             <div className="password-field">
               <input
                 type={showCurrentPassword ? 'text' : 'password'}
+                data-testid="current-password-input"
                 value={passwordForm.current}
                 onChange={(e) => setPasswordForm((c) => ({ ...c, current: e.target.value }))}
               />
@@ -430,6 +431,7 @@ export default function ProfilePage({
             <div className="password-field">
               <input
                 type={showNewPassword ? 'text' : 'password'}
+                data-testid="new-password-input"
                 value={passwordForm.newPassword}
                 onChange={(e) => setPasswordForm((c) => ({ ...c, newPassword: e.target.value }))}
               />
@@ -454,6 +456,7 @@ export default function ProfilePage({
             <div className="password-field">
               <input
                 type={showNewPassword ? 'text' : 'password'}
+                data-testid="confirm-password-input"
                 value={passwordForm.confirmNewPassword}
                 onChange={(e) => setPasswordForm((c) => ({ ...c, confirmNewPassword: e.target.value }))}
               />
@@ -461,11 +464,11 @@ export default function ProfilePage({
           </div>
         </div>
 
-        {passwordError && <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700" role="alert">{passwordError}</div>}
-        {passwordMessage && <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700" role="status">{passwordMessage}</div>}
+        {passwordError && <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700" data-testid="password-change-error" role="alert">{passwordError}</div>}
+        {passwordMessage && <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700" data-testid="password-change-success" role="status">{passwordMessage}</div>}
 
         <div className="mt-4">
-          <button className="primary-button" onClick={handlePasswordChange} disabled={passwordLoading}>{passwordLoading ? '...' : (language === 'en' ? 'Change password' : 'تغيير كلمة المرور')}</button>
+          <button className="primary-button" data-testid="change-password-button" onClick={handlePasswordChange} disabled={passwordLoading}>{passwordLoading ? '...' : (language === 'en' ? 'Change password' : 'تغيير كلمة المرور')}</button>
         </div>
       </section>
 
