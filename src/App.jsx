@@ -581,14 +581,16 @@ function App() {
                 ownerId,
                 property: targetProp || { title: targetBooking.title },
                 booking: targetBooking,
-                type: 'booking_new',
+                type: 'booking_confirmed',
+                guestName: targetBooking.guestName || targetBooking.fullName || '',
               })
               if (ownerId !== 'owner-demo') {
                 createOwnerBookingNotification({
                   ownerId: 'owner-demo',
                   property: targetProp || { title: targetBooking.title },
                   booking: targetBooking,
-                  type: 'booking_new',
+                  type: 'booking_confirmed',
+                  guestName: targetBooking.guestName || targetBooking.fullName || '',
                 })
               }
             }
@@ -738,15 +740,22 @@ function App() {
 
     const handleNotificationCreated = (e) => {
       const { userId, notification } = e.detail || {}
+      if (!notification) return
       const currentTarget = resolveCurrentUserId()
-      if (
-        userId === currentTarget ||
-        (isOwner && (userId === user?.id || userId === 'owner-demo' || userId === 'owner'))
-      ) {
+      // Always process notifications that belong to the current user
+      // Also process owner notifications when the owner is logged in
+      // Also immediately refresh from localStorage for cross-account notifications
+      const isForCurrentUser = userId === currentTarget
+      const isForOwner = isOwner && (userId === user?.id || userId === 'owner-demo' || userId === 'owner')
+      if (isForCurrentUser || isForOwner) {
         setNotifications((prev) => {
           if (prev.some((n) => n.id === notification.id)) return prev
           return [notification, ...prev].slice(0, 50)
         })
+      } else {
+        // Notification was created for a different user (e.g., owner notification while guest is logged in).
+        // We still save it to localStorage (already done by createNotification), so it will appear
+        // when that user logs in or on the next poll. No state update needed here.
       }
     }
 
@@ -1877,6 +1886,7 @@ function App() {
 
       // Generate notification for the property owner
       const targetOwnerId = selectedProperty.ownerId || (user?.role === 'owner' ? user.id : 'owner-demo')
+      const ownerNotifType = confirmedBooking.status === 'pending' ? 'booking_pending' : 'booking_confirmed'
       createOwnerBookingNotification({
         ownerId: targetOwnerId,
         property: selectedProperty,
@@ -1887,7 +1897,7 @@ function App() {
         dates: bookingDates,
         total: grandTotal,
         currency: selectedProperty.currency,
-        type: confirmedBooking.status === 'pending' ? 'booking_pending' : 'booking_new',
+        type: ownerNotifType,
       })
       if (targetOwnerId !== 'owner-demo') {
         createOwnerBookingNotification({
@@ -1900,7 +1910,7 @@ function App() {
           dates: bookingDates,
           total: grandTotal,
           currency: selectedProperty.currency,
-          type: confirmedBooking.status === 'pending' ? 'booking_pending' : 'booking_new',
+          type: ownerNotifType,
         })
       }
       cacheBooking(confirmedBooking, selectedProperty)
