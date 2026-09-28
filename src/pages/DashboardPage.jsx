@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FALLBACK_STAY_PHOTO, sanitizePhotoUrl } from '../lib/dataService'
+import { formatCurrency, formatNumber } from '../lib/formatters'
 
 export default function DashboardPage({
   user,
@@ -45,10 +46,62 @@ export default function DashboardPage({
     }
   }, [isAr, welcomeName])
 
-  // Financial calculations
-  const totalSpend = bookings.reduce((sum, booking) => sum + Number(booking.total || 0), 0)
-  const confirmedBookings = bookings.filter((b) => b.status === 'confirmed')
-  const pendingBookings = bookings.filter((b) => b.status === 'pending')
+  // Helper to normalize booking status
+  const normalizeBookingStatus = (status) => {
+    const s = String(status || '').trim().toLowerCase()
+    if (s === 'confirmed') return 'confirmed'
+    if (s === 'cancelled') return 'cancelled'
+    return 'pending'
+  }
+
+  // Deduplicate bookings: if same property and dates exist, keep the confirmed one
+  const safeBookings = useMemo(() => {
+    const raw = Array.isArray(bookings) ? bookings.filter(Boolean) : []
+    const map = new Map()
+    const sorted = [...raw].sort((a, b) => {
+      const aConf = normalizeBookingStatus(a.status) === 'confirmed' ? 1 : 0
+      const bConf = normalizeBookingStatus(b.status) === 'confirmed' ? 1 : 0
+      if (aConf !== bConf) return bConf - aConf
+      return String(b.id || '').localeCompare(String(a.id || ''))
+    })
+
+    for (const item of sorted) {
+      const propKey = String(item.propertyId || item.title || '').trim()
+      const checkInKey = String(item.checkIn || '').trim()
+      const checkOutKey = String(item.checkOut || '').trim()
+      const refKey = item.reference && !item.reference.includes('00000') ? `ref_${item.reference}` : `${propKey}_${checkInKey}_${checkOutKey}`
+      if (!map.has(refKey)) {
+        map.set(refKey, item)
+      }
+    }
+    return Array.from(map.values())
+  }, [bookings])
+
+  const confirmedBookings = useMemo(() => {
+    return safeBookings.filter((b) => normalizeBookingStatus(b.status) === 'confirmed')
+  }, [safeBookings])
+
+  const upcomingBookings = useMemo(() => {
+    const now = new Date()
+    return safeBookings.filter((b) => {
+      const s = normalizeBookingStatus(b?.status)
+      const co = new Date(b?.checkOut || b?.checkIn || now)
+      return s !== 'cancelled' && !Number.isNaN(co.getTime()) && co >= now
+    })
+  }, [safeBookings])
+
+  const pendingBookings = useMemo(() => {
+    return safeBookings.filter((b) => normalizeBookingStatus(b.status) === 'pending')
+  }, [safeBookings])
+
+  // Financial calculations: total spent on confirmed bookings
+  const totalSpend = useMemo(() => {
+    return confirmedBookings.reduce((sum, booking) => {
+      const raw = typeof booking.total === 'number' ? booking.total : String(booking.total || 0).replace(/[^0-9.-]+/g, '')
+      const val = Number(raw) || 0
+      return sum + val
+    }, 0)
+  }, [confirmedBookings])
 
   // Loyalty Points & Club Tier
   // 1 point per 1000 EGP spent — starts from 0
@@ -63,8 +116,8 @@ export default function DashboardPage({
     return { name: isAr ? 'عضو جديد' : 'New Member', color: 'from-emerald-500 to-teal-600', badge: '🌱', next: isAr ? 'فضي' : 'Silver', pointsToNext: 20 - loyaltyPoints }
   }, [loyaltyPoints, isAr])
 
-  // Next upcoming stay
-  const upcomingStay = bookings[0]
+  // Next upcoming stay (prioritize active confirmed upcoming stay)
+  const upcomingStay = upcomingBookings[0] || confirmedBookings[0] || safeBookings[0]
   const upcomingProperty = properties.find((item) => item.id === upcomingStay?.propertyId) || properties[0]
 
   // Countdown to next stay
@@ -80,21 +133,15 @@ export default function DashboardPage({
 
   // Filtered recent activity
   const filteredBookings = useMemo(() => {
-    if (activityFilter === 'confirmed') return bookings.filter((b) => b.status === 'confirmed')
-    if (activityFilter === 'pending') return bookings.filter((b) => b.status === 'pending')
-    return bookings
-  }, [bookings, activityFilter])
+    if (activityFilter === 'confirmed') return confirmedBookings
+    if (activityFilter === 'pending') return pendingBookings
+    return safeBookings
+  }, [safeBookings, confirmedBookings, pendingBookings, activityFilter])
 
   // Curated properties recommendation (top 3)
   const curatedProperties = useMemo(() => {
     return properties.slice(0, 3)
   }, [properties])
-
-  const currencyFormatter = new Intl.NumberFormat(isAr ? 'ar-EG' : 'en-US', {
-    style: 'currency',
-    currency: 'EGP',
-    maximumFractionDigits: 0,
-  })
 
   const dateFormatter = new Intl.DateTimeFormat(isAr ? 'ar-EG' : 'en-US', {
     day: 'numeric',
@@ -115,7 +162,9 @@ export default function DashboardPage({
       key: 'bookings',
       icon: 'calendar_month',
       label: isAr ? 'حجوزاتي وتذاكري' : 'My Bookings',
-      desc: isAr ? `${bookings.length} حجوزات مسجلة` : `${bookings.length} booked stays`,
+      desc: isAr
+        ? `${formatNumber(upcomingBookings.length || confirmedBookings.length)} ${(upcomingBookings.length || confirmedBookings.length) === 1 ? 'حجز مسجل' : 'حجوزات مسجلة'}`
+        : `${formatNumber(upcomingBookings.length || confirmedBookings.length)} booked stays`,
       color: 'from-teal-600 to-cyan-600',
       action: () => onNavigate('bookings'),
     },
@@ -206,9 +255,11 @@ export default function DashboardPage({
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{bookings.length}</span>
+            <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+              {formatNumber(upcomingBookings.length || confirmedBookings.length)}
+            </span>
             <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
-              {confirmedBookings.length} {isAr ? 'مؤكد' : 'ok'}
+              {formatNumber(confirmedBookings.length)} {isAr ? 'مؤكد' : 'Confirmed'}
             </span>
           </div>
           <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400 truncate">
@@ -228,7 +279,7 @@ export default function DashboardPage({
           </div>
           <div className="mt-3">
             <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-              {currencyFormatter.format(totalSpend || 0)}
+              {formatCurrency(totalSpend, 'EGP', language)}
             </span>
           </div>
           {/* Mini CSS Bar Chart representation */}
@@ -237,7 +288,7 @@ export default function DashboardPage({
             <div className="w-1.5 h-2.5 rounded-full bg-teal-300 dark:bg-teal-800" />
             <div className="w-1.5 h-2 rounded-full bg-teal-400 dark:bg-teal-700" />
             <div className="w-1.5 h-3 rounded-full bg-teal-500" />
-            <span className="text-[10px] text-slate-400 font-mono ms-1">{bookings.length ? (isAr ? 'نشط' : 'active') : '0'}</span>
+            <span className="text-[10px] text-slate-400 font-mono ms-1">{confirmedBookings.length ? (isAr ? 'نشط' : 'active') : '0'}</span>
           </div>
         </div>
 
@@ -256,7 +307,7 @@ export default function DashboardPage({
           </div>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-              {favorites.length}
+              {formatNumber(favorites.length)}
             </span>
             <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{isAr ? 'مكان' : 'saved'}</span>
           </div>
@@ -276,7 +327,7 @@ export default function DashboardPage({
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-1.5">
-            <span className="text-2xl sm:text-3xl font-black text-amber-300">{loyaltyPoints}</span>
+            <span className="text-2xl sm:text-3xl font-black text-amber-300">{formatNumber(loyaltyPoints)}</span>
             <span className="text-[11px] text-slate-300 font-bold">{isAr ? 'نقطة' : 'pts'}</span>
           </div>
           <div className="mt-2 flex items-center justify-between text-[11px] text-slate-300">
@@ -285,8 +336,8 @@ export default function DashboardPage({
           {loyaltyTier.next && (
             <div className="mt-2 text-[10px] text-slate-400">
               {isAr
-                ? `${loyaltyTier.pointsToNext} نقطة للوصول لمستوى ${loyaltyTier.next}`
-                : `${loyaltyTier.pointsToNext} pts to reach ${loyaltyTier.next}`}
+                ? `${formatNumber(loyaltyTier.pointsToNext)} نقطة للوصول لمستوى ${loyaltyTier.next}`
+                : `${formatNumber(loyaltyTier.pointsToNext)} pts to reach ${loyaltyTier.next}`}
             </div>
           )}
           <div className="mt-2 text-[9px] text-slate-500">
