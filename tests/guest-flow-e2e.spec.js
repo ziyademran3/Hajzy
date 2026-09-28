@@ -172,16 +172,11 @@ test.describe('Guest Flow & Auth Fix Verification', () => {
     await expect(ownerIndicator.first()).toBeVisible({ timeout: 10000 });
   });
 
-  test('7) Continue as guest button on login page redirects to public marketplace', async ({ page }) => {
+  test('7) Continue as guest button and demo accounts are not present on login page', async ({ page }) => {
     await page.goto('/login');
 
     const continueGuestBtn = page.locator('[data-testid="continue-as-guest"]');
-    await expect(continueGuestBtn).toBeVisible({ timeout: 10000 });
-    await continueGuestBtn.click();
-
-    // Verify public marketplace is rendered
-    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('#destination, [data-testid="search-destination"]')).toBeVisible();
-    await expect(page.locator('[data-testid="property-card"], .property-card').first()).toBeVisible();
+    await expect(continueGuestBtn).not.toBeVisible();
+    await expect(page.locator('text=user@hajzy.com')).not.toBeVisible();
   });
 });

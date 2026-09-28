@@ -637,49 +637,6 @@ export default function LoginPage({
                   )}
                 </button>
 
-                {/* Continue as Guest Button */}
-                {onContinueAsGuest && (
-                  <button
-                    type="button"
-                    data-testid="continue-as-guest"
-                    aria-label={language === 'en' ? 'Continue as guest' : 'المتابعة كضيف'}
-                    onClick={onContinueAsGuest}
-                    className="flex w-full min-h-[46px] items-center justify-center gap-2 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 hover:bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10 px-4 py-3 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 transition active:scale-[0.98]"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">explore</span>
-                    <span>{language === 'en' ? 'Continue as guest' : 'المتابعة كضيف'}</span>
-                  </button>
-                )}
-
-                {/* Demo / Seeded Credentials Helper */}
-                <div className="rounded-2xl border border-emerald-200/80 dark:border-emerald-800/60 bg-emerald-50/50 dark:bg-emerald-950/20 p-3 text-center text-xs text-slate-600 dark:text-slate-400">
-                  <div className="font-bold text-emerald-800 dark:text-emerald-300 mb-1.5 flex items-center justify-center gap-1.5">
-                    <span className="material-symbols-outlined text-sm">key</span>
-                    <span>{language === 'en' ? 'Seeded Test Accounts' : 'حسابات تجريبية جاهزة للاختبار'}</span>
-                  </div>
-                  <div className="flex items-center justify-center gap-2 flex-wrap">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setForm({ email: 'user@hajzy.com', password: 'TestPass123!', remember: true })
-                        setErrors({})
-                      }}
-                      className="px-2.5 py-1 rounded-xl bg-white dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 font-mono text-[11px] font-bold border border-emerald-200 dark:border-emerald-700 hover:bg-emerald-100/70 transition shadow-xs"
-                    >
-                      user@hajzy.com
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setForm({ email: 'hajzy2005@gmail.com', password: 'Ziad@Hajzy@2005', remember: true })
-                        setErrors({})
-                      }}
-                      className="px-2.5 py-1 rounded-xl bg-white dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 font-mono text-[11px] font-bold border border-emerald-200 dark:border-emerald-700 hover:bg-emerald-100/70 transition shadow-xs"
-                    >
-                      hajzy2005@gmail.com
-                    </button>
-                  </div>
-                </div>
 
               </form>
 
