@@ -105,7 +105,68 @@ export const saveUserNotifications = (userId, notifications) => {
 }
 
 /**
- * Add a new notification for a specific user
+ * Get notification preferences for a given user
+ */
+export const getNotificationPreferences = (userId) => {
+  if (typeof window === 'undefined') {
+    return { inApp: true, browserPush: false, email: true, whatsapp: false }
+  }
+  try {
+    const key = `hajzy_notif_prefs_${userId || 'default'}`
+    const raw = localStorage.getItem(key)
+    if (raw) return { inApp: true, browserPush: false, email: true, whatsapp: false, ...JSON.parse(raw) }
+  } catch {}
+  return { inApp: true, browserPush: false, email: true, whatsapp: false }
+}
+
+/**
+ * Save notification preferences for a given user
+ */
+export const saveNotificationPreferences = (userId, prefs) => {
+  if (typeof window === 'undefined') return
+  try {
+    const key = `hajzy_notif_prefs_${userId || 'default'}`
+    localStorage.setItem(key, JSON.stringify(prefs))
+  } catch (err) {
+    console.warn('saveNotificationPreferences error:', err)
+  }
+}
+
+/**
+ * Request browser push notification permission
+ */
+export const requestBrowserPushPermission = async () => {
+  if (typeof window === 'undefined' || !('Notification' in window)) {
+    return 'unsupported'
+  }
+  try {
+    const perm = await Notification.requestPermission()
+    return perm
+  } catch {
+    return 'denied'
+  }
+}
+
+/**
+ * Trigger native browser notification if granted and enabled
+ */
+export const triggerBrowserNotification = (title, options = {}) => {
+  if (typeof window === 'undefined' || !('Notification' in window)) return null
+  if (Notification.permission !== 'granted') return null
+  try {
+    return new Notification(title, {
+      icon: '/favicon.ico',
+      badge: '/favicon.ico',
+      ...options,
+    })
+  } catch (err) {
+    console.warn('triggerBrowserNotification error:', err)
+    return null
+  }
+}
+
+/**
+ * Add a new notification for a specific user and broadcast update
  */
 export const createNotification = (userId, {
   type = 'info',
@@ -114,6 +175,8 @@ export const createNotification = (userId, {
   detail,
   bookingId = null,
   propertyId = null,
+  status = null,
+  metadata = null,
   createdAt = new Date().toISOString(),
 }) => {
   const normalizedTitle = typeof title === 'object' && title !== null
@@ -124,24 +187,125 @@ export const createNotification = (userId, {
     ? (body || detail)
     : { ar: String(body || detail || ''), en: String(body || detail || '') }
 
+  const targetUserId = String(userId || 'guest').trim()
+
   const newNotification = {
     id: `notif_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-    userId: String(userId || 'guest'),
+    userId: targetUserId,
     type,
     title: normalizedTitle,
     body: normalizedBody,
     detail: normalizedBody,
     bookingId,
     propertyId,
+    status,
+    metadata,
     createdAt,
     readAt: null,
     read: false,
   }
 
-  const existing = getUserNotifications(userId)
+  const existing = getUserNotifications(targetUserId)
   const updated = [newNotification, ...existing].slice(0, 50)
-  saveUserNotifications(userId, updated)
+  saveUserNotifications(targetUserId, updated)
+
+  // Broadcast event in window for instant UI reactivity without page reload
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('hajzy_notification_created', {
+      detail: { userId: targetUserId, notification: newNotification },
+    }))
+
+    // Check user preferences for native browser push notification
+    const prefs = getNotificationPreferences(targetUserId)
+    if (prefs.browserPush) {
+      const textTitle = normalizedTitle.ar || normalizedTitle.en
+      const textBody = normalizedBody.ar || normalizedBody.en
+      triggerBrowserNotification(textTitle, {
+        body: textBody,
+        tag: newNotification.id,
+      })
+    }
+  }
+
   return newNotification
+}
+
+/**
+ * Create an owner-targeted booking notification with comprehensive details
+ * Types: 'booking_new' | 'booking_pending' | 'booking_confirmed' | 'booking_cancelled' | 'booking_modified'
+ */
+export const createOwnerBookingNotification = ({
+  ownerId,
+  property,
+  booking,
+  type = 'booking_new',
+  guestName = '',
+  guestPhone = '',
+  guestEmail = '',
+  dates = null,
+  total = null,
+  currency = 'EGP',
+}) => {
+  if (!ownerId) return null
+
+  const propTitle = property?.title || 'عقارك'
+  const propTitleEn = property?.titleEn || property?.title_en || propTitle
+  const name = guestName || booking?.guestName || booking?.fullName || 'ضيف'
+  const checkIn = dates?.checkIn || booking?.checkIn || booking?.startDate || ''
+  const checkOut = dates?.checkOut || booking?.checkOut || booking?.endDate || ''
+  const bookingTotal = total || booking?.total || booking?.totalPrice || 0
+  const bookingCurrency = currency || booking?.currency || 'EGP'
+
+  let title = { ar: 'طلب حجز جديد 🛎️', en: 'New Booking Request 🛎️' }
+  let body = {
+    ar: `حجز جديد من ${name} لعقار "${propTitle}" (${checkIn} إلى ${checkOut}) بإجمالي ${bookingTotal} ${bookingCurrency}.`,
+    en: `New booking from ${name} for "${propTitleEn}" (${checkIn} to ${checkOut}) totaling ${bookingTotal} ${bookingCurrency}.`,
+  }
+
+  if (type === 'booking_pending') {
+    title = { ar: 'طلب حجز بحاجة لمراجعتك ⏳', en: 'Booking Awaiting Review ⏳' }
+    body = {
+      ar: `طلب حجز جديد من ${name} لعقار "${propTitle}" يتطلب موافقتك (${checkIn} إلى ${checkOut}).`,
+      en: `New booking request from ${name} for "${propTitleEn}" requires your approval (${checkIn} to ${checkOut}).`,
+    }
+  } else if (type === 'booking_confirmed') {
+    title = { ar: 'تم تأكيد حجز 🌟', en: 'Booking Confirmed 🌟' }
+    body = {
+      ar: `تم تأكيد حجز ${name} في "${propTitle}" من ${checkIn} إلى ${checkOut}.`,
+      en: `Booking for ${name} at "${propTitleEn}" has been confirmed (${checkIn} to ${checkOut}).`,
+    }
+  } else if (type === 'booking_cancelled') {
+    title = { ar: 'إلغاء حجز ⚠️', en: 'Booking Cancelled ⚠️' }
+    body = {
+      ar: `تم إلغاء الحجز الخاص بـ ${name} في "${propTitle}" (${checkIn} إلى ${checkOut}).`,
+      en: `Booking for ${name} at "${propTitleEn}" has been cancelled (${checkIn} to ${checkOut}).`,
+    }
+  } else if (type === 'booking_modified') {
+    title = { ar: 'تعديل موعد الحجز ✏️', en: 'Booking Dates Updated ✏️' }
+    body = {
+      ar: `تم تعديل مواعيد حجز ${name} في "${propTitle}" إلى ${checkIn} حتى ${checkOut}.`,
+      en: `Dates updated for ${name} at "${propTitleEn}" to ${checkIn} through ${checkOut}.`,
+    }
+  }
+
+  return createNotification(ownerId, {
+    type,
+    title,
+    body,
+    bookingId: booking?.id,
+    propertyId: property?.id,
+    status: booking?.status || 'confirmed',
+    metadata: {
+      guestName: name,
+      guestPhone,
+      guestEmail,
+      checkIn,
+      checkOut,
+      total: bookingTotal,
+      currency: bookingCurrency,
+      propertyTitle: propTitle,
+    },
+  })
 }
 
 /**

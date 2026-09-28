@@ -1200,6 +1200,26 @@ app.post('/api/bookings', authenticate, async (req, res) => {
         email: normalizedEmail,
         notes: String(notes || '').trim(),
       })
+
+      // Generate notification for the property owner
+      const ownerId = property.owner_id || property.ownerId || property.owner
+      if (ownerId) {
+        await db.createNotification({
+          userId: ownerId,
+          bookingId: booking.id,
+          propertyId,
+          type: 'booking_new',
+          title: {
+            ar: 'طلب حجز جديد 🛎️',
+            en: 'New Booking Request 🛎️',
+          },
+          body: {
+            ar: `حجز جديد من ${normalizedFullName} لعقار "${property.title || 'عقارك'}" (${start.toISOString().slice(0, 10)} إلى ${end.toISOString().slice(0, 10)}) بإجمالي ${total} ج.م.`,
+            en: `New booking from ${normalizedFullName} for "${property.title || 'your property'}" (${start.toISOString().slice(0, 10)} to ${end.toISOString().slice(0, 10)}) totaling ${total} EGP.`,
+          },
+        }).catch((e) => console.error('Failed to create owner notification:', e))
+      }
+
       return res.status(201).json({ booking })
     } catch (err) {
       if (err && err.code === 'BOOKING_CONFLICT') {

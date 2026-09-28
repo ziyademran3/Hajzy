@@ -47,6 +47,10 @@ import {
   getUserNotifications,
   saveUserNotifications,
   createNotification,
+  createOwnerBookingNotification,
+  getNotificationPreferences,
+  saveNotificationPreferences,
+  requestBrowserPushPermission,
   markAllAsRead,
   deleteNotification,
   purgeLegacyMockNotifications,
@@ -308,6 +312,9 @@ function App() {
   const [ownerNotice, setOwnerNotice] = useState('')
   const [ownerEditingId, setOwnerEditingId] = useState(null)
   const [bookingFilter, setBookingFilter] = useState('upcoming')
+  const [ownerBookingFilter, setOwnerBookingFilter] = useState('all')
+  const [notifFilter, setNotifFilter] = useState('all')
+  const [ownerNotifPrefs, setOwnerNotifPrefs] = useState(() => getNotificationPreferences(null))
   const [showReviewsTooltip, setShowReviewsTooltip] = useState(false)
   const [language, setLanguage] = useState(() => {
     if (typeof window === 'undefined') {
@@ -560,6 +567,33 @@ function App() {
           },
           'success'
         )
+
+        // Notify property owner of the newly confirmed booking
+        try {
+          const raw = localStorage.getItem('hajzy_bookings')
+          if (raw) {
+            const list = JSON.parse(raw)
+            const targetBooking = list.find((b) => b.id === pendingId) || list[0]
+            if (targetBooking) {
+              const targetProp = properties.find((p) => p.id === targetBooking.propertyId)
+              const ownerId = targetProp?.ownerId || 'owner-demo'
+              createOwnerBookingNotification({
+                ownerId,
+                property: targetProp || { title: targetBooking.title },
+                booking: targetBooking,
+                type: 'booking_new',
+              })
+              if (ownerId !== 'owner-demo') {
+                createOwnerBookingNotification({
+                  ownerId: 'owner-demo',
+                  property: targetProp || { title: targetBooking.title },
+                  booking: targetBooking,
+                  type: 'booking_new',
+                })
+              }
+            }
+          }
+        } catch {}
       } else {
         setActivePage('bookings')
         setToast(language === 'en' ? 'Payment was cancelled or failed.' : 'تم إلغاء عملية الدفع أو لم تكتمل.')
@@ -677,9 +711,12 @@ function App() {
   // Sync notifications when user logs in or logs out
   useEffect(() => {
     purgeLegacyMockNotifications()
+    const targetUserId = user?.id || (isOwner ? 'owner-demo' : 'guest')
+    const local = getUserNotifications(targetUserId)
+    setNotifications(local)
+    setOwnerNotifPrefs(getNotificationPreferences(targetUserId))
+
     if (user?.id) {
-      const local = getUserNotifications(user.id)
-      setNotifications(local)
       fetchNotificationsApi()
         .then((res) => {
           if (res && Array.isArray(res.notifications)) {
@@ -688,10 +725,52 @@ function App() {
           }
         })
         .catch(() => {})
-    } else {
-      setNotifications([])
     }
-  }, [user?.id])
+  }, [user?.id, isOwner])
+
+  // Real-time synchronization for notifications: custom events, cross-tab storage, and periodic polling (every 10s)
+  useEffect(() => {
+    const refreshNotifications = () => {
+      const targetUserId = resolveCurrentUserId()
+      const list = getUserNotifications(targetUserId)
+      setNotifications(list)
+    }
+
+    const handleNotificationCreated = (e) => {
+      const { userId, notification } = e.detail || {}
+      const currentTarget = resolveCurrentUserId()
+      if (
+        userId === currentTarget ||
+        (isOwner && (userId === user?.id || userId === 'owner-demo' || userId === 'owner'))
+      ) {
+        setNotifications((prev) => {
+          if (prev.some((n) => n.id === notification.id)) return prev
+          return [notification, ...prev].slice(0, 50)
+        })
+      }
+    }
+
+    const handleStorageChange = (e) => {
+      if (e.key && (e.key.startsWith('hajzy_notifications_') || e.key === 'hajzy_bookings')) {
+        refreshNotifications()
+        if (e.key === 'hajzy_bookings') {
+          fetchBookings().then((b) => {
+            if (Array.isArray(b)) setBookings(b)
+          })
+        }
+      }
+    }
+
+    window.addEventListener('hajzy_notification_created', handleNotificationCreated)
+    window.addEventListener('storage', handleStorageChange)
+    const pollTimer = setInterval(refreshNotifications, 10000)
+
+    return () => {
+      window.removeEventListener('hajzy_notification_created', handleNotificationCreated)
+      window.removeEventListener('storage', handleStorageChange)
+      clearInterval(pollTimer)
+    }
+  }, [user?.id, isOwner])
 
   // Check arrival reminder for confirmed bookings within 24h
   useEffect(() => {
@@ -1399,9 +1478,56 @@ function App() {
     : []
 
   const filteredOwnerBookings = ownerBookings.filter((booking) => {
-    if (bookingFilter === 'all') return true
-    return booking.status === bookingFilter
+    if (ownerBookingFilter === 'all') return true
+    return booking.status === ownerBookingFilter
   })
+
+  const handleOwnerAcceptBooking = async (bookingId) => {
+    const booking = bookings.find((b) => String(b.id) === String(bookingId))
+    if (!booking) return
+    const updated = await updateBooking({ ...booking, status: 'confirmed' })
+    setBookings((prev) => prev.map((item) => (String(item.id) === String(bookingId) ? { ...item, status: 'confirmed' } : item)))
+    showToast(language === 'en' ? 'Booking confirmed successfully' : 'تم قبول وتأكيد الحجز بنجاح')
+
+    // Notify guest
+    const prop = properties.find((p) => String(p.id) === String(booking.propertyId))
+    createNotification(booking.userId || booking.guestId || 'guest', {
+      type: 'booking_confirmed',
+      title: { ar: 'تم تأكيد حجزك 🌟', en: 'Booking Confirmed 🌟' },
+      body: {
+        ar: `وافق المالك على حجزك في "${prop?.title || booking.title || 'العقار'}". نتمنى لك إقامة ممتعة!`,
+        en: `Owner confirmed your booking at "${prop?.titleEn || booking.title || 'property'}". Enjoy your stay!`,
+      },
+      bookingId: booking.id,
+      propertyId: booking.propertyId,
+      status: 'confirmed',
+    })
+  }
+
+  const handleOwnerRejectBooking = async (bookingId) => {
+    const booking = bookings.find((b) => String(b.id) === String(bookingId))
+    if (!booking) return
+    if (!window.confirm(language === 'en' ? 'Are you sure you want to decline this booking request?' : 'هل أنت متأكد من رغبتك في رفض طلب الحجز هذا؟')) {
+      return
+    }
+    const updated = await updateBooking({ ...booking, status: 'cancelled' })
+    setBookings((prev) => prev.map((item) => (String(item.id) === String(bookingId) ? { ...item, status: 'cancelled' } : item)))
+    showToast(language === 'en' ? 'Booking request declined' : 'تم رفض طلب الحجز')
+
+    // Notify guest
+    const prop = properties.find((p) => String(p.id) === String(booking.propertyId))
+    createNotification(booking.userId || booking.guestId || 'guest', {
+      type: 'booking_cancelled',
+      title: { ar: 'اعتذار عن قبول الحجز ⚠️', en: 'Booking Request Declined ⚠️' },
+      body: {
+        ar: `نعتذر، تعذر على المالك قبول حجزك في "${prop?.title || booking.title || 'العقار'}" في هذه التواريخ.`,
+        en: `Unfortunately, the owner was unable to accept your booking at "${prop?.titleEn || booking.title || 'property'}".`,
+      },
+      bookingId: booking.id,
+      propertyId: booking.propertyId,
+      status: 'cancelled',
+    })
+  }
 
   const ownerRevenue = ownerBookings.reduce((sum, item) => sum + Number(item.total || 0), 0)
 
@@ -1422,28 +1548,32 @@ function App() {
   const handleOwnerQuickAction = (action) => {
     if (action === 'manage') {
       document.getElementById('owner-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      showToast('يمكنك الآن إدارة العقارات من نموذج إضافة الشقة.')
+      showToast(language === 'en' ? 'You can now manage properties from the form below.' : 'يمكنك الآن إدارة العقارات من نموذج إضافة الشقة.')
       return
     }
 
     if (action === 'price') {
       document.getElementById('owner-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      showToast('وضع تحديث الأسعار مفعل. يمكنك تعديل سعر أي عقار من النموذج.')
+      showToast(language === 'en' ? 'Price update mode active. You can modify property pricing in the form.' : 'وضع تحديث الأسعار مفعل. يمكنك تعديل سعر أي عقار من النموذج.')
       return
     }
 
     if (action === 'message') {
       setChatOpen(true)
-      showToast('تم تجهيز رسالة ترحيب للضيوف، ويمكنك إرسالها من محادثة العقار.')
+      showToast(language === 'en' ? 'Welcome message prepared for guests. You can send it from property chat.' : 'تم تجهيز رسالة ترحيب للضيوف، ويمكنك إرسالها من محادثة العقار.')
       return
     }
 
     if (action === 'report') {
       const csvRows = [
-        ['العقار', 'الحالة', 'الإجمالي', 'تاريخ الوصول', 'تاريخ المغادرة'],
+        language === 'en'
+          ? ['Property', 'Status', 'Total', 'Check In', 'Check Out']
+          : ['العقار', 'الحالة', 'الإجمالي', 'تاريخ الوصول', 'تاريخ المغادرة'],
         ...ownerBookings.map((booking) => [
-          booking.title || 'العقار',
-          booking.status === 'confirmed' ? 'مؤكد' : 'قيد المراجعة',
+          booking.title || (language === 'en' ? 'Property' : 'العقار'),
+          booking.status === 'confirmed'
+            ? (language === 'en' ? 'Confirmed' : 'مؤكد')
+            : (language === 'en' ? 'Pending' : 'قيد المراجعة'),
           String(booking.total || 0),
           booking.checkIn || '',
           booking.checkOut || '',
@@ -1460,19 +1590,19 @@ function App() {
       link.click()
       document.body.removeChild(link)
       URL.revokeObjectURL(url)
-      showToast('تم تصدير تقرير الحجوزات بنجاح.')
+      showToast(language === 'en' ? 'Bookings report exported successfully.' : 'تم تصدير تقرير الحجوزات بنجاح.')
     }
   }
 
   const handleOwnerAlertDetails = () => {
-    setBookingFilter('all')
-    document.querySelector('.owner-table-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    showToast('تم تحديث عرض الحجوزات الأخيرة والطلبات على الشاشة.')
+    setOwnerBookingFilter('all')
+    document.getElementById('owner-bookings-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    showToast(language === 'en' ? 'Showing all bookings on screen' : 'تم تحديث عرض الحجوزات على الشاشة.')
   }
 
   const handleViewAllOwnerBookings = () => {
-    setBookingFilter('all')
-    document.querySelector('.owner-table-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setOwnerBookingFilter('all')
+    document.getElementById('owner-bookings-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   const handleViewAllProperties = () => {
@@ -1744,6 +1874,35 @@ function App() {
         confirmedBooking.id,
         selectedProperty.id
       )
+
+      // Generate notification for the property owner
+      const targetOwnerId = selectedProperty.ownerId || (user?.role === 'owner' ? user.id : 'owner-demo')
+      createOwnerBookingNotification({
+        ownerId: targetOwnerId,
+        property: selectedProperty,
+        booking: confirmedBooking,
+        guestName: normalizedGuest.fullName,
+        guestPhone: normalizedGuest.phone,
+        guestEmail: normalizedGuest.email,
+        dates: bookingDates,
+        total: grandTotal,
+        currency: selectedProperty.currency,
+        type: confirmedBooking.status === 'pending' ? 'booking_pending' : 'booking_new',
+      })
+      if (targetOwnerId !== 'owner-demo') {
+        createOwnerBookingNotification({
+          ownerId: 'owner-demo',
+          property: selectedProperty,
+          booking: confirmedBooking,
+          guestName: normalizedGuest.fullName,
+          guestPhone: normalizedGuest.phone,
+          guestEmail: normalizedGuest.email,
+          dates: bookingDates,
+          total: grandTotal,
+          currency: selectedProperty.currency,
+          type: confirmedBooking.status === 'pending' ? 'booking_pending' : 'booking_new',
+        })
+      }
       cacheBooking(confirmedBooking, selectedProperty)
       haptics.trigger('heavy')
       navigate('success')
@@ -1807,7 +1966,10 @@ function App() {
           </div>
 
           <div
-            onClick={() => setBookingFilter('pending')}
+            onClick={() => {
+              setOwnerBookingFilter('pending')
+              document.getElementById('owner-bookings-section')?.scrollIntoView({ behavior: 'smooth' })
+            }}
             className="owner-summary-card warn cursor-pointer hover:shadow-md transition"
           >
             <div className="owner-card-topline">
@@ -1843,11 +2005,25 @@ function App() {
           <span className="material-symbols-outlined">add</span>
           <span>{language === 'en' ? 'Add Property' : 'إضافة عقار'}</span>
         </button>
-        <button type="button" className="secondary-button small-button" onClick={() => setBookingFilter('pending')}>
+        <button
+          type="button"
+          className="secondary-button small-button"
+          onClick={() => {
+            setOwnerBookingFilter('pending')
+            document.getElementById('owner-bookings-section')?.scrollIntoView({ behavior: 'smooth' })
+          }}
+        >
           <span className="material-symbols-outlined">pending_actions</span>
           <span>{language === 'en' ? `Review Requests (${formatNumber(pendingOwnerBookingsCount)})` : `مراجعة الطلبات (${formatNumber(pendingOwnerBookingsCount)})`}</span>
         </button>
-        <button type="button" className="secondary-button small-button" onClick={() => setBookingFilter('all')}>
+        <button
+          type="button"
+          className="secondary-button small-button"
+          onClick={() => {
+            setOwnerBookingFilter('all')
+            document.getElementById('owner-bookings-section')?.scrollIntoView({ behavior: 'smooth' })
+          }}
+        >
           <span className="material-symbols-outlined">list_alt</span>
           <span>{language === 'en' ? `All Bookings (${formatNumber(ownerBookings.length)})` : `كل الحجوزات (${formatNumber(ownerBookings.length)})`}</span>
         </button>
@@ -1897,7 +2073,7 @@ function App() {
           <div className="owner-metrics-grid">
             <div>
               <span>{language === 'en' ? 'Avg Occupancy' : 'متوسط الإشغال'}</span>
-              <strong>78%</strong>
+              <strong>{formatNumber(78)}%</strong>
             </div>
             <div>
               <span>{language === 'en' ? 'Top Destination' : 'أعلى مدينة'}</span>
@@ -1912,14 +2088,14 @@ function App() {
             <div>
               <div className="label-row">
                 <span>{language === 'en' ? 'Confirmed Requests' : 'الطلبات المؤكدة'}</span>
-                <strong>84%</strong>
+                <strong>{formatNumber(84)}%</strong>
               </div>
               <div className="progress-bar"><span style={{ width: '84%' }}></span></div>
             </div>
             <div>
               <div className="label-row">
                 <span>{language === 'en' ? 'Monthly Occupancy' : 'الإشغال هذا الشهر'}</span>
-                <strong>71%</strong>
+                <strong>{formatNumber(71)}%</strong>
               </div>
               <div className="progress-bar"><span style={{ width: '71%' }}></span></div>
             </div>
@@ -1937,10 +2113,10 @@ function App() {
                 type="button"
                 className="status-pill neutral cursor-pointer inline-flex items-center gap-1 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-700 transition"
                 onClick={() => setShowReviewsTooltip((prev) => !prev)}
-                title={language === 'en' ? '+12% increase in guest reviews count compared to last month' : '+12% زيادة في عدد تقييمات الضيوف مقارنة بالشهر الماضي'}
-                aria-label={language === 'en' ? '+12% vs last month' : '+12% مقارنة بالشهر الماضي'}
+                title={language === 'en' ? `+${formatNumber(12)}% increase in guest reviews count compared to last month` : `+${formatNumber(12)}% زيادة في عدد تقييمات الضيوف مقارنة بالشهر الماضي`}
+                aria-label={language === 'en' ? `+${formatNumber(12)}% vs last month` : `+${formatNumber(12)}% مقارنة بالشهر الماضي`}
               >
-                <span>+12%</span>
+                <span>+{formatNumber(12)}%</span>
                 <span className="material-symbols-outlined text-[13px] text-slate-400">info</span>
               </button>
 
@@ -1948,7 +2124,7 @@ function App() {
                 <div className="absolute top-full mt-2 ltr:right-0 rtl:left-0 z-30 w-56 p-2.5 rounded-xl bg-slate-900 text-white text-[11px] leading-relaxed shadow-xl border border-slate-700 animate-fadeIn">
                   <div className="flex items-start justify-between gap-1 mb-1">
                     <strong className="text-emerald-400 font-bold">
-                      {language === 'en' ? '+12% Reviews Growth' : '+12% نمو التقييمات'}
+                      {language === 'en' ? `+${formatNumber(12)}% Reviews Growth` : `+${formatNumber(12)}% نمو التقييمات`}
                     </strong>
                     <button
                       type="button"
@@ -1963,21 +2139,21 @@ function App() {
                   </div>
                   <p className="m-0 text-slate-300">
                     {language === 'en'
-                      ? '12% increase in the number of guest reviews compared to the previous 30-day period.'
-                      : 'زيادة بنسبة 12% في إجمالي عدد تقييمات الضيوف مقارنة بفترة الـ 30 يوماً السابقة.'}
+                      ? `${formatNumber(12)}% increase in the number of guest reviews compared to the previous 30-day period.`
+                      : `زيادة بنسبة ${formatNumber(12)}% في إجمالي عدد تقييمات الضيوف مقارنة بفترة الـ 30 يوماً السابقة.`}
                   </p>
                 </div>
               )}
             </div>
           </div>
           <div className="rating-score-box">
-            <strong>4.9</strong>
+            <strong>{formatNumber(4.9, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</strong>
             <span>{language === 'en' ? 'Average Guest Rating' : 'متوسط تقييم الضيوف'}</span>
           </div>
           <ul className="mini-score-list">
-            <li><span>{language === 'en' ? 'Cleanliness' : 'الصفاء'}</span><strong>4.9</strong></li>
-            <li><span>{language === 'en' ? 'Location' : 'الموقع'}</span><strong>4.8</strong></li>
-            <li><span>{language === 'en' ? 'Communication' : 'التواصل'}</span><strong>5.0</strong></li>
+            <li><span>{language === 'en' ? 'Cleanliness' : 'النظافة'}</span><strong>{formatNumber(4.9, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</strong></li>
+            <li><span>{language === 'en' ? 'Location' : 'الموقع'}</span><strong>{formatNumber(4.8, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</strong></li>
+            <li><span>{language === 'en' ? 'Communication' : 'التواصل'}</span><strong>{formatNumber(5.0, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</strong></li>
           </ul>
         </div>
       </div>
@@ -1992,36 +2168,84 @@ function App() {
 
       <div className="owner-operational-panel">
         <div className="owner-overview-header">
-          <h3>تنبيهات التشغيل</h3>
-          <span className="status-pill neutral">اليوم</span>
+          <h3>{language === 'en' ? 'Operational Alerts' : 'تنبيهات التشغيل'}</h3>
+          <span className="status-pill neutral">{language === 'en' ? 'Today' : 'اليوم'}</span>
         </div>
+
+        {pendingOwnerBookingsCount > 0 ? (
+          <div className="owner-alert-row urgent-alert">
+            <div>
+              <span className="material-symbols-outlined text-amber-600">notifications_active</span>
+              <div>
+                <strong>
+                  {language === 'en'
+                    ? `${formatNumber(pendingOwnerBookingsCount)} new ${pendingOwnerBookingsCount === 1 ? 'booking request' : 'booking requests'}`
+                    : `${formatNumber(pendingOwnerBookingsCount)} ${pendingOwnerBookingsCount === 1 ? 'طلب حجز جديد' : pendingOwnerBookingsCount === 2 ? 'طلبا حجز جديدان' : 'طلبات حجز جديدة'}`}
+                </strong>
+                <small>
+                  {language === 'en' ? 'Awaiting your review and approval' : 'تحتاج إلى مراجعة وتأكيد من المالك'}
+                </small>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="secondary-button small-button"
+              onClick={() => {
+                setOwnerBookingFilter('pending')
+                document.getElementById('owner-bookings-section')?.scrollIntoView({ behavior: 'smooth' })
+              }}
+            >
+              {language === 'en' ? 'Review' : 'مراجعة'}
+            </button>
+          </div>
+        ) : (
+          <div className="owner-alert-row success-alert">
+            <div>
+              <span className="material-symbols-outlined text-emerald-600">check_circle</span>
+              <div>
+                <strong>{language === 'en' ? 'All operations up to date' : 'لا توجد طلبات معلقة'}</strong>
+                <small>
+                  {language === 'en'
+                    ? `${formatNumber(ownerBookings.length)} bookings confirmed & active`
+                    : `تمت مراجعة كافة الطلبات (${formatNumber(ownerBookings.length)} حجز مؤكد)`}
+                </small>
+              </div>
+            </div>
+            <span className="status-pill success">{language === 'en' ? 'Up to date' : 'منتظم'}</span>
+          </div>
+        )}
+
         <div className="owner-alert-row">
           <div>
-            <span className="material-symbols-outlined">notifications_active</span>
+            <span className="material-symbols-outlined">trending_up</span>
             <div>
-              <strong>3 طلبات جديدة</strong>
-              <small>تحتاج إلى مراجعة خلال 2 ساعة</small>
+              <strong>{language === 'en' ? 'Weekend Pricing Optimization' : 'تحديث أسعار السكن'}</strong>
+              <small>
+                {language === 'en'
+                  ? 'Recommended weekend surge based on current city occupancy'
+                  : 'توصية بزيادة 15% في عطلة نهاية الأسبوع وفق نسب الإقبال'}
+              </small>
             </div>
           </div>
-          <button type="button" className="secondary-button small-button" onClick={() => setBookingFilter('pending')}>مراجعة</button>
-        </div>
-        <div className="owner-alert-row">
-          <div>
-            <span className="material-symbols-outlined">schedule</span>
-            <div>
-              <strong>تحديث أسعار السكن</strong>
-              <small>توصية بزيادة 5% في عطلة نهاية الأسبوع</small>
-            </div>
-          </div>
-          <button type="button" className="text-button" onClick={handleOwnerAlertDetails}>تفاصيل</button>
+          <button type="button" className="text-button" onClick={handleOwnerAlertDetails}>
+            {language === 'en' ? 'Details' : 'تفاصيل'}
+          </button>
         </div>
       </div>
 
       <div className="owner-quick-actions">
-        <button type="button" className="primary-button" onClick={() => handleOwnerQuickAction('manage')}>إدارة العقارات</button>
-        <button type="button" className="secondary-button" onClick={() => handleOwnerQuickAction('price')}>تحديث الأسعار</button>
-        <button type="button" className="secondary-button" onClick={() => handleOwnerQuickAction('message')}>إرسال رسالة</button>
-        <button type="button" className="secondary-button" onClick={() => handleOwnerQuickAction('report')}>تصدير تقرير</button>
+        <button type="button" className="primary-button" onClick={() => handleOwnerQuickAction('manage')}>
+          {language === 'en' ? 'Manage Properties' : 'إدارة العقارات'}
+        </button>
+        <button type="button" className="secondary-button" onClick={() => handleOwnerQuickAction('price')}>
+          {language === 'en' ? 'Update Prices' : 'تحديث الأسعار'}
+        </button>
+        <button type="button" className="secondary-button" onClick={() => handleOwnerQuickAction('message')}>
+          {language === 'en' ? 'Send Message' : 'إرسال رسالة'}
+        </button>
+        <button type="button" className="secondary-button" onClick={() => handleOwnerQuickAction('report')}>
+          {language === 'en' ? 'Export Report' : 'تصدير تقرير'}
+        </button>
       </div>
 
       <div className="owner-analytics-surface relative">
@@ -2095,7 +2319,7 @@ function App() {
                 title={`${language === 'en' ? bar.labelEn : bar.labelAr}: ${formatCurrency(bar.amount, 'EGP', language)}`}
               >
                 <span className={`text-[10px] font-bold ${isSelected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}`}>
-                  {bar.value}k
+                  {formatNumber(bar.value)}k
                 </span>
                 <div
                   className={`owner-analytics-bar transition-all duration-200 ${isSelected ? 'brightness-125 shadow-md ring-2 ring-emerald-400' : 'group-hover:brightness-110'}`}
@@ -2118,8 +2342,10 @@ function App() {
       <div className="owner-analytics-grid">
         <div className="owner-analytics-card">
           <div className="owner-overview-header">
-            <h3>أحدث الحجوزات</h3>
-            <button type="button" className="text-button" onClick={handleViewAllOwnerBookings}>عرض الكل</button>
+            <h3>{language === 'en' ? 'Recent Bookings' : 'أحدث الحجوزات'}</h3>
+            <button type="button" className="text-button" onClick={handleViewAllOwnerBookings}>
+              {language === 'en' ? 'View All' : 'عرض الكل'}
+            </button>
           </div>
           <div className="mini-booking-list">
             {ownerBookings.length ? ownerBookings.slice(0, 5).map((booking) => (
@@ -2215,8 +2441,8 @@ function App() {
             { dayAr: 'الخميس', dayEn: 'Thu', value: 96 },
             { dayAr: 'الجمعة', dayEn: 'Fri', value: 76 },
           ].map((item, index) => (
-            <div key={item.dayAr + index} className="owner-chart-bar-wrap" title={`${language === 'en' ? item.dayEn : item.dayAr}: ${item.value}%`}>
-              <span className="owner-chart-val text-[11px] font-bold text-slate-600 dark:text-slate-400">{item.value}%</span>
+            <div key={item.dayAr + index} className="owner-chart-bar-wrap" title={`${language === 'en' ? item.dayEn : item.dayAr}: ${formatNumber(item.value)}%`}>
+              <span className="owner-chart-val text-[11px] font-bold text-slate-600 dark:text-slate-400">{formatNumber(item.value)}%</span>
               <div className="owner-chart-bar" style={{ height: `${item.value}%` }}></div>
               <span className="owner-chart-day-label text-[10px] font-bold text-slate-500 mt-1">
                 {language === 'en' ? item.dayEn : item.dayAr}
@@ -2228,35 +2454,35 @@ function App() {
 
       <div className="owner-table-card">
         <div className="owner-overview-header">
-          <h3>قائمة الحجوزات</h3>
+          <h3>{language === 'en' ? 'Bookings List' : 'قائمة الحجوزات'}</h3>
         </div>
         <div className="owner-table-wrap">
           <table className="owner-table">
             <thead>
               <tr>
-                <th>العميل</th>
-                <th>العقار</th>
-                <th>التواريخ</th>
-                <th>الإجمالي</th>
-                <th>الحالة</th>
+                <th>{language === 'en' ? 'Guest / Property' : 'العميل'}</th>
+                <th>{language === 'en' ? 'Location' : 'العقار'}</th>
+                <th>{language === 'en' ? 'Dates' : 'التواريخ'}</th>
+                <th>{language === 'en' ? 'Total' : 'الإجمالي'}</th>
+                <th>{language === 'en' ? 'Status' : 'الحالة'}</th>
               </tr>
             </thead>
             <tbody>
               {ownerBookings.length ? ownerBookings.slice(0, 5).map((booking) => (
                 <tr key={booking.id}>
-                  <td>{booking.title || 'زائر'}</td>
-                  <td>{booking.location || 'موقع العقار'}</td>
+                  <td>{booking.title || (language === 'en' ? 'Guest' : 'زائر')}</td>
+                  <td>{booking.location || (language === 'en' ? 'Location' : 'موقع العقار')}</td>
                   <td>{formatDate(booking.checkIn, language)} - {formatDate(booking.checkOut, language)}</td>
                   <td>{formatCurrency(booking.total, booking.currency, language)}</td>
                   <td>
                     <span className={booking.status === 'confirmed' ? 'status-badge confirmed' : 'status-badge pending'}>
-                      {booking.status === 'confirmed' ? 'مؤكد' : 'قيد المراجعة'}
+                      {booking.status === 'confirmed' ? (language === 'en' ? 'Confirmed' : 'مؤكد') : (language === 'en' ? 'Pending Review' : 'قيد المراجعة')}
                     </span>
                   </td>
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan="5" className="empty-table">لا توجد حجوزات حتى الآن.</td>
+                  <td colSpan="5" className="empty-table">{language === 'en' ? 'No bookings yet.' : 'لا توجد حجوزات حتى الآن.'}</td>
                 </tr>
               )}
             </tbody>
@@ -2532,7 +2758,7 @@ function App() {
               { id: 'confirmed', labelAr: 'مؤكد', labelEn: 'Confirmed', count: ownerBookings.filter(b => b.status === 'confirmed').length },
               { id: 'pending', labelAr: 'قيد المراجعة', labelEn: 'Pending', count: pendingOwnerBookingsCount },
             ].map((tab) => {
-              const isActive = bookingFilter === tab.id
+              const isActive = ownerBookingFilter === tab.id
               return (
                 <button
                   key={tab.id}
@@ -2540,11 +2766,11 @@ function App() {
                   role="tab"
                   aria-selected={isActive}
                   className={`booking-segmented-tab ${isActive ? 'active' : ''}`}
-                  onClick={() => setBookingFilter(tab.id)}
+                  onClick={() => setOwnerBookingFilter(tab.id)}
                 >
                   <span>{language === 'en' ? tab.labelEn : tab.labelAr}</span>
                   <span className={`booking-count-badge ${isActive ? 'active' : ''}`}>
-                    {tab.count}
+                    {formatNumber(tab.count)}
                   </span>
                 </button>
               )
@@ -2555,7 +2781,22 @@ function App() {
         {filteredOwnerBookings.length === 0 ? (
           <div className="owner-empty-state">
             <span className="material-symbols-outlined">calendar_month</span>
-            <p>{language === 'en' ? 'No bookings found in this filter.' : 'لا توجد حجوزات في هذا التصفية حالياً.'}</p>
+            <p>
+              {ownerBookings.length === 0
+                ? (language === 'en' ? 'No bookings received yet.' : 'لا توجد أي حجوزات واردة حتى الآن.')
+                : (language === 'en'
+                    ? `No bookings found under "${ownerBookingFilter === 'pending' ? 'Pending' : 'Confirmed'}".`
+                    : `لا توجد حجوزات تحت تصنيف "${ownerBookingFilter === 'pending' ? 'قيد المراجعة' : 'مؤكد'}".`)}
+            </p>
+            {ownerBookings.length > 0 && ownerBookingFilter !== 'all' && (
+              <button
+                type="button"
+                className="secondary-button small-button mt-2"
+                onClick={() => setOwnerBookingFilter('all')}
+              >
+                {language === 'en' ? `View all bookings (${formatNumber(ownerBookings.length)})` : `عرض كل الحجوزات (${formatNumber(ownerBookings.length)})`}
+              </button>
+            )}
           </div>
         ) : (
           filteredOwnerBookings.map((booking) => (
@@ -2571,6 +2812,12 @@ function App() {
                   <div>
                     <h3>{booking.title}</h3>
                     <p>{booking.location}</p>
+                    {booking.guestName && (
+                      <span className="text-xs text-slate-500 font-medium block mt-0.5">
+                        {language === 'en' ? `Guest: ${booking.guestName}` : `النزيل: ${booking.guestName}`}
+                        {booking.guestPhone ? ` (${booking.guestPhone})` : ''}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="booking-footer">
@@ -2582,12 +2829,43 @@ function App() {
                   </div>
                 </div>
                 <div className="owner-booking-actions">
-                  <button type="button" className="secondary-button small-button" onClick={() => handleBookingStatusToggle(booking)}>
-                    {booking.status === 'confirmed' ? (language === 'en' ? 'Move to Pending' : 'إرجاع إلى قيد المراجعة') : (language === 'en' ? 'Confirm Booking' : 'تأكيد الحجز')}
-                  </button>
-                  <button type="button" className="danger-button small-button" onClick={() => handleDeleteBooking(booking.id)}>
-                    {language === 'en' ? 'Delete' : 'حذف'}
-                  </button>
+                  {booking.status === 'pending' ? (
+                    <>
+                      <button
+                        type="button"
+                        className="primary-button small-button"
+                        onClick={() => handleOwnerAcceptBooking(booking.id)}
+                      >
+                        <span className="material-symbols-outlined text-xs">check</span>
+                        <span>{language === 'en' ? 'Accept Booking' : 'قبول الحجز'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="danger-button small-button"
+                        onClick={() => handleOwnerRejectBooking(booking.id)}
+                      >
+                        <span className="material-symbols-outlined text-xs">close</span>
+                        <span>{language === 'en' ? 'Decline' : 'رفض'}</span>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        className="secondary-button small-button"
+                        onClick={() => handleBookingStatusToggle(booking)}
+                      >
+                        {language === 'en' ? 'Move to Pending' : 'إرجاع إلى قيد المراجعة'}
+                      </button>
+                      <button
+                        type="button"
+                        className="danger-button small-button"
+                        onClick={() => handleCancelBooking(booking.id)}
+                      >
+                        {language === 'en' ? 'Cancel' : 'إلغاء'}
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </article>
@@ -5401,7 +5679,7 @@ function App() {
       <div className="settings-card dark:!bg-slate-900/90 dark:!border-slate-800">
         <div className="settings-header">
           <div className="avatar-wrap small-avatar">
-            <img src={user?.avatar || 'https://via.placeholder.com/96'} alt="مالك العقارات" />
+            <img src={user?.avatar || 'https://via.placeholder.com/96'} alt={language === 'en' ? 'Property Owner' : 'مالك العقارات'} />
           </div>
           <div>
             <h3 className="dark:!text-white">{user?.name}</h3>
@@ -5411,25 +5689,33 @@ function App() {
 
         <div className="settings-grid">
           <div className="setting-box dark:!bg-slate-800/60 dark:!border-slate-700/60">
-            <span className="dark:!text-slate-400">الدور</span>
-            <strong className="dark:!text-white">مالك عقارات</strong>
+            <span className="dark:!text-slate-400">{language === 'en' ? 'Role' : 'الدور'}</span>
+            <strong className="dark:!text-white">{language === 'en' ? 'Property Owner' : 'مالك عقارات'}</strong>
           </div>
           <div className="setting-box dark:!bg-slate-800/60 dark:!border-slate-700/60">
-            <span className="dark:!text-slate-400">حالة الاتصال</span>
-            <strong className="dark:!text-emerald-400">{hasSupabaseConnection ? 'متصل بـ Supabase' : 'وضع تجريبي محلي'}</strong>
+            <span className="dark:!text-slate-400">{language === 'en' ? 'Connection Status' : 'حالة الاتصال'}</span>
+            <strong className="dark:!text-emerald-400">
+              {hasSupabaseConnection 
+                ? (language === 'en' ? 'Connected to Supabase' : 'متصل بـ Supabase') 
+                : (language === 'en' ? 'Local Demo Mode' : 'وضع تجريبي محلي')}
+            </strong>
           </div>
           <div className="setting-box wide-setting dark:!bg-slate-800/60 dark:!border-slate-700/60">
-            <span className="dark:!text-slate-400">مفتاح المشروع</span>
-            <strong className="dark:!text-slate-200">{hasSupabaseConnection ? 'تمت تهيئة البيئة بنجاح' : 'أضف VITE_SUPABASE_URL و VITE_SUPABASE_ANON_KEY'}</strong>
+            <span className="dark:!text-slate-400">{language === 'en' ? 'Project Config' : 'مفتاح المشروع'}</span>
+            <strong className="dark:!text-slate-200">
+              {hasSupabaseConnection 
+                ? (language === 'en' ? 'Environment initialized successfully' : 'تمت تهيئة البيئة بنجاح') 
+                : (language === 'en' ? 'Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY' : 'أضف VITE_SUPABASE_URL و VITE_SUPABASE_ANON_KEY')}
+            </strong>
           </div>
         </div>
 
         <div className="settings-actions">
           <button className="primary-button" onClick={() => navigate('owner')}>
-            العودة للوحة التحكم
+            {language === 'en' ? 'Back to Dashboard' : 'العودة للوحة التحكم'}
           </button>
           <button className="secondary-button dark:!bg-rose-950/40 dark:!border-rose-900/50 dark:!text-rose-400 hover:dark:!bg-rose-900/50" onClick={handleLogout}>
-            تسجيل الخروج
+            {language === 'en' ? 'Log Out' : 'تسجيل الخروج'}
           </button>
         </div>
       </div>
