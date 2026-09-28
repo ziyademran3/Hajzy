@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { forgotPassword } from '../lib/authApi'
 import Logo from '../components/Logo'
 import { useTheme } from '../components/ThemeProvider'
@@ -19,8 +19,9 @@ export default function ForgotPasswordPage({ language = 'ar', onToggleLanguage, 
         signup: 'Create account',
         requiredEmail: 'Please enter your email.',
         invalidEmail: 'Please enter a valid email address.',
-        success: 'Reset instructions were sent successfully.',
+        success: 'If this email is registered, recovery instructions have been sent.',
         guarantee: 'Your data and credentials are encrypted and protected under strict privacy standards.',
+        cooldownText: (sec) => `Resend in ${sec}s`,
       }
     : {
         brand: 'حجزي',
@@ -33,8 +34,9 @@ export default function ForgotPasswordPage({ language = 'ar', onToggleLanguage, 
         signup: 'إنشاء حساب جديد',
         requiredEmail: 'يرجى إدخال البريد الإلكتروني.',
         invalidEmail: 'يرجى إدخال بريد إلكتروني صحيح.',
-        success: 'تم إرسال تعليمات استعادة كلمة المرور بنجاح.',
+        success: 'إذا كان البريد مسجلاً لدينا، فستصلك رسالة تحتوي على تعليمات الاستعادة خلال دقائق.',
         guarantee: 'بياناتك وكلمة مرورك مشفرة ومحمية بالكامل بأعلى معايير الخصوصية.',
+        cooldownText: (sec) => `إعادة الإرسال بعد ${sec} ثانية`,
       }
 
   const [email, setEmail] = useState('')
@@ -42,9 +44,21 @@ export default function ForgotPasswordPage({ language = 'ar', onToggleLanguage, 
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [resetLink, setResetLink] = useState('')
+  const [cooldown, setCooldown] = useState(0)
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const timer = setInterval(() => {
+      setCooldown((prev) => (prev > 0 ? prev - 1 : 0))
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [cooldown])
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+    if (cooldown > 0) return
+
     const trimmed = email.trim()
 
     if (!trimmed) {
@@ -66,25 +80,27 @@ export default function ForgotPasswordPage({ language = 'ar', onToggleLanguage, 
     try {
       const response = await forgotPassword(trimmed)
       setMessage(response?.message || text.success)
+      setCooldown(60) // Start 60-second cooldown
       if (!response?.emailSent && response?.resetLink) {
         setResetLink(response.resetLink)
       }
     } catch (requestError) {
       const rawMsg = requestError?.message || ''
-      if (rawMsg.includes('Failed to fetch')) {
+      if (rawMsg.includes('Failed to fetch') || rawMsg.includes('NetworkError')) {
         setError(
           language === 'en'
-            ? 'Auth server is not reachable on port 4000. Please start the backend server.'
-            : 'سيرفر إرسال البريد غير متصل حالياً (port 4000).'
+            ? 'Unable to connect to the server. Please check your internet connection.'
+            : 'تعذر الاتصال بالخادم، يرجى التحقق من اتصال الإنترنت ثم المحاولة مجدداً.'
         )
-      } else if (rawMsg.includes('ziyademran000@gmail.com') || rawMsg.includes('testing emails')) {
-        setError(
-          language === 'en'
-            ? 'In Resend free tier, testing emails can only be sent to the registered owner email (ziyademran000@gmail.com).'
-            : 'في خطة Resend التجريبية، يُسمح بالإرسال فقط إلى بريد صاحب الحساب (ziyademran000@gmail.com).'
-        )
+      } else if (rawMsg.includes('تجاوز الحد') || rawMsg.includes('429')) {
+        setError(rawMsg)
+        setCooldown(60)
       } else {
-        setError(rawMsg || text.invalidEmail)
+        setError(
+          language === 'en'
+            ? 'A temporary issue occurred. Please try again in a few moments.'
+            : 'حدثت مشكلة مؤقتة، يرجى المحاولة مرة أخرى بعد قليل.'
+        )
       }
       setMessage('')
     } finally {
@@ -233,13 +249,18 @@ export default function ForgotPasswordPage({ language = 'ar', onToggleLanguage, 
 
             <button
               type="submit"
-              disabled={loading}
-              className="flex w-full min-h-[50px] items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#00433f] via-[#0b5f59] to-[#00433f] px-4 py-3.5 text-sm sm:text-base font-extrabold text-white shadow-[0_12px_28px_rgba(0,67,63,0.25)] transition-all hover:shadow-[0_16px_34px_rgba(0,67,63,0.35)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+              disabled={loading || cooldown > 0}
+              className="flex w-full min-h-[50px] items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#00433f] via-[#0b5f59] to-[#00433f] px-4 py-3.5 text-sm sm:text-base font-extrabold text-white shadow-[0_12px_28px_rgba(0,67,63,0.25)] transition-all hover:shadow-[0_16px_34px_rgba(0,67,63,0.35)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? (
                 <>
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                   <span>{text.submit}</span>
+                </>
+              ) : cooldown > 0 ? (
+                <>
+                  <span className="material-symbols-outlined text-[20px] animate-pulse">schedule</span>
+                  <span>{text.cooldownText(cooldown)}</span>
                 </>
               ) : (
                 <>

@@ -583,6 +583,38 @@ const getGmailTransporter = () => {
 }
 
 async function sendEmail({ to, subject, html }) {
+  const brevoApiKey = process.env.BREVO_API_KEY?.trim()
+  if (brevoApiKey) {
+    try {
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'api-key': brevoApiKey,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          sender: {
+            name: process.env.BREVO_SENDER_NAME?.trim() || 'Hajzy | حجزي',
+            email: process.env.BREVO_SENDER_EMAIL?.trim() || 'hajzy2005@gmail.com',
+          },
+          to: [{ email: to.trim().toLowerCase() }],
+          subject,
+          htmlContent: html,
+        }),
+      })
+
+      const payload = await response.json().catch(() => ({}))
+      if (response.ok) {
+        console.log('Email sent via Brevo HTTP API:', payload.messageId)
+        return { ok: true, result: payload }
+      }
+      console.error('Brevo API error:', payload)
+    } catch (brevoErr) {
+      console.error('Brevo fetch error:', brevoErr.message || brevoErr)
+    }
+  }
+
   const gmail = getGmailTransporter()
   if (gmail) {
     try {
@@ -597,10 +629,6 @@ async function sendEmail({ to, subject, html }) {
       return { ok: true, result: info }
     } catch (gmailErr) {
       console.error('Gmail SMTP error:', gmailErr.message || gmailErr)
-      return {
-        ok: false,
-        message: gmailErr.message || 'Failed to send email via Gmail SMTP.',
-      }
     }
   }
 
@@ -615,20 +643,18 @@ async function sendEmail({ to, subject, html }) {
 
       if (error) {
         console.error('Resend error:', error)
-        return { ok: false, message: error.message || 'Failed to send email via Resend.' }
+      } else {
+        console.log('Email sent via Resend:', data?.id)
+        return { ok: true, result: data }
       }
-
-      console.log('Email sent via Resend:', data?.id)
-      return { ok: true, result: data }
     } catch (error) {
       console.error('Resend error:', error)
-      return { ok: false, message: error.message || 'Failed to send email via Resend.' }
     }
   }
 
   return {
     ok: false,
-    message: 'Email service is not configured. Set GMAIL_USER & GMAIL_APP_PASSWORD or RESEND_API_KEY.',
+    message: 'Email service is not configured or all providers failed.',
   }
 }
 

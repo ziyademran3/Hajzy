@@ -1,4 +1,10 @@
-import { connect } from 'cloudflare:sockets'
+import {
+  sendEmailUnified,
+  getPasswordResetTemplate,
+  getEmailVerificationTemplate,
+  getOwnerBookingNotificationTemplate,
+  maskEmail,
+} from './emailService.js'
 
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -206,181 +212,18 @@ function bearer(request) {
   return parts.length === 2 ? parts[1] : parts[0]
 }
 
-function resetEmailHtml(resetLink) {
-  return `<!DOCTYPE html>
-<html dir="rtl" lang="ar">
-<body style="margin:0;padding:0;background:#f1f5f9;font-family:sans-serif;color:#1e293b;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:40px 15px;">
-    <tr><td align="center">
-      <table role="presentation" width="100%" style="max-width:520px;background:#fff;border-radius:24px;overflow:hidden;border:1px solid #e2e8f0;">
-        <tr><td align="center" style="background:linear-gradient(135deg,#064e3b,#0d9488);padding:36px 20px;">
-          <h1 style="margin:0;color:#fff;font-size:24px;">Hajzy | حجزي</h1>
-        </td></tr>
-        <tr><td style="padding:36px 30px;text-align:right;direction:rtl;">
-          <h2 style="margin:0 0 14px;font-size:20px;">طلب إعادة تعيين كلمة المرور</h2>
-          <p style="margin:0 0 20px;font-size:15px;line-height:1.7;color:#475569;">اضغط على الزر أدناه لاختيار كلمة مرور جديدة:</p>
-          <div style="text-align:center;margin:32px 0;">
-            <a href="${resetLink}" style="display:inline-block;background:linear-gradient(135deg,#0d9488,#059669);color:#fff;text-decoration:none;font-weight:700;padding:14px 34px;border-radius:14px;">إعادة تعيين كلمة المرور الآن</a>
-          </div>
-          <p style="font-size:12px;color:#94a3b8;word-break:break-all;direction:ltr;text-align:left;">${resetLink}</p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`
+async function checkRateLimit(kv, key, limit = 5, windowSeconds = 900) {
+  if (!kv) return { allowed: true, remaining: limit }
+  const rateKey = `rate:${key}`
+  const raw = await kv.get(rateKey)
+  const count = raw ? parseInt(raw, 10) : 0
+  if (count >= limit) {
+    return { allowed: false, remaining: 0 }
+  }
+  await kv.put(rateKey, String(count + 1), { expirationTtl: windowSeconds })
+  return { allowed: true, remaining: limit - (count + 1) }
 }
 
-function verificationEmailHtml(name, verificationLink) {
-  const safeName = String(name || 'ضيفنا العزيز').replace(/[&<>"']/g, (character) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  })[character])
-
-  return `<!DOCTYPE html>
-<html dir="rtl" lang="ar">
-<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#1e293b;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:40px 15px;background:#f1f5f9;">
-    <tr><td align="center">
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:520px;background:#fff;border-radius:24px;overflow:hidden;border:1px solid #e2e8f0;box-shadow:0 12px 36px rgba(15,23,42,.08);">
-        <tr><td align="center" style="background:linear-gradient(135deg,#064e3b,#0d9488);padding:34px 20px;">
-          <div style="width:54px;height:54px;line-height:54px;border-radius:16px;background:#fff;color:#0d9488;font-size:27px;font-weight:900;margin:0 auto 12px;">H</div>
-          <h1 style="margin:0;color:#fff;font-size:24px;font-weight:800;">Hajzy | حجزي</h1>
-          <p style="margin:7px 0 0;color:#a7f3d0;font-size:13px;">أهلًا بك في مجتمع حجزي</p>
-        </td></tr>
-        <tr><td style="padding:36px 30px;text-align:right;direction:rtl;">
-          <h2 style="margin:0 0 14px;font-size:22px;color:#0f172a;">تأكيد البريد الإلكتروني</h2>
-          <p style="margin:0 0 14px;font-size:15px;line-height:1.8;color:#475569;">مرحبًا ${safeName}،</p>
-          <p style="margin:0;font-size:15px;line-height:1.8;color:#475569;">شكرًا لانضمامك إلى Hajzy. أكّد بريدك الإلكتروني لتفعيل حسابك والاستفادة من جميع خدماتنا.</p>
-          <div style="text-align:center;margin:32px 0 24px;">
-            <a href="${verificationLink}" style="display:inline-block;background:linear-gradient(135deg,#0d9488,#059669);color:#fff;text-decoration:none;font-size:15px;font-weight:700;padding:14px 34px;border-radius:14px;box-shadow:0 8px 20px rgba(13,148,136,.28);">تأكيد البريد الإلكتروني</a>
-          </div>
-          <div style="padding:14px 16px;border-radius:12px;background:#f0fdfa;color:#0f766e;font-size:13px;line-height:1.7;">إذا لم تنشئ هذا الحساب، يمكنك تجاهل هذه الرسالة بأمان.</div>
-          <p style="margin:22px 0 0;font-size:11px;line-height:1.6;color:#94a3b8;word-break:break-all;direction:ltr;text-align:left;">إذا لم يعمل الزر، انسخ الرابط التالي وافتحه في المتصفح:<br>${verificationLink}</p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`
-}
-
-async function readSmtp(reader, decoder, leftover) {
-  let buffer = leftover
-  while (true) {
-    const lines = buffer.split(/\r?\n/)
-    if (lines.length > 1) {
-      const line = lines.shift()
-      return { line, leftover: lines.join('\n') }
-    }
-    const { value, done } = await reader.read()
-    if (done) return { line: buffer, leftover: '' }
-    buffer += decoder.decode(value, { stream: true })
-  }
-}
-
-async function sendViaGmailSmtp({ user, pass, to, subject, html }) {
-  const socket = connect(
-    { hostname: 'smtp.gmail.com', port: 465 },
-    { secureTransport: 'on' },
-  )
-  const writer = socket.writable.getWriter()
-  const reader = socket.readable.getReader()
-  const encoder = new TextEncoder()
-  const decoder = new TextDecoder()
-  let leftover = ''
-
-  const send = async (command) => {
-    await writer.write(encoder.encode(`${command}\r\n`))
-  }
-  const recv = async () => {
-    const next = await readSmtp(reader, decoder, leftover)
-    leftover = next.leftover
-    return next.line
-  }
-  const expect = async (prefix) => {
-    let line = await recv()
-    while (line && line[3] === '-') line = await recv()
-    if (!line.startsWith(prefix)) throw new Error(line || 'SMTP handshake failed')
-    return line
-  }
-
-  try {
-    await expect('220')
-    await send('EHLO hajzy.pages.dev')
-    await expect('250')
-    await send('AUTH LOGIN')
-    await expect('334')
-    await send(btoa(user))
-    await expect('334')
-    await send(btoa(pass))
-    await expect('235')
-    await send(`MAIL FROM:<${user}>`)
-    await expect('250')
-    await send(`RCPT TO:<${to}>`)
-    await expect('250')
-    await send('DATA')
-    await expect('354')
-    const encodedSubject = `=?UTF-8?B?${btoa(String.fromCharCode(...new TextEncoder().encode(subject)))}?=`
-    const payload = [
-      `From: Hajzy <${user}>`,
-      `To: ${to}`,
-      `Subject: ${encodedSubject}`,
-      'MIME-Version: 1.0',
-      'Content-Type: text/html; charset=UTF-8',
-      '',
-      html,
-      '.',
-    ].join('\r\n')
-    await writer.write(encoder.encode(`${payload}\r\n`))
-    await expect('250')
-    await send('QUIT')
-    return { ok: true }
-  } finally {
-    try { await writer.close() } catch {}
-    try { reader.releaseLock() } catch {}
-  }
-}
-
-async function sendEmail(env, { to, subject, html }) {
-  const gmailUser = env.GMAIL_USER?.trim()
-  const gmailPass = env.GMAIL_APP_PASSWORD?.trim().replace(/\s+/g, '')
-  let gmailError = null
-  if (gmailUser && gmailPass) {
-    try {
-      await sendViaGmailSmtp({ user: gmailUser, pass: gmailPass, to, subject, html })
-      return { ok: true }
-    } catch (error) {
-      gmailError = error.message || String(error)
-      console.error('Gmail SMTP error:', gmailError)
-    }
-  }
-
-  if (env.RESEND_API_KEY) {
-    const from = env.RESEND_FROM?.trim()
-    if (!from) return { ok: false, message: 'RESEND_FROM is not configured with a verified sender address.' }
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${env.RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from,
-        to,
-        subject,
-        html,
-      }),
-    })
-    const payload = await response.json().catch(() => ({}))
-    if (!response.ok) {
-      return { ok: false, message: payload.message || 'Failed to send email via Resend.' }
-    }
-    return { ok: true }
-  }
-
-  if (gmailError) return { ok: false, message: `Gmail could not send the reset email: ${gmailError}` }
-  return { ok: false, message: 'Email service is not configured. Set GMAIL_USER and GMAIL_APP_PASSWORD, or configure Resend.' }
-}
 
 async function paymobRequest(path, body, secretKey) {
   const controller = new AbortController()
@@ -499,10 +342,16 @@ export async function onRequest(context) {
 
   try {
     if (path === '/api/health' && request.method === 'GET') {
+      const isConfigured = Boolean(
+        env.BREVO_API_KEY ||
+        (env.RESEND_API_KEY && env.RESEND_FROM) ||
+        (env.GMAIL_USER && env.GMAIL_APP_PASSWORD)
+      )
       return json({
         ok: true,
         mode: db ? 'kv' : 'unconfigured',
-        emailConfigured: Boolean((env.GMAIL_USER && env.GMAIL_APP_PASSWORD) || env.RESEND_API_KEY),
+        emailConfigured: isConfigured,
+        emailProvider: env.BREVO_API_KEY ? 'brevo' : (env.RESEND_API_KEY ? 'resend' : 'none'),
         message: 'API is healthy (Cloudflare Pages).',
       })
     }
@@ -529,11 +378,21 @@ export async function onRequest(context) {
       const verificationToken = [...crypto.getRandomValues(new Uint8Array(32))].map((b) => b.toString(16).padStart(2, '0')).join('')
       await db.save(user)
       await db.setVerificationToken(user.id, verificationToken)
-      await sendEmail(env, {
-        to: normalizedEmail,
-        subject: 'تأكيد بريدك الإلكتروني | Hajzy',
-        html: verificationEmailHtml(user.fullName, `${appUrl}/verify-email?token=${verificationToken}`),
-      })
+
+      // Send verification email asynchronously
+      context.waitUntil(
+        sendEmailUnified(env, {
+          to: normalizedEmail,
+          toName: user.fullName,
+          subject: 'تأكيد بريدك الإلكتروني | Hajzy',
+          html: getEmailVerificationTemplate({
+            name: user.fullName,
+            verificationLink: `${appUrl}/verify-email?token=${verificationToken}`,
+            language: 'ar',
+          }),
+        })
+      )
+
       return json({ message: 'User registered successfully. Please verify your email address.', user: publicUser(user) }, 201)
     }
 
@@ -557,39 +416,62 @@ export async function onRequest(context) {
 
     if (path === '/api/auth/forgot-password' && request.method === 'POST') {
       const { email } = await readBody(request)
-      if (!email || !isValidEmail(email)) return json({ message: 'Please provide a valid email address.' }, 400)
+      if (!email || !isValidEmail(email)) return json({ message: 'يرجى إدخال بريد إلكتروني صحيح.' }, 400)
       const normalizedEmail = email.trim().toLowerCase()
-      const user = await db.getByEmail(normalizedEmail)
-      if (!user) {
+
+      // Rate limit by IP (max 6 requests / 15 min) and by email (max 4 requests / 15 min)
+      const clientIp = request.headers.get('cf-connecting-ip') || 'anon'
+      const ipLimit = await checkRateLimit(env.HAJZY_AUTH, `ip:${clientIp}:forgot`, 6, 900)
+      const emailLimit = await checkRateLimit(env.HAJZY_AUTH, `email:${normalizedEmail}:forgot`, 4, 900)
+
+      if (!ipLimit.allowed || !emailLimit.allowed) {
         return json({
           ok: false,
-          emailSent: false,
-          message: 'هذا البريد الإلكتروني غير مسجل. أنشئ حسابًا جديدًا أو استخدم بريدًا مسجلاً.',
-        }, 404)
+          message: 'تم تجاوز الحد المسموح من المحاولات. يرجى الانتظار 15 دقيقة ثم المحاولة مجدداً.',
+        }, 429)
       }
+
+      const user = await db.getByEmail(normalizedEmail)
+
+      // User Enumeration Prevention: Always return a neutral success message
+      const neutralMessage = 'إذا كان هذا البريد مسجلاً لدينا، فستصلك رسالة تحتوي على تعليمات الاستعادة خلال دقائق.'
+
+      if (!user) {
+        return json({
+          ok: true,
+          emailSent: true,
+          message: neutralMessage,
+        })
+      }
+
       const resetToken = [...crypto.getRandomValues(new Uint8Array(32))].map((b) => b.toString(16).padStart(2, '0')).join('')
       const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString()
       await db.setResetToken(user, resetToken, expiresAt)
       const resetLink = `${appUrl}/reset-password?token=${resetToken}`
-      const emailResult = await sendEmail(env, {
+
+      const emailResult = await sendEmailUnified(env, {
         to: normalizedEmail,
+        toName: user.fullName || 'عضو منصة حجزي',
         subject: 'إعادة تعيين كلمة المرور | Hajzy Password Reset',
-        html: resetEmailHtml(resetLink),
+        html: getPasswordResetTemplate({ resetLink, language: 'ar' }),
       })
+
       if (!emailResult.ok) {
-        console.error(`Password reset email failed for ${normalizedEmail}:`, emailResult.message)
+        console.error(`[ForgotPassword] Delivery issue for ${maskEmail(normalizedEmail)}:`, emailResult.message)
         return json({
           ok: false,
           emailSent: false,
-          message: 'تعذر إرسال رسالة الاستعادة حالياً. تحقق من إعدادات البريد في الخادم ثم أعد المحاولة.',
+          message: 'حدثت مشكلة مؤقتة، يرجى المحاولة مرة أخرى بعد قليل.',
         }, 503)
       }
+
       return json({
         ok: true,
         emailSent: true,
-        message: 'تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني بنجاح.',
+        message: neutralMessage,
       })
     }
+
 
     if (path === '/api/auth/reset-password' && request.method === 'POST') {
       const { token, newPassword } = await readBody(request)
@@ -743,7 +625,24 @@ export async function onRequest(context) {
       }
 
       if (path === '/api/notifications' && request.method === 'POST') {
-        const { title, body, detail, type, bookingId, propertyId } = await readBody(request)
+        const reqData = await readBody(request)
+        const {
+          title,
+          body,
+          detail,
+          type,
+          bookingId,
+          propertyId,
+          ownerEmail,
+          ownerName,
+          guestName,
+          propertyTitle,
+          checkIn,
+          checkOut,
+          totalPrice,
+          currency,
+        } = reqData
+
         const notif = {
           id: `notif_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
           userId,
@@ -760,8 +659,72 @@ export async function onRequest(context) {
         const list = await loadNotifs()
         const updated = [notif, ...list].slice(0, 50)
         await saveNotifs(updated)
+
+        // Asynchronously notify owner via email if ownerEmail provided
+        if (ownerEmail && isValidEmail(ownerEmail)) {
+          context.waitUntil(
+            sendEmailUnified(env, {
+              to: ownerEmail,
+              toName: ownerName || 'مالك العقار',
+              subject: 'إشعار بحجز جديد في عقارك | Hajzy',
+              html: getOwnerBookingNotificationTemplate({
+                ownerName,
+                guestName,
+                propertyTitle,
+                checkIn,
+                checkOut,
+                totalPrice,
+                currency: currency || 'EGP',
+                bookingId,
+                dashboardUrl: `${appUrl}/owner/bookings`,
+                language: 'ar',
+              }),
+            })
+          )
+        }
+
         return json({ notification: notif }, 201)
       }
+
+    if (path === '/api/email/notify-booking' && request.method === 'POST') {
+      const {
+        ownerEmail,
+        ownerName,
+        guestName,
+        propertyTitle,
+        checkIn,
+        checkOut,
+        totalPrice,
+        currency,
+        bookingId,
+        language = 'ar',
+      } = await readBody(request)
+
+      if (!ownerEmail || !isValidEmail(ownerEmail)) {
+        return json({ ok: false, message: 'Valid ownerEmail is required.' }, 400)
+      }
+
+      const emailResult = await sendEmailUnified(env, {
+        to: ownerEmail,
+        toName: ownerName || 'مالك العقار',
+        subject: language === 'en' ? 'New Booking Alert | Hajzy' : 'إشعار بحجز جديد في عقارك | Hajzy',
+        html: getOwnerBookingNotificationTemplate({
+          ownerName,
+          guestName,
+          propertyTitle,
+          checkIn,
+          checkOut,
+          totalPrice,
+          currency: currency || 'EGP',
+          bookingId,
+          dashboardUrl: `${appUrl}/owner/bookings`,
+          language,
+        }),
+      })
+
+      return json({ ok: emailResult.ok, provider: emailResult.provider, messageId: emailResult.messageId })
+    }
+
 
       if (path === '/api/notifications/read-all' && (request.method === 'PATCH' || request.method === 'POST')) {
         const list = await loadNotifs()
