@@ -1,8 +1,47 @@
-export const formatCurrency = (amount, currency = 'EGP', currentLanguage = 'ar') => {
+/**
+ * Centralized locale & numeral system configuration.
+ * Uses 'latn' (Western Arabic numerals: 0, 1, 2, 3...) by default
+ * for visual consistency with currency (ج.م), charts, percentages, and inputs.
+ * Can be switched dynamically between 'latn' and 'arab'.
+ */
+export const NUMERAL_SYSTEM_CONFIG = {
+  numeralSystem: 'latn', // 'latn' | 'arab'
+}
+
+export const setNumeralSystem = (system) => {
+  if (system === 'latn' || system === 'arab') {
+    NUMERAL_SYSTEM_CONFIG.numeralSystem = system
+  }
+}
+
+export const getNumeralSystem = () => NUMERAL_SYSTEM_CONFIG.numeralSystem
+
+export const formatNumber = (num, options = {}) => {
+  if (num === null || num === undefined || isNaN(Number(num))) return '0'
+  const numeralSystem = options.numeralSystem || NUMERAL_SYSTEM_CONFIG.numeralSystem
+  const locale = `ar-EG-u-nu-${numeralSystem}`
+  try {
+    return new Intl.NumberFormat(locale, {
+      maximumFractionDigits: options.maximumFractionDigits ?? 0,
+      minimumFractionDigits: options.minimumFractionDigits ?? 0,
+      ...options,
+    }).format(num)
+  } catch {
+    return Number(num).toLocaleString('en-US')
+  }
+}
+
+export const formatCurrency = (amount, currency = 'EGP', currentLanguage = 'ar', options = {}) => {
+  if (amount === null || amount === undefined || isNaN(Number(amount))) {
+    const isArabic = currentLanguage === 'ar'
+    const sym = currency === 'EGP' ? (isArabic ? 'ج.م' : 'EGP') : currency
+    return isArabic ? `0 ${sym}` : `${sym} 0`
+  }
   const isArabic = currentLanguage === 'ar'
-  const locale = isArabic ? 'ar-EG' : 'en-US'
+  const numeralSystem = options.numeralSystem || NUMERAL_SYSTEM_CONFIG.numeralSystem
+  const locale = isArabic ? `ar-EG-u-nu-${numeralSystem}` : 'en-US'
   const value = new Intl.NumberFormat(locale, {
-    maximumFractionDigits: 0,
+    maximumFractionDigits: options.maximumFractionDigits ?? 0,
   }).format(amount)
   const symbol = currency === 'EGP' ? (isArabic ? 'ج.م' : 'EGP') : currency
 
@@ -97,7 +136,7 @@ export const nightsBetween = (startDate, endDate) => {
  * Safely format a date for display in the current language.
  * Never throws RangeError on empty, null, or invalid dates.
  */
-export const formatDate = (dateString, currentLanguage = 'ar') => {
+export const formatDate = (dateString, currentLanguage = 'ar', options = {}) => {
   if (!dateString) return '—'
 
   let d = null
@@ -113,12 +152,14 @@ export const formatDate = (dateString, currentLanguage = 'ar') => {
 
   if (!d) return '—'
 
-  const locale = currentLanguage === 'ar' ? 'ar-EG' : 'en-US'
+  const numeralSystem = options.numeralSystem || NUMERAL_SYSTEM_CONFIG.numeralSystem
+  const locale = currentLanguage === 'ar' ? `ar-EG-u-nu-${numeralSystem}` : 'en-US'
   try {
     return new Intl.DateTimeFormat(locale, {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
+      ...options,
     }).format(d)
   } catch {
     return '—'

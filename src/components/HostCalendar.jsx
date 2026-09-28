@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { formatNumber, formatCurrency } from '../lib/formatters'
 
 export default function HostCalendar({
   language = 'ar',
@@ -111,7 +112,7 @@ export default function HostCalendar({
                 >
                   <span className="day-number">{day}</span>
                   <span className="day-price">
-                    {isBlocked ? (isArabic ? 'مغلق' : 'Blocked') : `${dailyPrice.toLocaleString()}`}
+                    {isBlocked ? (isArabic ? 'مغلق' : 'Blocked') : formatNumber(dailyPrice)}
                   </span>
                 </button>
               )
@@ -121,11 +122,18 @@ export default function HostCalendar({
       </div>
 
       <div className="calendar-controls-row mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="control-tile p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-            {isArabic ? 'زيادة سعر عطلة نهاية الأسبوع (الخميس والجمعة)' : 'Weekend Rate Surge (Thu & Fri)'}
-          </label>
-          <div className="flex items-center gap-3">
+        {/* Weekend surge slider with clear min/max bounds and dynamic price breakdown */}
+        <div className="control-tile p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              {isArabic ? 'زيادة سعر عطلة نهاية الأسبوع (الخميس والجمعة)' : 'Weekend Rate Surge (Thu & Fri)'}
+            </label>
+            <span className="inline-flex items-center gap-0.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 shadow-xs">
+              +{weekendSurge}%
+            </span>
+          </div>
+
+          <div className="relative pt-1 pb-1">
             <input
               type="range"
               min="0"
@@ -133,48 +141,80 @@ export default function HostCalendar({
               step="5"
               value={weekendSurge}
               onChange={(e) => setWeekendSurge(Number(e.target.value))}
-              className="flex-1"
+              className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+              aria-label={isArabic ? 'نسبة زيادة عطلة نهاية الأسبوع' : 'Weekend surge percentage'}
             />
-            <strong className="text-emerald-700 dark:text-emerald-400 text-sm w-12 text-center">
-              +{weekendSurge}%
+            {/* Min and Max bounds clearly visible at track edges */}
+            <div className="flex justify-between items-center text-[10px] text-slate-500 font-semibold mt-1">
+              <span>0% ({isArabic ? 'سعر أساسي' : 'Base'})</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                {isArabic ? `المحدد: +${weekendSurge}%` : `Selected: +${weekendSurge}%`}
+              </span>
+              <span>+50% ({isArabic ? 'الحد الأقصى' : 'Max'})</span>
+            </div>
+          </div>
+
+          {/* Dynamic price breakdown */}
+          <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-400 mt-2 p-2 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/40">
+            <span>{isArabic ? 'السعر في ليلة الويك إند:' : 'Weekend night rate:'}</span>
+            <strong className="text-emerald-700 dark:text-emerald-300 font-bold">
+              {formatCurrency(Math.round(basePrice * (1 + weekendSurge / 100)), currency, language)}
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-normal mr-1">
+                ({isArabic ? `+${formatNumber(Math.round(basePrice * (weekendSurge / 100)))} زيادة` : `+${formatNumber(Math.round(basePrice * (weekendSurge / 100)))} surge`})
+              </span>
             </strong>
           </div>
-          <small className="text-[11px] text-slate-500 mt-1 block">
-            {isArabic
-              ? `السعر في الويك إند: ${Math.round(basePrice * (1 + weekendSurge / 100)).toLocaleString()} ${currency}`
-              : `Weekend rate: ${Math.round(basePrice * (1 + weekendSurge / 100)).toLocaleString()} ${currency}`}
-          </small>
         </div>
 
-        <div className="control-tile p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-            {isArabic ? 'رمز القفل الذكي (الدخول الذاتي)' : 'Smart Lock Passcode (Self Check-in)'}
-          </label>
+        {/* Smart lock passcode with clear validity and status pill */}
+        <div className="control-tile p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              {isArabic ? 'رمز القفل الذكي (الدخول الذاتي)' : 'Smart Lock Passcode (Self Check-in)'}
+            </label>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              {isArabic ? 'نشط للنزيل القادم' : 'Active for next guest'}
+            </span>
+          </div>
+
           <div className="flex items-center gap-2">
-            <div className="passcode-display flex-1 flex items-center justify-between px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono font-bold tracking-widest text-emerald-700 dark:text-emerald-400">
+            <div className="passcode-display flex-1 flex items-center justify-between px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono font-black text-lg tracking-widest text-emerald-700 dark:text-emerald-400 shadow-xs">
               <span>{selfCheckInCode}</span>
               <button
                 type="button"
-                className="text-xs text-slate-500 hover:text-slate-800"
+                className="text-xs text-slate-500 hover:text-emerald-700 dark:hover:text-emerald-400 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                 onClick={handleCopyCode}
                 title={isArabic ? 'نسخ الكود' : 'Copy code'}
+                aria-label={isArabic ? 'نسخ رمز القفل' : 'Copy smart lock code'}
               >
-                <span className="material-symbols-outlined text-sm">
+                <span className="material-symbols-outlined text-base">
                   {copiedCode ? 'check' : 'content_copy'}
                 </span>
               </button>
             </div>
             <button
               type="button"
-              className="secondary-button small-button text-xs py-1.5"
+              className="secondary-button small-button text-xs py-2 px-3 whitespace-nowrap inline-flex items-center gap-1"
               onClick={generateNewPasscode}
             >
-              {isArabic ? 'توليد كود جديد' : 'Generate'}
+              <span className="material-symbols-outlined text-xs">autorenew</span>
+              <span>{isArabic ? 'توليد جديد' : 'Generate'}</span>
             </button>
           </div>
-          <small className="text-[11px] text-slate-500 mt-1 block">
-            {isArabic ? 'يتم إرسال هذا الكود تلقائياً للنزيل قبل موعد الوصول بـ 24 ساعة.' : 'Sent automatically to guest 24h prior to arrival.'}
-          </small>
+
+          {/* Direct Expiry Information linked to the code */}
+          <div className="flex items-start gap-1.5 text-xs text-emerald-900 dark:text-emerald-200 bg-emerald-50/80 dark:bg-emerald-950/40 p-2 rounded-lg border border-emerald-200 dark:border-emerald-800/60 mt-2">
+            <span className="material-symbols-outlined text-base text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5">event_available</span>
+            <div className="flex-1 min-w-0">
+              <strong className="block text-[11px] leading-snug font-bold">
+                {isArabic ? 'صالح حتى: 30 سبتمبر 2026 - 12:00 ظهراً (موعد المغادرة)' : 'Valid until: Sep 30, 2026 - 12:00 PM (Check-out)'}
+              </strong>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">
+                {isArabic ? 'يُرسل للنزيل تلقائياً قبل الوصول بـ 24 ساعة ويُلغى تلقائياً عند المغادرة' : 'Auto-sent 24h prior to arrival and auto-expires at checkout'}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

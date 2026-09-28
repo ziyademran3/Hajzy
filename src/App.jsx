@@ -30,6 +30,7 @@ import HostCalendar from './components/HostCalendar'
 import { useTheme } from './components/ThemeProvider'
 import {
   formatCurrency,
+  formatNumber,
   formatDate,
   parseISODate,
   formatISODate,
@@ -406,6 +407,27 @@ function App() {
     description: '',
     bookingInfo: '',
   })
+  const [activeRevenueBar, setActiveRevenueBar] = useState(null)
+  const propertyFileInputRef = useRef(null)
+
+  const handlePropertyImageUpload = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) {
+      showToast(language === 'en' ? 'Image size must be less than 5MB' : 'حجم الصورة يجب ألا يتجاوز 5 ميجابايت')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (loadEvent) => {
+      const dataUrl = loadEvent.target?.result
+      if (typeof dataUrl === 'string') {
+        setPropertyForm((prev) => ({ ...prev, image: dataUrl }))
+        showToast(language === 'en' ? 'Photo ready for preview' : 'تم اختيار صورة العقار ومعاينتها بنجاح')
+      }
+    }
+    reader.readAsDataURL(file)
+  }
+
   const [isLoadingData, setIsLoadingData] = useState(true)
   const isOwner = user?.role === 'owner'
   const activeText = {
@@ -1780,8 +1802,8 @@ function App() {
               <p>{language === 'en' ? 'Total Properties' : 'إجمالي العقارات'}</p>
               <span className="owner-stat-icon material-symbols-outlined">apartment</span>
             </div>
-            <strong>{ownerProperties.length}</strong>
-            <small>+{Math.max(1, Math.round(ownerProperties.length * 0.3))} {language === 'en' ? 'this month' : 'هذا الشهر'}</small>
+            <strong>{formatNumber(ownerProperties.length)}</strong>
+            <small>+{formatNumber(Math.max(1, Math.round(ownerProperties.length * 0.3)))} {language === 'en' ? 'this month' : 'هذا الشهر'}</small>
           </div>
 
           <div
@@ -1792,8 +1814,8 @@ function App() {
               <p>{language === 'en' ? 'Pending Requests' : 'الطلبات المعلقة'}</p>
               <span className="owner-stat-icon material-symbols-outlined">pending_actions</span>
             </div>
-            <strong>{pendingOwnerBookingsCount}</strong>
-            <small>{pendingOwnerBookingsCount ? `${pendingOwnerBookingsCount} ${language === 'en' ? 'need review' : 'تحتاج مراجعة'}` : (language === 'en' ? 'No pending requests' : 'لا توجد طلبات معلقة')}</small>
+            <strong>{formatNumber(pendingOwnerBookingsCount)}</strong>
+            <small>{pendingOwnerBookingsCount ? `${formatNumber(pendingOwnerBookingsCount)} ${language === 'en' ? 'need review' : 'تحتاج مراجعة'}` : (language === 'en' ? 'No pending requests' : 'لا توجد طلبات معلقة')}</small>
           </div>
 
           <div className="owner-summary-card success">
@@ -1801,7 +1823,7 @@ function App() {
               <p>{language === 'en' ? 'Total Revenue' : 'إجمالي الإيرادات'}</p>
               <span className="owner-stat-icon material-symbols-outlined">payments</span>
             </div>
-            <strong>{formatCurrency(ownerRevenue)}</strong>
+            <strong>{formatCurrency(ownerRevenue, 'EGP', language)}</strong>
             <small>+18.4% {language === 'en' ? 'vs last week' : 'مقارنة بالأسبوع الماضي'}</small>
           </div>
 
@@ -1810,7 +1832,7 @@ function App() {
               <p>{language === 'en' ? 'Host Rating' : 'تقييم المضيف'}</p>
               <span className="owner-stat-icon material-symbols-outlined text-amber-500">star</span>
             </div>
-            <strong>4.9 ★</strong>
+            <strong>{formatNumber(4.9, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} ★</strong>
             <small>{language === 'en' ? 'Guest satisfaction (12+ reviews)' : 'متوسط رضا الضيوف (12+ تقييم)'}</small>
           </div>
         </div>
@@ -1823,11 +1845,11 @@ function App() {
         </button>
         <button type="button" className="secondary-button small-button" onClick={() => setBookingFilter('pending')}>
           <span className="material-symbols-outlined">pending_actions</span>
-          <span>{language === 'en' ? `Review Requests (${pendingOwnerBookingsCount})` : `مراجعة الطلبات (${pendingOwnerBookingsCount})`}</span>
+          <span>{language === 'en' ? `Review Requests (${formatNumber(pendingOwnerBookingsCount)})` : `مراجعة الطلبات (${formatNumber(pendingOwnerBookingsCount)})`}</span>
         </button>
         <button type="button" className="secondary-button small-button" onClick={() => setBookingFilter('all')}>
           <span className="material-symbols-outlined">list_alt</span>
-          <span>{language === 'en' ? `All Bookings (${ownerBookings.length})` : `كل الحجوزات (${ownerBookings.length})`}</span>
+          <span>{language === 'en' ? `All Bookings (${formatNumber(ownerBookings.length)})` : `كل الحجوزات (${formatNumber(ownerBookings.length)})`}</span>
         </button>
         <button type="button" className="secondary-button small-button" onClick={() => handleOwnerQuickAction('report')}>
           <span className="material-symbols-outlined">download</span>
@@ -1840,14 +1862,29 @@ function App() {
       </div>
 
       <div className="owner-feature-banner">
-        <div>
-          <span className="owner-feature-kicker">{language === 'en' ? 'Instant Payout' : 'الدفع الفوري'}</span>
-          <h3>{language === 'en' ? 'Top demand this week' : 'أعلى طلب هذا الأسبوع'}</h3>
+        <div className="owner-feature-main">
+          <span className="owner-feature-kicker">{language === 'en' ? 'Weekly High Demand' : 'أعلى طلب هذا الأسبوع'}</span>
+          <h3 className="m-0 text-lg sm:text-xl font-bold">{language === 'en' ? 'Top demand in your properties' : 'إقبال قياسي على وحداتك هذا الأسبوع'}</h3>
+          <p className="text-xs text-emerald-100/80 m-0 mt-1">
+            {language === 'en'
+              ? 'Peak booking demand detected in your stays. Review new requests and adjust weekend rates.'
+              : 'تم رصد زيادة في معدل الحجوزات لوحداتك — راجع الطلبات الجديدة واستفد من تعديل أسعار الويك إند.'}
+          </p>
         </div>
-        <div className="owner-feature-pills">
-          <span>{language === 'en' ? 'Occupancy 78%' : 'إشغال 78%'}</span>
-          <span>{language === 'en' ? 'Confirmed 84%' : 'حجوزات مؤكدة 84%'}</span>
-          <span>{language === 'en' ? 'Rating 4.9' : 'تقييم 4.9'}</span>
+        <div className="owner-feature-actions-wrap flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="owner-feature-pills">
+            <span>{language === 'en' ? 'Occupancy 78%' : 'إشغال 78%'}</span>
+            <span>{language === 'en' ? 'Confirmed 84%' : 'حجوزات مؤكدة 84%'}</span>
+            <span>{language === 'en' ? 'Rating 4.9 ★' : 'تقييم 4.9 ★'}</span>
+          </div>
+          <button
+            type="button"
+            className="owner-feature-cta-button inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-white text-emerald-900 font-bold text-xs shadow-md hover:bg-emerald-50 transition cursor-pointer"
+            onClick={() => document.getElementById('owner-bookings-section')?.scrollIntoView({ behavior: 'smooth' })}
+          >
+            <span>{language === 'en' ? 'Review Bookings & Demand' : 'مراجعة الطلبات والحجوزات'}</span>
+            <span className="material-symbols-outlined text-sm">arrow_forward</span>
+          </button>
         </div>
       </div>
 
@@ -1868,7 +1905,7 @@ function App() {
             </div>
             <div>
               <span>{language === 'en' ? 'Monthly Revenue' : 'إيراد هذا الشهر'}</span>
-              <strong>{formatCurrency(ownerRevenue)}</strong>
+              <strong>{formatCurrency(ownerRevenue, 'EGP', language)}</strong>
             </div>
           </div>
           <div className="owner-progress-list">
@@ -1987,18 +2024,94 @@ function App() {
         <button type="button" className="secondary-button" onClick={() => handleOwnerQuickAction('report')}>تصدير تقرير</button>
       </div>
 
-      <div className="owner-analytics-surface">
-        <div className="owner-insights-header">
-          <h3>إيرادات العقارات</h3>
-          <span className="status-pill neutral">آخر 30 يوم</span>
+      <div className="owner-analytics-surface relative">
+        <div className="owner-insights-header flex items-center justify-between mb-3">
+          <div>
+            <h3 className="m-0 text-base font-bold text-slate-900 dark:text-white">
+              {language === 'en' ? 'Property Revenue' : 'إيرادات العقارات'}
+            </h3>
+            <span className="text-[11px] text-slate-500 block mt-0.5">
+              {language === 'en' ? 'Historical revenue breakdown (last 30 days)' : 'تحليل الإيرادات مقسمة على فترات خلال آخر 30 يوماً'}
+            </span>
+          </div>
+          <span className="status-pill neutral">{language === 'en' ? 'Last 30 Days' : 'آخر 30 يوم'}</span>
         </div>
-        <div className="owner-analytics-graph">
-          {[42, 58, 49, 63, 72, 88, 96, 82, 68].map((value, index) => (
-            <div key={value + index} className="owner-analytics-bar-wrap">
-              <span>{value}k</span>
-              <div className="owner-analytics-bar" style={{ height: `${value}%` }} />
+
+        {/* Dynamic Tooltip on Bar Click/Hover */}
+        {activeRevenueBar !== null && (
+          <div className="mb-2 p-2.5 rounded-xl bg-slate-900 text-white text-xs flex items-center justify-between border border-slate-700 animate-fadeIn shadow-lg">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              <span>
+                <strong>{language === 'en' ? 'Period:' : 'الفترة:'}</strong> {[
+                  { ar: '1 - 3 سبتمبر', en: 'Sep 1 - 3' },
+                  { ar: '4 - 6 سبتمبر', en: 'Sep 4 - 6' },
+                  { ar: '7 - 9 سبتمبر', en: 'Sep 7 - 9' },
+                  { ar: '10 - 12 سبتمبر', en: 'Sep 10 - 12' },
+                  { ar: '13 - 15 سبتمبر', en: 'Sep 13 - 15' },
+                  { ar: '16 - 18 سبتمبر', en: 'Sep 16 - 18' },
+                  { ar: '19 - 21 سبتمبر', en: 'Sep 19 - 21' },
+                  { ar: '22 - 24 سبتمبر', en: 'Sep 22 - 24' },
+                  { ar: '25 - 28 سبتمبر', en: 'Sep 25 - 28' },
+                ][activeRevenueBar]?.[language === 'en' ? 'en' : 'ar']}
+              </span>
             </div>
-          ))}
+            <div className="flex items-center gap-2">
+              <strong className="text-emerald-400 font-bold text-sm">
+                {formatCurrency([
+                  42000, 58000, 49000, 63000, 72000, 88000, 96000, 82000, 68000,
+                ][activeRevenueBar], 'EGP', language)}
+              </strong>
+              <button
+                type="button"
+                className="text-slate-400 hover:text-white"
+                onClick={() => setActiveRevenueBar(null)}
+              >
+                <span className="material-symbols-outlined text-xs">close</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="owner-analytics-graph">
+          {[
+            { labelAr: '1-3 سبت', labelEn: '1-3 Sep', value: 42, amount: 42000 },
+            { labelAr: '4-6 سبت', labelEn: '4-6 Sep', value: 58, amount: 58000 },
+            { labelAr: '7-9 سبت', labelEn: '7-9 Sep', value: 49, amount: 49000 },
+            { labelAr: '10-12', labelEn: '10-12', value: 63, amount: 63000 },
+            { labelAr: '13-15', labelEn: '13-15', value: 72, amount: 72000 },
+            { labelAr: '16-18', labelEn: '16-18', value: 88, amount: 88000 },
+            { labelAr: '19-21', labelEn: '19-21', value: 96, amount: 96000 },
+            { labelAr: '22-24', labelEn: '22-24', value: 82, amount: 82000 },
+            { labelAr: '25-28', labelEn: '25-28', value: 68, amount: 68000 },
+          ].map((bar, index) => {
+            const isSelected = activeRevenueBar === index
+            return (
+              <div
+                key={bar.labelAr + index}
+                className={`owner-analytics-bar-wrap cursor-pointer group ${isSelected ? 'active' : ''}`}
+                onClick={() => setActiveRevenueBar(isSelected ? null : index)}
+                onMouseEnter={() => setActiveRevenueBar(index)}
+                title={`${language === 'en' ? bar.labelEn : bar.labelAr}: ${formatCurrency(bar.amount, 'EGP', language)}`}
+              >
+                <span className={`text-[10px] font-bold ${isSelected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}`}>
+                  {bar.value}k
+                </span>
+                <div
+                  className={`owner-analytics-bar transition-all duration-200 ${isSelected ? 'brightness-125 shadow-md ring-2 ring-emerald-400' : 'group-hover:brightness-110'}`}
+                  style={{ height: `${bar.value}%` }}
+                />
+                <span className={`owner-analytics-x-label text-[9px] font-semibold tracking-tighter mt-1 whitespace-nowrap ${isSelected ? 'text-emerald-700 dark:text-emerald-300 font-bold' : 'text-slate-400'}`}>
+                  {language === 'en' ? bar.labelEn : bar.labelAr}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+        <div className="flex justify-between items-center text-[10px] text-slate-400 mt-2 px-1 border-t border-slate-100 dark:border-slate-800 pt-1.5">
+          <span>{language === 'en' ? '← Early Sep' : '← بداية الشهر'}</span>
+          <span className="text-slate-500 font-medium">{language === 'en' ? 'Tap any bar for exact figures' : 'اضغط على أي عمود لمعرفة المبلغ الدقيق'}</span>
+          <span>{language === 'en' ? 'Today →' : 'اليوم →'}</span>
         </div>
       </div>
 
@@ -2016,34 +2129,34 @@ function App() {
                   <span>{booking.location}</span>
                 </div>
                 <div>
-                  <strong>{formatCurrency(booking.total, booking.currency)}</strong>
-                  <span>{booking.status === 'confirmed' ? 'مؤكد' : 'قيد المراجعة'}</span>
+                  <strong>{formatCurrency(booking.total, booking.currency, language)}</strong>
+                  <span>{booking.status === 'confirmed' ? (language === 'en' ? 'Confirmed' : 'مؤكد') : (language === 'en' ? 'Pending' : 'قيد المراجعة')}</span>
                 </div>
               </div>
             )) : (
-              <div className="empty-inline">لا توجد حجوزات حتى الآن.</div>
+              <div className="empty-inline">{language === 'en' ? 'No bookings yet.' : 'لا توجد حجوزات حتى الآن.'}</div>
             )}
           </div>
         </div>
 
         <div className="owner-analytics-card">
           <div className="owner-overview-header">
-            <h3>مهام سريعة</h3>
-            <span className="status-pill neutral">اليوم</span>
+            <h3>{language === 'en' ? 'Quick Tasks' : 'مهام سريعة'}</h3>
+            <span className="status-pill neutral">{language === 'en' ? 'Today' : 'اليوم'}</span>
           </div>
           <ul className="owner-task-list">
-            <li>متابعة طلبات الحجز الجديدة</li>
-            <li><span className="material-symbols-outlined">inventory_2</span>تحديث وصف الشقة الرئيسية</li>
-            <li><span className="material-symbols-outlined">campaign</span>إرسال رسالة ترحيب للضيوف</li>
-            <li><span className="material-symbols-outlined">payments</span>مراجعة الإيرادات الشهرية</li>
+            <li>{language === 'en' ? 'Review new booking requests' : 'متابعة طلبات الحجز الجديدة'}</li>
+            <li><span className="material-symbols-outlined">inventory_2</span>{language === 'en' ? 'Update main property description' : 'تحديث وصف الشقة الرئيسية'}</li>
+            <li><span className="material-symbols-outlined">campaign</span>{language === 'en' ? 'Send welcome message to guests' : 'إرسال رسالة ترحيب للضيوف'}</li>
+            <li><span className="material-symbols-outlined">payments</span>{language === 'en' ? 'Audit monthly revenue statements' : 'مراجعة الإيرادات الشهرية'}</li>
           </ul>
         </div>
       </div>
 
       <div className="owner-leading-listings">
         <div className="owner-overview-header">
-          <h3>أفضل العقارات أداءً</h3>
-          <span className="status-pill neutral">هذا الأسبوع</span>
+          <h3>{language === 'en' ? 'Top Performing Properties' : 'أفضل العقارات أداءً'}</h3>
+          <span className="status-pill neutral">{language === 'en' ? 'This Week' : 'هذا الأسبوع'}</span>
         </div>
         <div className="owner-listing-strip">
           {properties.slice(0, 3).map((property) => (
@@ -2054,8 +2167,8 @@ function App() {
                 <span>{property.city}</span>
               </div>
               <div className="owner-listing-meta">
-                <span>{property.rating}★</span>
-                <strong>{formatCurrency(property.priceValue, property.currency)}</strong>
+                <span>{formatNumber(property.rating, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}★</span>
+                <strong>{formatCurrency(property.priceValue, property.currency, language)}</strong>
               </div>
             </div>
           ))}
@@ -2064,32 +2177,50 @@ function App() {
 
       <div className="owner-summary-grid">
         <div className="owner-summary-card">
-          <span>متوسط الإشغال</span>
-          <strong>78%</strong>
-          <small>منذ آخر 30 يوم</small>
+          <span>{language === 'en' ? 'Avg Occupancy' : 'متوسط الإشغال'}</span>
+          <strong>{formatNumber(78)}%</strong>
+          <small>{language === 'en' ? 'Past 30 days' : 'منذ آخر 30 يوم'}</small>
         </div>
         <div className="owner-summary-card">
-          <span>معدل الحجز</span>
-          <strong>14%</strong>
-          <small>نسبة التحويل</small>
+          <span>{language === 'en' ? 'Booking Rate' : 'معدل الحجز'}</span>
+          <strong>{formatNumber(14)}%</strong>
+          <small>{language === 'en' ? 'Conversion rate' : 'نسبة التحويل'}</small>
         </div>
         <div className="owner-summary-card">
-          <span>استجابة المالك</span>
-          <strong>1.2h</strong>
-          <small>متوسط الرد</small>
+          <span>{language === 'en' ? 'Host Response' : 'استجابة المالك'}</span>
+          <strong>{formatNumber(1.2, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}h</strong>
+          <small>{language === 'en' ? 'Average reply time' : 'متوسط الرد'}</small>
         </div>
       </div>
 
       <div className="owner-main-panel">
         <div className="owner-main-panel-header">
-          <h3>إحصاءات الإقبال</h3>
-          <span>آخر 7 أيام</span>
+          <div>
+            <h3 className="m-0 text-base font-bold text-slate-900 dark:text-white">
+              {language === 'en' ? 'Weekly Occupancy Rate' : 'إحصاءات الإقبال ونسبة الإشغال'}
+            </h3>
+            <span className="text-[11px] text-slate-500 block mt-0.5">
+              {language === 'en' ? 'Daily visitor and booking traction' : 'معدل تفاعل وحجوزات الضيوف اليومية'}
+            </span>
+          </div>
+          <span className="status-pill neutral">{language === 'en' ? 'Last 7 Days' : 'آخر 7 أيام'}</span>
         </div>
         <div className="owner-chart">
-          {[48, 72, 58, 90, 84, 96, 76].map((value, index) => (
-            <div key={value + index} className="owner-chart-bar-wrap">
-              <span>{value}%</span>
-              <div className="owner-chart-bar" style={{ height: `${value}%` }}></div>
+          {[
+            { dayAr: 'السبت', dayEn: 'Sat', value: 48 },
+            { dayAr: 'الأحد', dayEn: 'Sun', value: 72 },
+            { dayAr: 'الإثنين', dayEn: 'Mon', value: 58 },
+            { dayAr: 'الثلاثاء', dayEn: 'Tue', value: 90 },
+            { dayAr: 'الأربعاء', dayEn: 'Wed', value: 84 },
+            { dayAr: 'الخميس', dayEn: 'Thu', value: 96 },
+            { dayAr: 'الجمعة', dayEn: 'Fri', value: 76 },
+          ].map((item, index) => (
+            <div key={item.dayAr + index} className="owner-chart-bar-wrap" title={`${language === 'en' ? item.dayEn : item.dayAr}: ${item.value}%`}>
+              <span className="owner-chart-val text-[11px] font-bold text-slate-600 dark:text-slate-400">{item.value}%</span>
+              <div className="owner-chart-bar" style={{ height: `${item.value}%` }}></div>
+              <span className="owner-chart-day-label text-[10px] font-bold text-slate-500 mt-1">
+                {language === 'en' ? item.dayEn : item.dayAr}
+              </span>
             </div>
           ))}
         </div>
@@ -2115,8 +2246,8 @@ function App() {
                 <tr key={booking.id}>
                   <td>{booking.title || 'زائر'}</td>
                   <td>{booking.location || 'موقع العقار'}</td>
-                  <td>{formatDate(booking.checkIn)} - {formatDate(booking.checkOut)}</td>
-                  <td>{formatCurrency(booking.total, booking.currency)}</td>
+                  <td>{formatDate(booking.checkIn, language)} - {formatDate(booking.checkOut, language)}</td>
+                  <td>{formatCurrency(booking.total, booking.currency, language)}</td>
                   <td>
                     <span className={booking.status === 'confirmed' ? 'status-badge confirmed' : 'status-badge pending'}>
                       {booking.status === 'confirmed' ? 'مؤكد' : 'قيد المراجعة'}
@@ -2135,10 +2266,17 @@ function App() {
 
       <form id="owner-form" className="owner-form" onSubmit={handleOwnerAddProperty}>
         <div className="owner-form-head">
-          <h3>{ownerEditingId ? 'تعديل الشقة' : 'إضافة شقة جديدة'}</h3>
+          <div>
+            <h3 className="m-0 text-lg font-bold text-slate-900 dark:text-white">
+              {ownerEditingId ? (language === 'en' ? 'Edit Property' : 'تعديل الشقة') : (language === 'en' ? 'Add New Property' : 'إضافة شقة جديدة')}
+            </h3>
+            <span className="text-xs text-slate-500 block mt-0.5">
+              {language === 'en' ? 'Fill details to publish or update your listing' : 'أدخل تفاصيل الوحدة لنشرها واستقبال طلبات الحجز'}
+            </span>
+          </div>
           {ownerEditingId && (
             <button type="button" className="secondary-button small-button" onClick={resetOwnerForm}>
-              إلغاء
+              {language === 'en' ? 'Cancel' : 'إلغاء'}
             </button>
           )}
         </div>
@@ -2147,16 +2285,16 @@ function App() {
 
         <div className="owner-grid">
           <label>
-            عنوان الشقة
+            {language === 'en' ? 'Property Title' : 'عنوان الشقة'}
             <input
               type="text"
               value={propertyForm.title}
               onChange={(event) => setPropertyForm({ ...propertyForm, title: event.target.value })}
-              placeholder="اسم الشقة"
+              placeholder={language === 'en' ? 'e.g. Luxury Seafront Suite' : 'اسم الشقة'}
             />
           </label>
           <label>
-            المدينة
+            {language === 'en' ? 'City' : 'المدينة'}
             <select
               value={propertyForm.city}
               onChange={(event) => setPropertyForm({ ...propertyForm, city: event.target.value })}
@@ -2169,16 +2307,16 @@ function App() {
             </select>
           </label>
           <label>
-            الموقع التفصيلي
+            {language === 'en' ? 'Detailed Location' : 'الموقع التفصيلي'}
             <input
               type="text"
               value={propertyForm.location}
               onChange={(event) => setPropertyForm({ ...propertyForm, location: event.target.value })}
-              placeholder="مثال: شارع النيل، القاهرة"
+              placeholder={language === 'en' ? 'e.g. Nile Corniche, Cairo' : 'مثال: شارع النيل، القاهرة'}
             />
           </label>
           <label>
-            السعر / يوم
+            {language === 'en' ? 'Rate / Night (EGP)' : 'السعر / يوم (ج.م)'}
             <input
               type="number"
               min="0"
@@ -2187,73 +2325,185 @@ function App() {
               placeholder="مثال: 2500"
             />
           </label>
-          <label className="wide">
-            رابط الصورة
+
+          {/* User-friendly image upload & preview replacing raw URL */}
+          <div className="wide owner-image-upload-section">
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
+              {language === 'en' ? 'Property Photo' : 'صورة العقار'}
+            </span>
+
+            {/* Hidden file input */}
             <input
-              type="url"
-              value={propertyForm.image}
-              onChange={(event) => setPropertyForm({ ...propertyForm, image: event.target.value })}
-              placeholder="https://..."
+              ref={propertyFileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handlePropertyImageUpload}
             />
-          </label>
+
+            {propertyForm.image ? (
+              <div className="owner-image-preview-card p-3 rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/30 flex flex-col sm:flex-row items-center gap-3">
+                <img
+                  src={propertyForm.image}
+                  alt="Property Preview"
+                  className="w-24 h-20 rounded-xl object-cover border border-emerald-300 shadow-sm shrink-0"
+                  onError={handleStayImageError}
+                />
+                <div className="flex-1 text-right sm:text-start min-w-0">
+                  <div className="flex items-center gap-1.5 text-xs text-emerald-800 dark:text-emerald-300 font-bold mb-1">
+                    <span className="material-symbols-outlined text-sm text-emerald-600">check_circle</span>
+                    <span>{language === 'en' ? 'Photo ready for listing' : 'تم اختيار صورة العقار بنجاح'}</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 m-0 truncate">
+                    {propertyForm.image.startsWith('data:')
+                      ? (language === 'en' ? 'Uploaded from device' : 'تم الرفع من ملفات الجهاز')
+                      : propertyForm.image}
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <button
+                      type="button"
+                      className="secondary-button small-button text-xs py-1 px-2.5 inline-flex items-center gap-1"
+                      onClick={() => propertyFileInputRef.current?.click()}
+                    >
+                      <span className="material-symbols-outlined text-xs">photo_camera</span>
+                      <span>{language === 'en' ? 'Change Photo' : 'تغيير الصورة'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="danger-button small-button text-xs py-1 px-2.5 inline-flex items-center gap-1"
+                      onClick={() => setPropertyForm((prev) => ({ ...prev, image: '' }))}
+                    >
+                      <span className="material-symbols-outlined text-xs">delete</span>
+                      <span>{language === 'en' ? 'Remove' : 'حذف'}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div
+                className="owner-upload-dropzone p-5 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 hover:border-emerald-500 transition cursor-pointer text-center flex flex-col items-center justify-center gap-2"
+                onClick={() => propertyFileInputRef.current?.click()}
+              >
+                <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 grid place-items-center shadow-xs">
+                  <span className="material-symbols-outlined text-2xl">add_photo_alternate</span>
+                </div>
+                <div>
+                  <strong className="block text-sm text-slate-800 dark:text-slate-200">
+                    {language === 'en' ? 'Upload photo from your device' : 'اضغط لرفع صورة الشقة من جهازك'}
+                  </strong>
+                  <span className="text-xs text-slate-500 block mt-0.5">
+                    {language === 'en' ? 'Supports JPG, PNG, WebP (Max 5MB)' : 'يدعم صيغ JPG، PNG، WebP (حتى 5 ميجابايت)'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="secondary-button small-button text-xs py-1.5 px-3.5 mt-1 inline-flex items-center gap-1"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    propertyFileInputRef.current?.click()
+                  }}
+                >
+                  <span className="material-symbols-outlined text-xs">upload_file</span>
+                  <span>{language === 'en' ? 'Choose Image' : 'اختيار صورة'}</span>
+                </button>
+              </div>
+            )}
+
+            {/* Optional URL input toggle for power users */}
+            <details className="mt-2 text-xs text-slate-500">
+              <summary className="cursor-pointer hover:text-emerald-600 transition">
+                {language === 'en' ? 'Or enter direct image URL' : 'أو إدخال رابط صورة خارجي (اختياري)'}
+              </summary>
+              <input
+                type="url"
+                value={propertyForm.image}
+                onChange={(event) => setPropertyForm({ ...propertyForm, image: event.target.value })}
+                placeholder="https://..."
+                className="mt-1.5 w-full text-xs p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+              />
+            </details>
+          </div>
+
           <label className="wide">
-            المزايا
+            {language === 'en' ? 'Amenities' : 'المزايا'}
             <input
               type="text"
               value={propertyForm.amenities}
               onChange={(event) => setPropertyForm({ ...propertyForm, amenities: event.target.value })}
-              placeholder="مثل: إنترنت, موقف, نوافذ واسعة"
+              placeholder={language === 'en' ? 'e.g. WiFi, Pool, Sea View, Parking' : 'مثل: إنترنت, موقف, نوافذ واسعة'}
             />
           </label>
           <label className="wide">
-            الوصف
+            {language === 'en' ? 'Description' : 'الوصف'}
             <textarea
               rows="3"
               value={propertyForm.description}
               onChange={(event) => setPropertyForm({ ...propertyForm, description: event.target.value })}
-              placeholder="اكتب وصف الشقة بشكل جذاب"
+              placeholder={language === 'en' ? 'Write an appealing property description' : 'اكتب وصف الشقة بشكل جذاب'}
             />
           </label>
           <label className="wide">
-            معلومات الحجز
+            {language === 'en' ? 'Booking Policies' : 'معلومات الحجز'}
             <textarea
               rows="3"
               value={propertyForm.bookingInfo}
               onChange={(event) => setPropertyForm({ ...propertyForm, bookingInfo: event.target.value })}
-              placeholder="مثل: إلغاء مجاني حتى 48 ساعة قبل الوصول"
+              placeholder={language === 'en' ? 'e.g. Free cancellation up to 48 hours prior to arrival' : 'مثل: إلغاء مجاني حتى 48 ساعة قبل الوصول'}
             />
           </label>
         </div>
 
         <button type="submit" className="primary-button">
-          {ownerEditingId ? 'حفظ التعديلات' : 'إضافة الشقة'}
+          {ownerEditingId ? (language === 'en' ? 'Save Changes' : 'حفظ التعديلات') : (language === 'en' ? 'Add Property' : 'إضافة الشقة')}
         </button>
       </form>
 
       <div className="owner-listings">
-        <h3>الشقق المضافة</h3>
+        <div className="owner-form-head">
+          <div>
+            <h3 className="m-0 text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+              {language === 'en' ? 'Managed Properties' : 'الشقق المضافة'}
+            </h3>
+            <span className="text-xs text-slate-500">
+              {language === 'en' ? `${ownerProperties.length} active listings` : `${ownerProperties.length} عقارات مسجلة`}
+            </span>
+          </div>
+        </div>
 
         {ownerProperties.length === 0 ? (
           <div className="owner-empty-state">
             <span className="material-symbols-outlined">apartment</span>
-            <p>لا توجد شقق مضافة بعد، أضف أول إعلان لك.</p>
+            <p>{language === 'en' ? 'No properties listed yet. Add your first listing.' : 'لا توجد شقق مضافة بعد، أضف أول إعلان لك.'}</p>
           </div>
         ) : (
           ownerProperties.map((property) => (
             <article key={property.id} className="owner-card">
-              <img src={property.image} alt={property.title} onError={handleStayImageError} />
+              <img
+                src={property.image}
+                alt={property.title}
+                onError={handleStayImageError}
+                className="owner-card-thumb"
+              />
               <div className="owner-card-body">
-                <div>
-                  <h4>{property.title}</h4>
-                  <p>{property.location}</p>
-                  <strong>{formatCurrency(property.priceValue, property.currency)}</strong>
+                <div className="owner-card-info">
+                  <h4 title={property.title}>{property.title}</h4>
+                  <p title={property.location}>{property.location}</p>
+                  <strong>{formatCurrency(property.priceValue, property.currency, language)}</strong>
                 </div>
                 <div className="owner-actions">
-                  <button type="button" className="secondary-button small-button" onClick={() => handleOwnerEditProperty(property)}>
-                    تعديل
+                  <button
+                    type="button"
+                    className="secondary-button small-button"
+                    onClick={() => handleOwnerEditProperty(property)}
+                  >
+                    {language === 'en' ? 'Edit' : 'تعديل'}
                   </button>
-                  <button type="button" className="danger-button" onClick={() => handleOwnerDeleteProperty(property.id)}>
-                    حذف
+                  <button
+                    type="button"
+                    className="danger-button small-button"
+                    onClick={() => handleOwnerDeleteProperty(property.id)}
+                  >
+                    {language === 'en' ? 'Delete' : 'حذف'}
                   </button>
                 </div>
               </div>
@@ -2262,27 +2512,50 @@ function App() {
         )}
       </div>
 
-      <div className="owner-listings owner-bookings-panel">
-        <div className="owner-form-head">
-          <h3>طلبات الحجز</h3>
-          <div className="booking-filter-tabs">
-            {['all', 'confirmed', 'pending'].map((filter) => (
-              <button
-                key={filter}
-                type="button"
-                className={bookingFilter === filter ? 'filter-tag active' : 'filter-tag'}
-                onClick={() => setBookingFilter(filter)}
-              >
-                {filter === 'all' ? 'الكل' : filter === 'confirmed' ? 'مؤكد' : 'قيد المراجعة'}
-              </button>
-            ))}
+      <div id="owner-bookings-section" className="owner-listings owner-bookings-panel">
+        <div className="owner-form-head flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h3 className="m-0 text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+              {language === 'en' ? 'Booking Requests' : 'طلبات الحجز'}
+            </h3>
+            <span className="text-xs text-slate-500">
+              {language === 'en'
+                ? `Showing ${filteredOwnerBookings.length} bookings`
+                : `عرض ${filteredOwnerBookings.length} من الحجوزات`}
+            </span>
+          </div>
+
+          {/* Unified Segmented Control */}
+          <div className="booking-segmented-control" role="tablist" aria-label={language === 'en' ? 'Filter bookings' : 'تصفية الحجوزات'}>
+            {[
+              { id: 'all', labelAr: 'الكل', labelEn: 'All', count: ownerBookings.length },
+              { id: 'confirmed', labelAr: 'مؤكد', labelEn: 'Confirmed', count: ownerBookings.filter(b => b.status === 'confirmed').length },
+              { id: 'pending', labelAr: 'قيد المراجعة', labelEn: 'Pending', count: pendingOwnerBookingsCount },
+            ].map((tab) => {
+              const isActive = bookingFilter === tab.id
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  className={`booking-segmented-tab ${isActive ? 'active' : ''}`}
+                  onClick={() => setBookingFilter(tab.id)}
+                >
+                  <span>{language === 'en' ? tab.labelEn : tab.labelAr}</span>
+                  <span className={`booking-count-badge ${isActive ? 'active' : ''}`}>
+                    {tab.count}
+                  </span>
+                </button>
+              )
+            })}
           </div>
         </div>
 
         {filteredOwnerBookings.length === 0 ? (
           <div className="owner-empty-state">
             <span className="material-symbols-outlined">calendar_month</span>
-            <p>لا توجد حجوزات في هذا التصفية حالياً.</p>
+            <p>{language === 'en' ? 'No bookings found in this filter.' : 'لا توجد حجوزات في هذا التصفية حالياً.'}</p>
           </div>
         ) : (
           filteredOwnerBookings.map((booking) => (
@@ -2290,7 +2563,7 @@ function App() {
               <div className="booking-image">
                 <img src={booking.image} alt={booking.title} onError={handleStayImageError} />
                 <span className={`status ${booking.status === 'confirmed' ? 'confirmed' : 'pending'}`}>
-                  {booking.status === 'confirmed' ? 'مؤكدة' : 'قيد المراجعة'}
+                  {booking.status === 'confirmed' ? (language === 'en' ? 'Confirmed' : 'مؤكدة') : (language === 'en' ? 'Pending Review' : 'قيد المراجعة')}
                 </span>
               </div>
               <div className="booking-body">
@@ -2303,17 +2576,17 @@ function App() {
                 <div className="booking-footer">
                   <div>
                     <small>
-                      من {formatDate(booking.checkIn)} إلى {formatDate(booking.checkOut)}
+                      {language === 'en' ? `From ${formatDate(booking.checkIn, language)} to ${formatDate(booking.checkOut, language)}` : `من ${formatDate(booking.checkIn, language)} إلى ${formatDate(booking.checkOut, language)}`}
                     </small>
-                    <strong>{formatCurrency(booking.total, booking.currency)}</strong>
+                    <strong>{formatCurrency(booking.total, booking.currency, language)}</strong>
                   </div>
                 </div>
                 <div className="owner-booking-actions">
                   <button type="button" className="secondary-button small-button" onClick={() => handleBookingStatusToggle(booking)}>
-                    {booking.status === 'confirmed' ? 'إرجاع إلى قيد المراجعة' : 'تأكيد الحجز'}
+                    {booking.status === 'confirmed' ? (language === 'en' ? 'Move to Pending' : 'إرجاع إلى قيد المراجعة') : (language === 'en' ? 'Confirm Booking' : 'تأكيد الحجز')}
                   </button>
-                  <button type="button" className="danger-button" onClick={() => handleDeleteBooking(booking.id)}>
-                    حذف
+                  <button type="button" className="danger-button small-button" onClick={() => handleDeleteBooking(booking.id)}>
+                    {language === 'en' ? 'Delete' : 'حذف'}
                   </button>
                 </div>
               </div>
