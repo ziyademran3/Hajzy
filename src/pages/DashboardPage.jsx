@@ -1,14 +1,14 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FALLBACK_STAY_PHOTO, sanitizePhotoUrl } from '../lib/dataService'
-import { formatCurrency, formatNumber } from '../lib/formatters'
+import { formatCurrency, formatNumber, formatDate } from '../lib/formatters'
 
 export default function DashboardPage({
   user,
   bookings = [],
   properties = [],
   favorites = [],
-  onNavigate,
+  onNavigate = () => {},
   onLogout: _onLogout,
   language = 'ar',
   onSupportRequest,
@@ -124,6 +124,7 @@ export default function DashboardPage({
   const countdownDays = useMemo(() => {
     if (!upcomingStay?.checkIn) return null
     const checkInDate = new Date(upcomingStay.checkIn)
+    if (isNaN(checkInDate.getTime())) return null
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     checkInDate.setHours(0, 0, 0, 0)
@@ -140,13 +141,17 @@ export default function DashboardPage({
 
   // Curated properties recommendation (top 3)
   const curatedProperties = useMemo(() => {
-    return properties.slice(0, 3)
+    return Array.isArray(properties) ? properties.slice(0, 3) : []
   }, [properties])
 
-  const dateFormatter = new Intl.DateTimeFormat(isAr ? 'ar-EG' : 'en-US', {
-    day: 'numeric',
-    month: 'short',
-  })
+  const safeFormatDate = (val) => {
+    if (!val) return ''
+    return formatDate(val, language, { day: 'numeric', month: 'short' })
+  }
+
+  const currencyFormatter = useMemo(() => ({
+    format: (amount) => formatCurrency(amount, 'EGP', language),
+  }), [language])
 
   // Quick Action Buttons
   const quickActions = [
@@ -413,13 +418,13 @@ export default function DashboardPage({
                   <div>
                     <div className="text-slate-400">{isAr ? 'تاريخ الوصول' : 'Check-in'}</div>
                     <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">
-                      {upcomingStay?.checkIn ? dateFormatter.format(new Date(upcomingStay.checkIn)) : (isAr ? 'مرن' : 'Flexible')}
+                      {upcomingStay?.checkIn ? safeFormatDate(upcomingStay.checkIn) : (isAr ? 'مرن' : 'Flexible')}
                     </div>
                   </div>
                   <div className="border-r border-l border-slate-200 dark:border-slate-700 px-3">
                     <div className="text-slate-400">{isAr ? 'تاريخ المغادرة' : 'Check-out'}</div>
                     <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">
-                      {upcomingStay?.checkOut ? dateFormatter.format(new Date(upcomingStay.checkOut)) : (isAr ? 'مرن' : 'Flexible')}
+                      {upcomingStay?.checkOut ? safeFormatDate(upcomingStay.checkOut) : (isAr ? 'مرن' : 'Flexible')}
                     </div>
                   </div>
                   <div>
@@ -575,11 +580,11 @@ export default function DashboardPage({
                   } else if (hours < 24) {
                     timeLabel = isAr ? `منذ ${hours} ${hours === 1 ? 'ساعة' : 'ساعات'}` : `${hours}h ago`
                   } else {
-                    timeLabel = dateFormatter.format(new Date(rawTs))
+                    timeLabel = safeFormatDate(rawTs)
                   }
                 }
               } else if (booking.checkIn) {
-                timeLabel = dateFormatter.format(new Date(booking.checkIn))
+                timeLabel = safeFormatDate(booking.checkIn)
               }
 
               return (
@@ -613,7 +618,7 @@ export default function DashboardPage({
                           <>
                             <span>•</span>
                             <span>
-                              {dateFormatter.format(new Date(booking.checkIn))} - {dateFormatter.format(new Date(booking.checkOut))}
+                              {safeFormatDate(booking.checkIn)} - {safeFormatDate(booking.checkOut)}
                             </span>
                           </>
                         )}
@@ -630,7 +635,7 @@ export default function DashboardPage({
                   <div className="flex items-center justify-between gap-4 sm:justify-end">
                     <div className="text-end">
                       <div className="text-sm font-black text-slate-900 dark:text-white">
-                        {currencyFormatter.format(booking.total || 1400)}
+                        {formatCurrency(booking.total || 1400, 'EGP', language)}
                       </div>
                       <span
                         className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${
@@ -730,7 +735,7 @@ export default function DashboardPage({
                   <div className="flex items-center justify-between pt-1">
                     <div>
                       <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
-                        {currencyFormatter.format(property.priceValue || 2500)}
+                        {formatCurrency(property.priceValue || 2500, 'EGP', language)}
                       </span>
                       <span className="text-[11px] text-slate-400"> / {isAr ? 'ليلة' : 'night'}</span>
                     </div>

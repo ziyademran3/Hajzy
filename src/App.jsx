@@ -5942,22 +5942,24 @@ function App() {
         </div>
 
         {accountTab === 'overview' ? (
-          <DashboardPage
-            user={user}
-            bookings={bookings}
-            properties={properties}
-            favorites={favorites}
-            language={language}
-            onNavigate={(dest, item) => {
-              if (dest === 'profile') {
-                setAccountTab('settings')
-              } else {
-                navigate(dest, item)
-              }
-            }}
-            onLogout={handleLogout}
-            onSupportRequest={handleSupportRequest}
-          />
+          <ErrorBoundary>
+            <DashboardPage
+              user={user}
+              bookings={bookings}
+              properties={properties}
+              favorites={favorites}
+              language={language}
+              onNavigate={(dest, item) => {
+                if (dest === 'profile') {
+                  setAccountTab('settings')
+                } else {
+                  navigate(dest, item)
+                }
+              }}
+              onLogout={handleLogout}
+              onSupportRequest={handleSupportRequest}
+            />
+          </ErrorBoundary>
         ) : (
           <ProfilePage
             user={user || effectiveUser}
@@ -5982,16 +5984,18 @@ function App() {
     if (activePage === 'favorites') return renderFavoritesPage()
     if (activePage === 'dashboard') {
       return (
-        <DashboardPage
-          user={user}
-          bookings={bookings}
-          properties={properties}
-          favorites={favorites}
-          language={language}
-          onNavigate={navigate}
-          onLogout={handleLogout}
-          onSupportRequest={handleSupportRequest}
-        />
+        <ErrorBoundary>
+          <DashboardPage
+            user={user}
+            bookings={bookings}
+            properties={properties}
+            favorites={favorites}
+            language={language}
+            onNavigate={navigate}
+            onLogout={handleLogout}
+            onSupportRequest={handleSupportRequest}
+          />
+        </ErrorBoundary>
       )
     }
     if (activePage === 'account' || activePage === 'profile') {
