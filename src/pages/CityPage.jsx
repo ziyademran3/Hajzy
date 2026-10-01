@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { CITY_DEFINITIONS, getCitySlug, FALLBACK_STAY_PHOTO } from '../lib/dataService'
+import { pluralize } from '../lib/formatters'
 import HeartIcon from '../components/HeartIcon'
 
 export default function CityPage({
@@ -153,7 +154,7 @@ export default function CityPage({
 
         <div className="w-16 flex justify-end">
           <span className="rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 text-[11px] font-extrabold px-2.5 py-1">
-            {cityAllProperties.length} {isEn ? (cityAllProperties.length === 1 ? 'stay' : 'stays') : 'إقامة'}
+            {pluralize(cityAllProperties.length, 'stay', isEn ? 'en' : 'ar')}
           </span>
         </div>
       </div>
@@ -198,7 +199,7 @@ export default function CityPage({
                 {isEn ? 'Total Available' : 'المتاح حالياً'}
               </span>
               <strong className="text-lg font-black text-white">
-                {cityAllProperties.length} {isEn ? (cityAllProperties.length === 1 ? 'stay' : 'stays') : 'إقامة'}
+                {pluralize(cityAllProperties.length, 'stay', isEn ? 'en' : 'ar')}
               </strong>
             </div>
           </div>
@@ -428,8 +429,8 @@ export default function CityPage({
                   {/* Meta features */}
                   <div className="property-meta-row flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mb-3 pb-3 border-b border-slate-100 dark:border-slate-800">
                     <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-sm">bed</span>
-                      {isEn ? `${property.guests || 2} guests` : `${property.guests || 2} ضيوف`}
+                      <span className="material-symbols-outlined text-sm">group</span>
+                      {pluralize(property.guests || 2, 'guest', isEn ? 'en' : 'ar')}
                     </span>
                     <span className="flex items-center gap-1">
                       <span className="material-symbols-outlined text-sm">wifi</span> Wi‑Fi

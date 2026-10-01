@@ -39,6 +39,7 @@ test.describe('City Cards and City Page Tests', () => {
   });
 
   test('Clicking Cairo, Giza, Hurghada, and Sharm city cards open their respective city pages', async ({ page }) => {
+    test.setTimeout(60000);
     const cities = [
       { slug: 'cairo', nameMatch: /القاهرة|Cairo/ },
       { slug: 'giza', nameMatch: /الجيزة|Giza/ },

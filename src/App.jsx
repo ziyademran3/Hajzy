@@ -34,6 +34,10 @@ import {
   formatDate,
   parseISODate,
   formatISODate,
+  formatDisplayDMY,
+  getNextDayISO,
+  pluralize,
+  getArabicPluralWord,
   nightsBetween,
 } from './lib/formatters'
 import {
@@ -70,6 +74,7 @@ import {
   addBooking,
   addChatMessage,
   addProperty,
+  calculateBookingPricing,
   CITY_PHOTOS,
   deleteBooking,
   deleteProperty,
@@ -78,7 +83,9 @@ import {
   fetchChatMessages,
   fetchProperties,
   getCitySlug,
+  getSafeBookings,
   hasSupabaseConnection,
+  normalizeBookingStatus,
   propertySeed,
   updateBooking,
   updateProperty,
@@ -1062,12 +1069,18 @@ function App() {
     setHomeQuickSearch((current) => {
       const nextState = { ...current, [field]: value }
 
-      if (field === 'checkIn' && nextState.checkOut && new Date(nextState.checkOut) < new Date(value)) {
-        nextState.checkOut = value
+      if (field === 'checkIn') {
+        const nextMinOut = getNextDayISO(value)
+        if (!nextState.checkOut || nextState.checkOut < nextMinOut) {
+          nextState.checkOut = nextMinOut
+        }
       }
 
-      if (field === 'checkOut' && nextState.checkIn && new Date(value) < new Date(nextState.checkIn)) {
-        nextState.checkOut = nextState.checkIn
+      if (field === 'checkOut' && nextState.checkIn) {
+        const minOut = getNextDayISO(nextState.checkIn)
+        if (value < minOut) {
+          nextState.checkOut = minOut
+        }
       }
 
       return nextState
@@ -1077,7 +1090,7 @@ function App() {
   const quickSearchDateError =
     homeQuickSearch.checkIn &&
     homeQuickSearch.checkOut &&
-    new Date(homeQuickSearch.checkOut) < new Date(homeQuickSearch.checkIn)
+    new Date(homeQuickSearch.checkOut) <= new Date(homeQuickSearch.checkIn)
       ? language === 'en'
         ? 'Check-out must be after check-in.'
         : 'تاريخ المغادرة يجب أن يكون بعد تاريخ الوصول.'
@@ -1861,9 +1874,12 @@ function App() {
         checkIn: bookingDates.checkIn,
         checkOut: bookingDates.checkOut,
         guests: Number(bookingDates.guests),
-        total: grandTotal,
+        pricePerNight: Number(selectedProperty.priceValue || 0),
+        nights: Number(stayNights || 1),
+        serviceFee: Number(serviceFee || 0),
         discountAmount: promoDiscountAmount || 0,
         promoCode: appliedPromo?.code || null,
+        total: grandTotal,
         currency: selectedProperty.currency,
         status: (paymentMethod === 'card' && paymentSession?.redirectUrl) ? 'pending_payment' : 'confirmed',
         reference,
@@ -3145,34 +3161,58 @@ function App() {
                 runHomeSearch()
               }}
             >
-              <div className="search-panel-row compact">
+              <div className="search-panel-row search-dates-row">
                 <label htmlFor="check-in" className="search-field">
                   <span>{language === 'en' ? 'Check-in' : 'تاريخ الوصول'}</span>
-                  <div className="input-with-icon">
-                    <span className="field-icon material-symbols-outlined">calendar_month</span>
+                  <div
+                    className="input-with-icon search-date-field"
+                    onClick={(e) => {
+                      try {
+                        e.currentTarget.querySelector('input[type="date"]')?.showPicker?.()
+                      } catch (err) {}
+                    }}
+                  >
+                    <span className="field-icon material-symbols-outlined" aria-hidden="true">calendar_month</span>
+                    <div className="search-date-display" aria-hidden="true">
+                      {formatDisplayDMY(homeQuickSearch.checkIn)}
+                    </div>
                     <input
                       id="check-in"
                       name="checkIn"
                       data-testid="search-checkin"
                       aria-label={language === 'en' ? 'Check-in' : 'تاريخ الوصول'}
                       type="date"
+                      min={formatISODate(new Date())}
                       value={homeQuickSearch.checkIn}
                       onChange={(event) => handleQuickSearchDateChange('checkIn', event.target.value)}
+                      className="search-date-native-input"
                     />
                   </div>
                 </label>
                 <label htmlFor="check-out" className="search-field">
                   <span>{language === 'en' ? 'Check-out' : 'تاريخ المغادرة'}</span>
-                  <div className="input-with-icon">
-                    <span className="field-icon material-symbols-outlined">calendar_month</span>
+                  <div
+                    className="input-with-icon search-date-field"
+                    onClick={(e) => {
+                      try {
+                        e.currentTarget.querySelector('input[type="date"]')?.showPicker?.()
+                      } catch (err) {}
+                    }}
+                  >
+                    <span className="field-icon material-symbols-outlined" aria-hidden="true">calendar_month</span>
+                    <div className="search-date-display" aria-hidden="true">
+                      {formatDisplayDMY(homeQuickSearch.checkOut)}
+                    </div>
                     <input
                       id="check-out"
                       name="checkOut"
                       data-testid="search-checkout"
                       aria-label={language === 'en' ? 'Check-out' : 'تاريخ المغادرة'}
                       type="date"
+                      min={getNextDayISO(homeQuickSearch.checkIn)}
                       value={homeQuickSearch.checkOut}
                       onChange={(event) => handleQuickSearchDateChange('checkOut', event.target.value)}
+                      className="search-date-native-input"
                     />
                   </div>
                 </label>
@@ -3194,7 +3234,9 @@ function App() {
                       onChange={(event) => setHomeQuickSearch((current) => ({ ...current, guests: Number(event.target.value) }))}
                     >
                       {[1, 2, 3, 4, 5, 6].map((guest) => (
-                        <option key={guest} value={guest}>{guest} {language === 'en' ? (guest === 1 ? 'guest' : 'guests') : 'ضيف'}</option>
+                        <option key={guest} value={guest}>
+                          {pluralize(guest, 'guest', language)}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -3328,7 +3370,7 @@ function App() {
               className="mini-city-card"
               role="button"
               tabIndex={0}
-              aria-label={`${item.city}, ${item.label}, ${item.staysCount} ${language === 'en' ? 'stays' : 'إقامة'}`}
+              aria-label={`${item.city}, ${item.label}, ${pluralize(item.staysCount, 'stay', language)}`}
               onClick={(e) => {
                 e.preventDefault()
                 navigate('city', null, item.slug)
@@ -3350,7 +3392,7 @@ function App() {
                     </span>
                   )}
                 </div>
-                <small>{item.label} • {item.staysCount} {language === 'en' ? 'stays' : 'إقامة'}</small>
+                <small>{item.label} • {pluralize(item.staysCount, 'stay', language)}</small>
                 <strong>{item.price}</strong>
               </div>
             </a>
@@ -3362,7 +3404,7 @@ function App() {
             <div className="home-section-title-wrap">
               <h3>{language === 'en' ? 'Most booked this week' : 'الأكثر حجزًا هذا الأسبوع'}</h3>
               <span className="home-results-pill">
-                {filteredProperties.length} {filteredProperties.length === 1 ? (language === 'en' ? 'result' : 'نتيجة') : (language === 'en' ? 'results' : 'نتائج')}
+                {pluralize(filteredProperties.length, 'result', language)}
               </span>
             </div>
             <div className="view-toggle">
@@ -3532,7 +3574,7 @@ function App() {
                 </div>
 
                 <div className="property-meta-row">
-                  <span><span className="material-symbols-outlined">bed</span> {language === 'en' ? `${property.guests || 2} guests` : `${property.guests || 2} ضيوف`}</span>
+                  <span><span className="material-symbols-outlined">group</span> {pluralize(property.guests || 2, 'guest', language)}</span>
                   <span><span className="material-symbols-outlined">wifi</span> Wi‑Fi</span>
                   <span><span className="material-symbols-outlined">local_parking</span> {language === 'en' ? 'Parking' : 'موقف'}</span>
                 </div>
@@ -3638,7 +3680,7 @@ function App() {
 
     const propertyPricePreview = [
       { label: language === 'en' ? 'Price per night' : 'السعر لكل ليلة', value: formatCurrency(selectedProperty.priceValue, selectedProperty.currency, language) },
-      { label: language === 'en' ? 'Stay length' : 'مدة الإقامة', value: language === 'en' ? `${stayNights} nights` : `${stayNights} ليلة` },
+      { label: language === 'en' ? 'Stay length' : 'مدة الإقامة', value: pluralize(stayNights, 'night', language) },
       { label: language === 'en' ? 'Estimated total' : 'الإجمالي المتوقع', value: formatCurrency(grandTotal, selectedProperty.currency, language) },
     ]
 
@@ -4203,8 +4245,8 @@ function App() {
     if (stayNights < minRequiredNights) {
       showToast(
         language === 'en'
-          ? `Minimum stay is ${minRequiredNights} ${minRequiredNights === 1 ? 'night' : 'nights'}.`
-          : `الحد الأدنى للإقامة في هذا العقار هو ${minRequiredNights} ${minRequiredNights === 2 ? 'ليلتان' : 'ليالٍ'}.`
+          ? `Minimum stay is ${pluralize(minRequiredNights, 'night', 'en')}.`
+          : `الحد الأدنى للإقامة في هذا العقار هو ${pluralize(minRequiredNights, 'night', 'ar')}.`
       )
       setBookingStep(1)
       return
@@ -4504,26 +4546,24 @@ function App() {
                           }))
                         }
                       >
-                        <option value={1}>{language === 'en' ? '1 guest' : '1 ضيف'}</option>
-                        <option value={2}>{language === 'en' ? '2 guests' : '2 ضيوف'}</option>
-                        <option value={3}>{language === 'en' ? '3 guests' : '3 ضيوف'}</option>
-                        <option value={4}>{language === 'en' ? '4 guests' : '4 ضيوف'}</option>
+                        <option value={1}>{pluralize(1, 'guest', language)}</option>
+                        <option value={2}>{pluralize(2, 'guest', language)}</option>
+                        <option value={3}>{pluralize(3, 'guest', language)}</option>
+                        <option value={4}>{pluralize(4, 'guest', language)}</option>
                       </select>
                     </div>
                     <div className="info-box">
                       <span>{language === 'en' ? 'Nights' : 'عدد الليالي'}</span>
                       <strong>
                         {stayNights > 0
-                          ? language === 'en'
-                            ? `${stayNights} ${stayNights === 1 ? 'night' : 'nights'}`
-                            : `${stayNights} ${stayNights === 1 ? 'ليلة' : stayNights === 2 ? 'ليلتان' : stayNights <= 10 ? 'ليالٍ' : 'ليلة'}`
+                          ? pluralize(stayNights, 'night', language)
                           : language === 'en'
                             ? 'Select dates'
                             : 'حدد التواريخ'}
                       </strong>
                       {minRequiredNights > 1 && (
                         <small className={`block text-[11px] mt-0.5 ${stayNights > 0 && stayNights < minRequiredNights ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-500'}`}>
-                          {language === 'en' ? `Min. ${minRequiredNights} nights` : `الحد الأدنى: ${minRequiredNights} ليالٍ`}
+                          {language === 'en' ? `Min. ${pluralize(minRequiredNights, 'night', 'en')}` : `الحد الأدنى: ${pluralize(minRequiredNights, 'night', 'ar')}`}
                         </small>
                       )}
                     </div>
@@ -4534,8 +4574,8 @@ function App() {
                       <span className="material-symbols-outlined text-base text-amber-600 shrink-0">info</span>
                       <span>
                         {language === 'en'
-                          ? `This property requires a minimum stay of ${minRequiredNights} nights.`
-                          : `يشترط هذا العقار حداً أدنى للإقامة قدره ${minRequiredNights} ${minRequiredNights === 2 ? 'ليلتان' : 'ليالٍ'}. يرجى تمديد موعد المغادرة للمتابعة.`}
+                          ? `This property requires a minimum stay of ${pluralize(minRequiredNights, 'night', 'en')}.`
+                          : `يشترط هذا العقار حداً أدنى للإقامة قدره ${pluralize(minRequiredNights, 'night', 'ar')}. يرجى تمديد موعد المغادرة للمتابعة.`}
                       </span>
                     </div>
                   )}
@@ -5071,11 +5111,11 @@ function App() {
                     </div>
                     <div className="meta-tile">
                       <small>{language === 'en' ? 'Guests' : 'الضيوف'}</small>
-                      <strong>{bookingDates.guests} {language === 'en' ? (bookingDates.guests === 1 ? 'guest' : 'guests') : 'ضيف'}</strong>
+                      <strong>{pluralize(bookingDates.guests, 'guest', language)}</strong>
                     </div>
                     <div className="meta-tile accent">
                       <small>{language === 'en' ? 'Nights' : 'الليالي'}</small>
-                      <strong>{stayNights} {language === 'en' ? (stayNights === 1 ? 'night' : 'nights') : 'ليلة'}</strong>
+                      <strong>{pluralize(stayNights, 'night', language)}</strong>
                     </div>
                   </div>
 
@@ -5281,39 +5321,7 @@ function App() {
   }
 
   const renderBookingsPage = () => {
-    const normalizeBookingStatus = (status) => {
-      const nextStatus = String(status || '').trim().toLowerCase()
-      if (nextStatus === 'confirmed') return 'confirmed'
-      if (nextStatus === 'cancelled') return 'cancelled'
-      return 'pending'
-    }
-
-    const rawBookings = Array.isArray(bookings) ? bookings.filter(Boolean) : []
-    
-    // Deduplicate bookings: if same property and dates exist, keep the confirmed one
-    const deduplicateList = (list) => {
-      const map = new Map()
-      const sorted = [...list].sort((a, b) => {
-        const aConf = normalizeBookingStatus(a.status) === 'confirmed' ? 1 : 0
-        const bConf = normalizeBookingStatus(b.status) === 'confirmed' ? 1 : 0
-        if (aConf !== bConf) return bConf - aConf
-        return String(b.id || '').localeCompare(String(a.id || ''))
-      })
-
-      for (const item of sorted) {
-        const propKey = String(item.propertyId || item.title || '').trim()
-        const checkInKey = String(item.checkIn || '').trim()
-        const checkOutKey = String(item.checkOut || '').trim()
-        const refKey = item.reference && !item.reference.includes('00000') ? `ref_${item.reference}` : `${propKey}_${checkInKey}_${checkOutKey}`
-        
-        if (!map.has(refKey)) {
-          map.set(refKey, item)
-        }
-      }
-      return Array.from(map.values())
-    }
-
-    const safeBookings = deduplicateList(rawBookings)
+    const safeBookings = getSafeBookings(bookings)
 
     const visibleBookings = safeBookings.filter((booking) => {
       const normalizedStatus = normalizeBookingStatus(booking?.status)
@@ -5510,15 +5518,21 @@ function App() {
           ) : (
             visibleBookings.map((booking, index) => {
               const normalizedStatus = normalizeBookingStatus(booking?.status)
-              const property = properties.find((item) => item.id === booking?.propertyId) ?? selectedProperty
+              const property = properties.find((item) => String(item.id) === String(booking?.propertyId)) ?? selectedProperty
 
               const checkInVal = booking?.checkIn || ''
               const checkOutVal = booking?.checkOut || booking?.checkIn || ''
               const nights = (checkInVal && checkOutVal && !Number.isNaN(new Date(checkInVal).getTime()) && !Number.isNaN(new Date(checkOutVal).getTime()))
                 ? Math.max(1, Math.round((new Date(checkOutVal) - new Date(checkInVal)) / (1000 * 60 * 60 * 24)))
-                : 1
+                : (booking?.nights || 1)
 
-              const perNight = booking?.total && nights ? Math.round(Number(booking.total) / nights) : (property?.priceValue || 0)
+              const pricing = calculateBookingPricing({
+                pricePerNight: booking?.pricePerNight || property?.priceValue,
+                nights,
+                discountAmount: booking?.discountAmount,
+                serviceFee: booking?.serviceFee,
+                total: booking?.total,
+              })
 
               const displayDateRange = checkInVal || checkOutVal
                 ? `${booking?.checkIn ? formatDate(booking.checkIn, language) : '—'} ${language === 'en' ? 'to' : 'إلى'} ${booking?.checkOut ? formatDate(booking.checkOut, language) : '—'}`
@@ -5560,11 +5574,22 @@ function App() {
                     <div className="booking-footer">
                       <div className="booking-details">
                         <small>
-                          {displayDateRange} • {nights} {language === 'en' ? (nights === 1 ? 'night' : 'nights') : 'ليلة'}
+                          {displayDateRange} • {pluralize(pricing.nights, 'night', language)}
                         </small>
-                        <div className="booking-pricing">
-                          <span className="per-night">{formatCurrency(perNight, booking.currency || property?.currency || 'EGP', language)} {language === 'en' ? '/ night' : '/ ليلة'}</span>
-                          <strong className="booking-total">{formatCurrency(Number(booking.total || (perNight * nights)), booking.currency || property?.currency || 'EGP', language)}</strong>
+                        <div className="booking-pricing flex flex-col items-start gap-0.5">
+                          <div className="flex items-baseline gap-2">
+                            <span className="per-night">
+                              {formatCurrency(pricing.pricePerNight, booking.currency || property?.currency || 'EGP', language)} {language === 'en' ? '/ night' : '/ ليلة'}
+                            </span>
+                            <strong className="booking-total">
+                              {formatCurrency(pricing.total, booking.currency || property?.currency || 'EGP', language)}
+                            </strong>
+                          </div>
+                          <span className="booking-breakdown-details text-[11px] text-slate-500 dark:text-slate-400">
+                            {formatCurrency(pricing.pricePerNight, booking.currency || property?.currency || 'EGP', language)} × {pluralize(pricing.nights, 'night', language)}
+                            {pricing.serviceFee > 0 && ` + ${formatCurrency(pricing.serviceFee, booking.currency || property?.currency || 'EGP', language)} ${language === 'en' ? 'fees' : 'رسوم'}`}
+                            {pricing.discountAmount > 0 && ` - ${formatCurrency(pricing.discountAmount, booking.currency || property?.currency || 'EGP', language)} ${language === 'en' ? 'discount' : 'خصم'}`}
+                          </span>
                         </div>
                       </div>
 
@@ -5638,7 +5663,7 @@ function App() {
             </div>
             <div className="profile-metric-card">
               <small>{language === 'en' ? 'Trips' : 'رحلات'}</small>
-              <strong>{bookings.length || 0}</strong>
+              <strong>{getSafeBookings(bookings).length || 0}</strong>
             </div>
             <div className="profile-metric-card">
               <small>{language === 'en' ? 'Member' : 'عضوية'}</small>
@@ -5838,8 +5863,8 @@ function App() {
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               {language === 'en'
-                ? `${savedProperties.length} stays saved to your wishlist`
-                : `${savedProperties.length} إقامة محفوظة في قائمتك المفضلة`}
+                ? `${pluralize(savedProperties.length, 'stay', 'en')} saved to your wishlist`
+                : `${pluralize(savedProperties.length, 'stay', 'ar')} محفوظة في قائمتك المفضلة`}
             </p>
           </div>
           {savedProperties.length > 0 && (
@@ -6098,14 +6123,14 @@ function App() {
 
   const bottomNavItems = [
     {
-      key: isOwner ? 'owner' : 'dashboard',
-      label: language === 'en' ? 'Dashboard' : 'لوحة التحكم',
-      icon: 'dashboard',
-    },
-    {
       key: 'home',
       label: language === 'en' ? 'Home' : 'الرئيسية',
       icon: 'home',
+    },
+    {
+      key: isOwner ? 'owner' : 'dashboard',
+      label: language === 'en' ? 'Dashboard' : 'لوحة التحكم',
+      icon: 'dashboard',
     },
     {
       key: 'bookings',
@@ -6578,13 +6603,44 @@ function App() {
     return renderAuthPage()
   }
 
+  const MAIN_TAB_PAGES = ['home', 'dashboard', 'owner', 'bookings', 'account', 'profile']
+  const isSubPage = !MAIN_TAB_PAGES.includes(activePage)
+
+  const handleHeaderBack = () => {
+    if (activePage === 'checkout') {
+      if (selectedProperty) navigate('details', selectedProperty)
+      else navigate('home')
+    } else if (activePage === 'details') {
+      navigate('home')
+    } else if (activePage === 'city') {
+      navigate('home')
+    } else if (activePage === 'notifications') {
+      navigate(isOwner ? 'owner' : 'dashboard')
+    } else if (activePage === 'chat' || activePage === 'reviews') {
+      if (selectedProperty) navigate('details', selectedProperty)
+      else navigate('home')
+    } else if (activePage === 'profile-edit') {
+      navigate('account')
+    } else if (activePage === 'favorites') {
+      navigate('home')
+    } else {
+      navigate(isOwner ? 'owner' : 'home')
+    }
+  }
+
   return (
   <div className="app-shell" data-theme={theme}>
       <header className="topbar">
         <div className="topbar-inner">
-          {(!isOwner ? (activePage !== 'home' && activePage !== 'dashboard' && activePage !== 'profile') : activePage !== 'owner') ? (
-            <button className="icon-button" aria-label="العودة" onClick={() => navigate(isOwner ? 'owner' : 'home')}>
-              <span className="material-symbols-outlined">arrow_back</span>
+          {isSubPage ? (
+            <button
+              type="button"
+              className="icon-button header-back-button"
+              aria-label={language === 'en' ? 'Back' : 'العودة'}
+              title={language === 'en' ? 'Back' : 'العودة'}
+              onClick={handleHeaderBack}
+            >
+              <span className="material-symbols-outlined rtl:rotate-180">arrow_back</span>
             </button>
           ) : (
             <div className="topbar-ghost" aria-hidden="true" />
@@ -6604,7 +6660,7 @@ function App() {
           <div className="topbar-actions flex items-center gap-1.5">
             <button
               type="button"
-              className="icon-button"
+              className="icon-button theme-toggle"
               aria-label={theme === 'dark' ? 'الوضع النهاري' : 'الوضع الليلي'}
               title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
               onClick={toggleTheme}
@@ -6614,11 +6670,12 @@ function App() {
 
             <button
               type="button"
-              className="icon-button"
-              aria-label={language === 'en' ? 'العربية' : 'English'}
+              className="icon-button language-toggle"
+              aria-label={language === 'en' ? 'Switch to Arabic' : 'Switch to English'}
               title={language === 'en' ? 'العربية' : 'English'}
               onClick={handleLanguageToggle}
             >
+              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">language</span>
               <span className="text-xs font-bold">{language === 'en' ? 'AR' : 'EN'}</span>
             </button>
 

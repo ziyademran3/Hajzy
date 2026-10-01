@@ -2,7 +2,9 @@
   "common": {
     "hajzy": "Hajzy",
     "dark": "Dark",
-    "light": "Light"
+    "light": "Light",
+    "unnamedStay": "Reserved stay",
+    "locationUnspecified": "Location unspecified"
   },
   "theme": {
     "light": "Light",
@@ -19,7 +21,12 @@
     "activeStays": "Active stays",
     "searchCity": "Discover",
     "support": "Support",
-    "noRecentActivity": "No recent activity"
+    "noRecentActivity": "No recent activity",
+    "confirmedSpend": "Confirmed payments",
+    "pendingSpend": "Pending review",
+    "totalBookingsAmount": "Total bookings",
+    "fees": "fees",
+    "discount": "discount"
   },
   "quickActions": {
     "savedHomes": "Saved homes",

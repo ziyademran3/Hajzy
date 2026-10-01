@@ -580,7 +580,118 @@ const normalizeProperty = (property) => {
   }
 }
 
-const normalizeBooking = (booking) => {
+export const normalizeBookingStatus = (status) => {
+  const s = String(status || '').trim().toLowerCase()
+  if (s === 'confirmed') return 'confirmed'
+  if (s === 'cancelled') return 'cancelled'
+  return 'pending'
+}
+
+export const getSafeBookings = (bookings = []) => {
+  const raw = Array.isArray(bookings) ? bookings.filter(Boolean) : []
+  const map = new Map()
+  const sorted = [...raw].sort((a, b) => {
+    const aConf = normalizeBookingStatus(a.status) === 'confirmed' ? 1 : 0
+    const bConf = normalizeBookingStatus(b.status) === 'confirmed' ? 1 : 0
+    if (aConf !== bConf) return bConf - aConf
+    return String(b.id || '').localeCompare(String(a.id || ''))
+  })
+
+  for (const item of sorted) {
+    const propKey = String(item.propertyId || item.title || '').trim()
+    const checkInKey = String(item.checkIn || '').trim()
+    const checkOutKey = String(item.checkOut || '').trim()
+    const refKey = item.reference && !item.reference.includes('00000')
+      ? `ref_${item.reference}`
+      : `${propKey}_${checkInKey}_${checkOutKey}`
+    if (!map.has(refKey)) {
+      map.set(refKey, item)
+    }
+  }
+  return Array.from(map.values())
+}
+
+export const calculateBookingPricing = ({
+  pricePerNight = 0,
+  nights = 1,
+  discountAmount = 0,
+  serviceFee = null,
+  total = null,
+  feeRate = 0.08,
+} = {}) => {
+  const safeNights = Math.max(1, Math.round(Number(nights) || 1))
+  const rawPrice = Number(pricePerNight || 0)
+  const rawDiscount = Math.max(0, Number(discountAmount || 0))
+  let effectivePricePerNight = rawPrice
+  let effectiveDiscount = rawDiscount
+  let effectiveFee = (serviceFee !== null && serviceFee !== undefined) ? Number(serviceFee) : null
+  let effectiveTotal = (total !== null && total !== undefined && !isNaN(Number(total))) ? Number(total) : null
+
+  if (effectivePricePerNight > 0) {
+    const baseStayTotal = effectivePricePerNight * safeNights
+    const subtotalAfterDiscount = Math.max(0, baseStayTotal - effectiveDiscount)
+    if (effectiveFee === null) {
+      if (effectiveTotal !== null && effectiveTotal > subtotalAfterDiscount) {
+        effectiveFee = effectiveTotal - subtotalAfterDiscount
+      } else {
+        effectiveFee = Math.round(subtotalAfterDiscount * feeRate)
+      }
+    }
+    const computedTotal = subtotalAfterDiscount + effectiveFee
+    if (effectiveTotal === null || effectiveTotal === 0) {
+      effectiveTotal = computedTotal
+    }
+    return {
+      pricePerNight: effectivePricePerNight,
+      nights: safeNights,
+      baseStayTotal,
+      discountAmount: effectiveDiscount,
+      serviceFee: effectiveFee,
+      total: effectiveTotal,
+    }
+  }
+
+  if (effectiveTotal !== null && effectiveTotal > 0) {
+    if (effectiveFee !== null) {
+      const staySubtotal = Math.max(0, effectiveTotal - effectiveFee + effectiveDiscount)
+      effectivePricePerNight = Math.round(staySubtotal / safeNights)
+      const baseStayTotal = effectivePricePerNight * safeNights
+      return {
+        pricePerNight: effectivePricePerNight,
+        nights: safeNights,
+        baseStayTotal,
+        discountAmount: effectiveDiscount,
+        serviceFee: effectiveFee,
+        total: effectiveTotal,
+      }
+    }
+
+    const estimatedSubtotal = Math.round((effectiveTotal + effectiveDiscount) / (1 + feeRate))
+    effectivePricePerNight = Math.round(estimatedSubtotal / safeNights)
+    const baseStayTotal = effectivePricePerNight * safeNights
+    effectiveFee = Math.max(0, effectiveTotal - (baseStayTotal - effectiveDiscount))
+
+    return {
+      pricePerNight: effectivePricePerNight,
+      nights: safeNights,
+      baseStayTotal,
+      discountAmount: effectiveDiscount,
+      serviceFee: effectiveFee,
+      total: effectiveTotal,
+    }
+  }
+
+  return {
+    pricePerNight: 0,
+    nights: safeNights,
+    baseStayTotal: 0,
+    discountAmount: 0,
+    serviceFee: 0,
+    total: 0,
+  }
+}
+
+export const normalizeBooking = (booking) => {
   const rawImage = booking.image || FALLBACK_STAY_PHOTO
   return {
     id: booking.id || `booking-${Date.now()}`,
@@ -591,6 +702,11 @@ const normalizeBooking = (booking) => {
     checkIn: booking.checkIn,
     checkOut: booking.checkOut,
     guests: Number(booking.guests || 1),
+    pricePerNight: Number(booking.pricePerNight || booking.nightlyRate || 0),
+    nights: Number(booking.nights || 0),
+    serviceFee: Number(booking.serviceFee || 0),
+    discountAmount: Number(booking.discountAmount || 0),
+    promoCode: booking.promoCode || null,
     total: Number(booking.total || 0),
     currency: booking.currency || 'EGP',
     status: booking.status || 'confirmed',

@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useAuth } from '../hooks/useAuth'
+import { getSafeBookings, normalizeBookingStatus, calculateBookingPricing } from '../lib/dataService'
 
 export default function ProfilePage({
   user: initialUser,
@@ -23,6 +24,22 @@ export default function ProfilePage({
   const [error, setError] = useState('')
   const [avatarPreview, setAvatarPreview] = useState(initialUser?.avatar || initialUser?.avatar_url || '')
   const [passwordForm, setPasswordForm] = useState({ current: '', newPassword: '', confirmNewPassword: '' })
+
+  const clubPoints = useMemo(() => {
+    const safe = getSafeBookings(bookings)
+    const confirmed = safe.filter((b) => normalizeBookingStatus(b.status) === 'confirmed')
+    const totalSpend = confirmed.reduce((sum, b) => {
+      const pricing = calculateBookingPricing({
+        pricePerNight: b.pricePerNight,
+        nights: b.nights,
+        discountAmount: b.discountAmount,
+        serviceFee: b.serviceFee,
+        total: b.total,
+      })
+      return sum + pricing.total
+    }, 0)
+    return Math.floor(totalSpend / 1000)
+  }, [bookings])
   const [passwordLoading, setPasswordLoading] = useState(false)
   const [passwordMessage, setPasswordMessage] = useState('')
   const [passwordError, setPasswordError] = useState('')
@@ -308,7 +325,7 @@ export default function ProfilePage({
           </div>
           <div>
             <div className="text-xs font-bold text-slate-400">{language === 'en' ? 'Club Points' : 'نقاط الولاء'}</div>
-            <div className="text-sm font-black text-amber-500 mt-0.5">{Math.floor(bookings.reduce((sum, b) => sum + Number(b.total || 0), 0) / 1000)} ⭐</div>
+            <div className="text-sm font-black text-amber-500 mt-0.5">{clubPoints} ⭐</div>
           </div>
         </div>
       </div>
@@ -395,8 +412,14 @@ export default function ProfilePage({
                 </div>
               </div>
               {item.icon === 'language' ? (
-                <button type="button" className="language-toggle" onClick={onToggleLanguage} aria-label={language === 'en' ? 'Switch to Arabic' : 'Switch to English'}>
-                  <span aria-hidden="true">🇪🇬</span>
+                <button
+                  type="button"
+                  className="language-toggle"
+                  onClick={onToggleLanguage}
+                  aria-label={language === 'en' ? 'Switch to Arabic' : 'Switch to English'}
+                  title={language === 'en' ? 'Switch to Arabic' : 'Switch to English'}
+                >
+                  <span className="material-symbols-outlined text-base" aria-hidden="true">language</span>
                   <span className="language-toggle-text">{language === 'en' ? 'العربية' : 'English'}</span>
                 </button>
               ) : (

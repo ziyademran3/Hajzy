@@ -1,7 +1,13 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FALLBACK_STAY_PHOTO, sanitizePhotoUrl } from '../lib/dataService'
-import { formatCurrency, formatNumber, formatDate } from '../lib/formatters'
+import {
+  FALLBACK_STAY_PHOTO,
+  sanitizePhotoUrl,
+  getSafeBookings,
+  normalizeBookingStatus,
+  calculateBookingPricing,
+} from '../lib/dataService'
+import { formatCurrency, formatNumber, formatDate, pluralize } from '../lib/formatters'
 
 export default function DashboardPage({
   user,
@@ -46,35 +52,9 @@ export default function DashboardPage({
     }
   }, [isAr, welcomeName])
 
-  // Helper to normalize booking status
-  const normalizeBookingStatus = (status) => {
-    const s = String(status || '').trim().toLowerCase()
-    if (s === 'confirmed') return 'confirmed'
-    if (s === 'cancelled') return 'cancelled'
-    return 'pending'
-  }
-
-  // Deduplicate bookings: if same property and dates exist, keep the confirmed one
+  // Single source of truth for bookings
   const safeBookings = useMemo(() => {
-    const raw = Array.isArray(bookings) ? bookings.filter(Boolean) : []
-    const map = new Map()
-    const sorted = [...raw].sort((a, b) => {
-      const aConf = normalizeBookingStatus(a.status) === 'confirmed' ? 1 : 0
-      const bConf = normalizeBookingStatus(b.status) === 'confirmed' ? 1 : 0
-      if (aConf !== bConf) return bConf - aConf
-      return String(b.id || '').localeCompare(String(a.id || ''))
-    })
-
-    for (const item of sorted) {
-      const propKey = String(item.propertyId || item.title || '').trim()
-      const checkInKey = String(item.checkIn || '').trim()
-      const checkOutKey = String(item.checkOut || '').trim()
-      const refKey = item.reference && !item.reference.includes('00000') ? `ref_${item.reference}` : `${propKey}_${checkInKey}_${checkOutKey}`
-      if (!map.has(refKey)) {
-        map.set(refKey, item)
-      }
-    }
-    return Array.from(map.values())
+    return getSafeBookings(bookings)
   }, [bookings])
 
   const confirmedBookings = useMemo(() => {
@@ -94,20 +74,41 @@ export default function DashboardPage({
     return safeBookings.filter((b) => normalizeBookingStatus(b.status) === 'pending')
   }, [safeBookings])
 
-  // Financial calculations: total spent on confirmed bookings
-  const totalSpend = useMemo(() => {
-    return confirmedBookings.reduce((sum, booking) => {
-      const raw = typeof booking.total === 'number' ? booking.total : String(booking.total || 0).replace(/[^0-9.-]+/g, '')
-      const val = Number(raw) || 0
-      return sum + val
-    }, 0)
-  }, [confirmedBookings])
+  // Accurate financial calculation using calculateBookingPricing
+  const getBookingTotal = (booking) => {
+    const property = properties.find((item) => String(item.id) === String(booking.propertyId))
+    const checkInVal = booking.checkIn || ''
+    const checkOutVal = booking.checkOut || booking.checkIn || ''
+    const nights = (checkInVal && checkOutVal && !isNaN(new Date(checkInVal)) && !isNaN(new Date(checkOutVal)))
+      ? Math.max(1, Math.round((new Date(checkOutVal) - new Date(checkInVal)) / (1000 * 60 * 60 * 24)))
+      : (booking.nights || 1)
+
+    const pricing = calculateBookingPricing({
+      pricePerNight: booking.pricePerNight || property?.priceValue,
+      nights,
+      discountAmount: booking.discountAmount,
+      serviceFee: booking.serviceFee,
+      total: booking.total,
+    })
+    return pricing.total
+  }
+
+  const confirmedSpend = useMemo(() => {
+    return confirmedBookings.reduce((sum, booking) => sum + getBookingTotal(booking), 0)
+  }, [confirmedBookings, properties])
+
+  const pendingSpend = useMemo(() => {
+    return pendingBookings.reduce((sum, booking) => sum + getBookingTotal(booking), 0)
+  }, [pendingBookings, properties])
+
+  const totalAllBookingsSpend = confirmedSpend + pendingSpend
+  const totalSpend = confirmedSpend
 
   // Loyalty Points & Club Tier
-  // 1 point per 1000 EGP spent — starts from 0
+  // 1 point per 1000 EGP spent — based on confirmed bookings
   const loyaltyPoints = useMemo(() => {
-    return Math.floor(totalSpend / 1000)
-  }, [totalSpend])
+    return Math.floor(confirmedSpend / 1000)
+  }, [confirmedSpend])
 
   const loyaltyTier = useMemo(() => {
     if (loyaltyPoints >= 250) return { name: isAr ? 'بلاتينيوم' : 'Platinum', color: 'from-indigo-500 to-purple-600', badge: '💎 VIP', next: null, pointsToNext: 0 }
@@ -272,7 +273,7 @@ export default function DashboardPage({
           </p>
         </div>
 
-        {/* Total Spend + Mini Sparkline */}
+        {/* Total Spend + Breakdown */}
         <div className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:border-teal-300 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900/90">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -284,17 +285,30 @@ export default function DashboardPage({
           </div>
           <div className="mt-3">
             <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-              {formatCurrency(totalSpend, 'EGP', language)}
+              {formatCurrency(confirmedSpend, 'EGP', language)}
             </span>
           </div>
-          {/* Mini CSS Bar Chart representation */}
-          <div className="mt-2 flex items-end gap-1 h-3" title={isAr ? 'نشاط الإنفاق' : 'Spend activity'}>
-            <div className="w-1.5 h-1.5 rounded-full bg-teal-200 dark:bg-teal-900" />
-            <div className="w-1.5 h-2.5 rounded-full bg-teal-300 dark:bg-teal-800" />
-            <div className="w-1.5 h-2 rounded-full bg-teal-400 dark:bg-teal-700" />
-            <div className="w-1.5 h-3 rounded-full bg-teal-500" />
-            <span className="text-[10px] text-slate-400 font-mono ms-1">{confirmedBookings.length ? (isAr ? 'نشط' : 'active') : '0'}</span>
-          </div>
+          {pendingSpend > 0 ? (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px]">
+              <span className="font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md">
+                {isAr ? 'مؤكد' : 'Confirmed'}: {formatCurrency(confirmedSpend, 'EGP', language)}
+              </span>
+              <span className="font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded-md">
+                {isAr ? 'قيد المراجعة' : 'Pending'}: {formatCurrency(pendingSpend, 'EGP', language)}
+              </span>
+              <span className="text-slate-400 font-medium">
+                ({isAr ? 'المجموع' : 'Total'}: {formatCurrency(totalAllBookingsSpend, 'EGP', language)})
+              </span>
+            </div>
+          ) : (
+            <div className="mt-2 flex items-end gap-1 h-3" title={isAr ? 'نشاط الإنفاق' : 'Spend activity'}>
+              <div className="w-1.5 h-1.5 rounded-full bg-teal-200 dark:bg-teal-900" />
+              <div className="w-1.5 h-2.5 rounded-full bg-teal-300 dark:bg-teal-800" />
+              <div className="w-1.5 h-2 rounded-full bg-teal-400 dark:bg-teal-700" />
+              <div className="w-1.5 h-3 rounded-full bg-teal-500" />
+              <span className="text-[10px] text-slate-400 font-mono ms-1">{confirmedBookings.length ? (isAr ? 'نشط' : 'active') : '0'}</span>
+            </div>
+          )}
         </div>
 
         {/* Saved Favorites */}
@@ -333,7 +347,7 @@ export default function DashboardPage({
           </div>
           <div className="mt-3 flex items-baseline gap-1.5">
             <span className="text-2xl sm:text-3xl font-black text-amber-300">{formatNumber(loyaltyPoints)}</span>
-            <span className="text-[11px] text-slate-300 font-bold">{isAr ? 'نقطة' : 'pts'}</span>
+            <span className="text-[11px] text-slate-300 font-bold">{isAr ? pluralize(loyaltyPoints, 'point', 'ar').replace(/^[\d,٫٬\s]+/, '') : 'pts'}</span>
           </div>
           <div className="mt-2 flex items-center justify-between text-[11px] text-slate-300">
             <span className="font-semibold text-white">{loyaltyTier.name} {loyaltyTier.badge}</span>
@@ -341,7 +355,7 @@ export default function DashboardPage({
           {loyaltyTier.next && (
             <div className="mt-2 text-[10px] text-slate-400">
               {isAr
-                ? `${formatNumber(loyaltyTier.pointsToNext)} نقطة للوصول لمستوى ${loyaltyTier.next}`
+                ? `${pluralize(loyaltyTier.pointsToNext, 'point', 'ar')} للوصول لمستوى ${loyaltyTier.next}`
                 : `${formatNumber(loyaltyTier.pointsToNext)} pts to reach ${loyaltyTier.next}`}
             </div>
           )}
@@ -541,7 +555,7 @@ export default function DashboardPage({
               onClick={() => setActivityFilter('all')}
               className={`rounded-xl px-3 py-1 text-xs font-bold transition ${activityFilter === 'all' ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}
             >
-              {isAr ? 'الكل' : 'All'} ({bookings.length})
+              {isAr ? 'الكل' : 'All'} ({safeBookings.length})
             </button>
             <button
               type="button"
@@ -563,14 +577,19 @@ export default function DashboardPage({
         {filteredBookings.length > 0 ? (
           <div className="mt-5 divide-y divide-slate-100 dark:divide-slate-800">
             {filteredBookings.map((booking) => {
-              const property = properties.find((item) => item.id === booking.propertyId)
+              const property = properties.find((item) => {
+                const pId = String(item.id || '').trim()
+                const bPropId = String(booking.propertyId || booking.property_id || '').trim()
+                if (bPropId && pId === bPropId) return true
+                if (booking.title && (item.title === booking.title || item.titleEn === booking.title)) return true
+                return false
+              })
+
               const rawTs = booking.updatedAt || booking.createdAt
               let timeLabel = ''
               if (rawTs) {
                 const diff = Date.now() - new Date(rawTs).getTime()
-                if (diff < 0) {
-                  timeLabel = isAr ? 'الآن' : 'Just now'
-                } else {
+                if (!isNaN(diff) && diff >= 0) {
                   const mins = Math.floor(diff / (1000 * 60))
                   const hours = Math.floor(diff / (1000 * 60 * 60))
                   if (mins < 1) {
@@ -578,13 +597,97 @@ export default function DashboardPage({
                   } else if (mins < 60) {
                     timeLabel = isAr ? `منذ ${mins} دقيقة` : `${mins}m ago`
                   } else if (hours < 24) {
-                    timeLabel = isAr ? `منذ ${hours} ${hours === 1 ? 'ساعة' : 'ساعات'}` : `${hours}h ago`
-                  } else {
-                    timeLabel = safeFormatDate(rawTs)
+                    timeLabel = isAr ? `منذ ${pluralize(hours, 'hour', 'ar')}` : `${hours}h ago`
                   }
                 }
-              } else if (booking.checkIn) {
-                timeLabel = safeFormatDate(booking.checkIn)
+              }
+
+              const checkInVal = booking.checkIn || ''
+              const checkOutVal = booking.checkOut || ''
+              const nights = (checkInVal && checkOutVal && !isNaN(new Date(checkInVal)) && !isNaN(new Date(checkOutVal)))
+                ? Math.max(1, Math.round((new Date(checkOutVal) - new Date(checkInVal)) / (1000 * 60 * 60 * 24)))
+                : (booking.nights || 1)
+
+              const pricing = calculateBookingPricing({
+                pricePerNight: booking.pricePerNight || property?.priceValue,
+                nights,
+                discountAmount: booking.discountAmount,
+                serviceFee: booking.serviceFee,
+                total: booking.total,
+              })
+
+              // Resolve Title with clear localized fallback
+              const fallbackTitle = isAr
+                ? t('common.unnamedStay', { defaultValue: 'إقامة محجوزة' })
+                : t('common.unnamedStay', { defaultValue: 'Reserved stay' })
+
+              const displayTitle = isAr
+                ? (property?.title || booking.title || booking.titleAr || booking.propertyTitle || fallbackTitle)
+                : (property?.titleEn || property?.title || booking.titleEn || booking.title || fallbackTitle)
+
+              // Resolve City/Location with clear localized fallback
+              const fallbackLocation = isAr
+                ? t('common.locationUnspecified', { defaultValue: 'الموقع غير محدد' })
+                : t('common.locationUnspecified', { defaultValue: 'Location unspecified' })
+
+              let displayLocation = ''
+              if (isAr) {
+                if (property?.city) {
+                  displayLocation = property.city
+                } else if (property?.neighborhood) {
+                  displayLocation = property.neighborhood
+                } else if (booking.city) {
+                  displayLocation = booking.city
+                } else if (booking.location) {
+                  const locLower = String(booking.location).trim().toLowerCase()
+                  displayLocation = locLower === 'egypt' ? 'مصر' : booking.location
+                } else {
+                  displayLocation = fallbackLocation
+                }
+              } else {
+                if (property?.cityEn) {
+                  displayLocation = property.cityEn
+                } else if (property?.city) {
+                  displayLocation = property.city
+                } else if (property?.neighborhood) {
+                  displayLocation = property.neighborhood
+                } else if (booking.cityEn) {
+                  displayLocation = booking.cityEn
+                } else if (booking.city) {
+                  displayLocation = booking.city
+                } else if (booking.location) {
+                  displayLocation = booking.location
+                } else {
+                  displayLocation = fallbackLocation
+                }
+              }
+
+              // Stay date range displayed once
+              let dateRangeText = ''
+              if (checkInVal && checkOutVal) {
+                const inStr = safeFormatDate(checkInVal)
+                const outStr = safeFormatDate(checkOutVal)
+                if (inStr && outStr) {
+                  dateRangeText = `${inStr} – ${outStr}`
+                } else {
+                  dateRangeText = inStr || outStr
+                }
+              } else if (checkInVal) {
+                dateRangeText = safeFormatDate(checkInVal)
+              } else if (checkOutVal) {
+                dateRangeText = safeFormatDate(checkOutVal)
+              }
+
+              // Assemble metadata items to guarantee no dangling bullets
+              const metaItems = []
+              if (displayLocation) {
+                metaItems.push({ text: displayLocation, isLocation: true })
+              }
+              if (dateRangeText) {
+                metaItems.push({ text: dateRangeText })
+              }
+              if (timeLabel) {
+                metaItems.push({ text: timeLabel, isMuted: true })
               }
 
               return (
@@ -605,29 +708,18 @@ export default function DashboardPage({
                     />
                     <div className="space-y-1">
                       <h4 className="font-bold text-slate-900 group-hover:text-emerald-600 transition dark:text-white dark:group-hover:text-emerald-400">
-                        {isAr
-                          ? (property?.title || booking.title || 'إقامة عقار')
-                          : (property?.titleEn || property?.title || booking.title || 'Property stay')}
+                        {displayTitle}
                       </h4>
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                        <span className="inline-flex items-center gap-1">
-                          <span className="material-symbols-outlined text-xs text-emerald-500">location_on</span>
-                          {property?.city || booking.location || 'Egypt'}
-                        </span>
-                        {booking.checkIn && booking.checkOut && (
-                          <>
-                            <span>•</span>
-                            <span>
-                              {safeFormatDate(booking.checkIn)} - {safeFormatDate(booking.checkOut)}
-                            </span>
-                          </>
-                        )}
-                        {timeLabel && (
-                          <>
-                            <span>•</span>
-                            <span className="text-slate-400">{timeLabel}</span>
-                          </>
-                        )}
+                      <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                        {metaItems.map((item, idx) => (
+                          <span key={idx} className="inline-flex items-center gap-1">
+                            {idx > 0 && <span className="text-slate-300 dark:text-slate-600 select-none">•</span>}
+                            {item.isLocation && (
+                              <span className="material-symbols-outlined text-xs text-emerald-500">location_on</span>
+                            )}
+                            <span className={item.isMuted ? 'text-slate-400' : ''}>{item.text}</span>
+                          </span>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -635,10 +727,15 @@ export default function DashboardPage({
                   <div className="flex items-center justify-between gap-4 sm:justify-end">
                     <div className="text-end">
                       <div className="text-sm font-black text-slate-900 dark:text-white">
-                        {formatCurrency(booking.total || 1400, 'EGP', language)}
+                        {formatCurrency(pricing.total, booking.currency || property?.currency || 'EGP', language)}
+                      </div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                        {formatCurrency(pricing.pricePerNight, booking.currency || property?.currency || 'EGP', language)} × {pluralize(pricing.nights, 'night', language)}
+                        {pricing.serviceFee > 0 && ` + ${formatCurrency(pricing.serviceFee, booking.currency || property?.currency || 'EGP', language)} ${isAr ? 'رسوم' : 'fees'}`}
+                        {pricing.discountAmount > 0 && ` - ${formatCurrency(pricing.discountAmount, booking.currency || property?.currency || 'EGP', language)} ${isAr ? 'خصم' : 'discount'}`}
                       </div>
                       <span
-                        className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        className={`inline-block mt-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
                           booking.status === 'confirmed'
                             ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
                             : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'

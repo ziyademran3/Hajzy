@@ -9,8 +9,8 @@ import '../styles/safe-area.css'
 // - Safe-area padding applied via .safe-area-bottom
 
 const ITEMS = [
-  { id: 'dashboard', label: 'لوحة التحكم', labelEn: 'Dashboard', icon: FiGrid },
   { id: 'home', label: 'الرئيسية', labelEn: 'Home', icon: AiOutlineHome },
+  { id: 'dashboard', label: 'لوحة التحكم', labelEn: 'Dashboard', icon: FiGrid },
   { id: 'bookings', label: 'حجوزاتي', labelEn: 'Bookings', icon: AiOutlineCalendar },
   { id: 'account', label: 'حسابي', labelEn: 'My Account', icon: FiUser },
 ]

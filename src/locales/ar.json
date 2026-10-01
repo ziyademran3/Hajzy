@@ -2,7 +2,9 @@
   "common": {
     "hajzy": "حجزي",
     "dark": "وضع ليلي",
-    "light": "وضع نهاري"
+    "light": "وضع نهاري",
+    "unnamedStay": "إقامة محجوزة",
+    "locationUnspecified": "الموقع غير محدد"
   },
   "theme": {
     "light": "وضع نهاري",
@@ -19,7 +21,12 @@
     "activeStays": "إقامات نشطة",
     "searchCity": "بحث عن مدينة",
     "support": "الدعم",
-    "noRecentActivity": "لا يوجد نشاط حديث"
+    "noRecentActivity": "لا يوجد نشاط حديث",
+    "confirmedSpend": "المدفوعات المؤكدة",
+    "pendingSpend": "قيد المراجعة",
+    "totalBookingsAmount": "إجمالي الحجوزات",
+    "fees": "رسوم",
+    "discount": "خصم"
   },
   "quickActions": {
     "savedHomes": "المنازل المحفوظة",
