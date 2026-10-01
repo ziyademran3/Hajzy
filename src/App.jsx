@@ -270,8 +270,26 @@ function App() {
   const { shareProperty, shareBooking } = useNativeShare()
   const [selectedInvoiceBooking, setSelectedInvoiceBooking] = useState(null)
   const [activeBookingActionsTarget, setActiveBookingActionsTarget] = useState(null)
-  const [activePage, setActivePage] = useState('home')
-  const [selectedCitySlug, setSelectedCitySlug] = useState('alexandria')
+  const [activePage, setActivePage] = useState(() => {
+    try {
+      const hash = window.location.hash.replace('#', '')
+      const params = new URLSearchParams(window.location.search)
+      const cityParam = params.get('city')
+      if (cityParam) return 'city'
+      if (hash && ['home', 'dashboard', 'owner', 'bookings', 'favorites', 'account', 'profile', 'details', 'checkout', 'success', 'notifications', 'chat', 'reviews', 'city', 'owner-settings'].includes(hash)) {
+        return hash
+      }
+    } catch {}
+    return 'home'
+  })
+  const [selectedCitySlug, setSelectedCitySlug] = useState(() => {
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const cityParam = params.get('city')
+      if (cityParam) return getCitySlug(cityParam)
+    } catch {}
+    return 'alexandria'
+  })
   const homeScrollPositionRef = useRef(0)
   const [authRequired, setAuthRequired] = useState(() => {
     try {
@@ -616,6 +634,7 @@ function App() {
       const state = e.state
       const params = new URLSearchParams(window.location.search)
       const path = window.location.pathname
+      const hash = window.location.hash.replace('#', '')
       const cityParam = params.get('city')
       const cityPathMatch = path.match(/\/city\/([a-zA-Z0-9_-]+)/)
       const targetCity = state?.citySlug || cityParam || (cityPathMatch ? cityPathMatch[1] : null)
@@ -632,6 +651,8 @@ function App() {
             document.body.scrollTop = homeScrollPositionRef.current
           })
         }
+      } else if (hash && hash !== 'home') {
+        setActivePage(hash)
       } else {
         setActivePage('home')
         window.requestAnimationFrame(() => {
@@ -903,11 +924,15 @@ function App() {
       const slug = getCitySlug(citySlug || selectedCitySlug || 'alexandria')
       setSelectedCitySlug(slug)
       try {
-        window.history.pushState({ page: 'city', citySlug: slug }, '', `?city=${slug}`)
+        window.history.pushState({ page: 'city', citySlug: slug }, '', `?city=${slug}#city`)
       } catch {}
     } else if (page === 'home') {
       try {
-        window.history.pushState({ page: 'home' }, '', window.location.pathname)
+        window.history.pushState({ page: 'home' }, '', window.location.pathname + '#home')
+      } catch {}
+    } else {
+      try {
+        window.history.pushState({ page }, '', window.location.pathname + '#' + page)
       } catch {}
     }
 
