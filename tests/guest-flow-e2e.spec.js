@@ -125,9 +125,11 @@ test.describe('Guest Flow & Auth Fix Verification', () => {
         .filter(Boolean)
         .map((label) => {
           const foreground = parseColor(getComputedStyle(label).color);
-          const fontSize = Number.parseFloat(getComputedStyle(label).fontSize);
+          const style = getComputedStyle(label);
           return {
-            fontSize,
+            color: style.color,
+            fontSize: Number.parseFloat(style.fontSize),
+            fontWeight: Number.parseInt(style.fontWeight, 10),
             contrast: Math.min(...backgrounds.map((background) => contrast(foreground, background))),
           };
         });
@@ -141,6 +143,8 @@ test.describe('Guest Flow & Auth Fix Verification', () => {
         expect(metric.fontSize).toBeLessThanOrEqual(13);
         expect(metric.contrast).toBeGreaterThanOrEqual(4.5);
       }
+      expect(metrics[0].color).not.toBe(metrics[1].color);
+      expect(metrics[0].fontWeight).toBeGreaterThan(metrics[1].fontWeight);
     };
 
     await assertReadable();
