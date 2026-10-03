@@ -82,6 +82,27 @@ test.describe('Guest Flow & Auth Fix Verification', () => {
     await expect(destinationSelect).toBeVisible({ timeout: 10000 });
   });
 
+  test('Cairo uses a Nile photo and Giza hotel galleries lead with the property photo', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+
+    const cairoPhoto = page.locator('.mini-city-card').filter({ hasText: 'القاهرة' }).locator('img');
+    const gizaPhoto = page.locator('.mini-city-card').filter({ hasText: 'الجيزة' }).locator('img');
+    await expect(cairoPhoto).toHaveAttribute('src', /photo-1719659018185-8a239c35fb4a/);
+    await expect(gizaPhoto).not.toHaveAttribute('src', /photo-1719659018185-8a239c35fb4a/);
+
+    await page.getByRole('tab', { name: 'الجيزة' }).click();
+
+    const pyramidHotel = page.locator('[data-property-id="giza-pyramid-hotel"]');
+    const sphinxHotel = page.locator('[data-property-id="giza-sphinx-hotel"]');
+    await expect(pyramidHotel.locator('.image-wrap img')).toHaveAttribute('src', /photo-1582719478250-c89cae4dc85b/);
+    await expect(sphinxHotel.locator('.image-wrap img')).toHaveAttribute('src', /photo-1611892440504-42a792e24d32/);
+
+    await pyramidHotel.click();
+    await expect(page.locator('.gallery-strip .gallery-thumb img').nth(1))
+      .toHaveAttribute('src', /photo-1503177119275-0aa32b3a9368/);
+  });
+
   test('3) Open a property from listings via property link or card', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });

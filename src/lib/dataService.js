@@ -47,7 +47,7 @@ export const CITY_DEFINITIONS = {
     subtitleEn: 'Nile & city',
     badgeAr: 'شائع',
     badgeEn: 'Popular',
-    photo: photo('photo-1568322445389-f64ac2515020'),
+    photo: photo('photo-1719659018185-8a239c35fb4a'),
   },
   giza: {
     id: 'giza',
@@ -103,7 +103,7 @@ export const getCitySlug = (cityOrKey) => {
 
 export const CITY_PHOTOS = {
   'الإسكندرية': photo('photo-1507525428034-b723cf961d3e'),
-  'القاهرة': photo('photo-1568322445389-f64ac2515020'),
+  'القاهرة': photo('photo-1719659018185-8a239c35fb4a'),
   'الجيزة': photo('photo-1553913861-c0fddf2619ee'),
   'الغردقة': photo('photo-1544551763-46a013bb70d5'),
   'شرم الشيخ': photo('photo-1571896349842-33c89424de2d'),
@@ -340,8 +340,8 @@ export const propertySeed = [
     guests: 4,
     rating: 4.8,
     reviews: 298,
-    image: photo('photo-1503177119275-0aa32b3a9368'),
-    images: [photo('photo-1566073771259-6a8506099945'), photo('photo-1582719478250-c89cae4dc85b')],
+    image: photo('photo-1582719478250-c89cae4dc85b'),
+    images: [photo('photo-1503177119275-0aa32b3a9368'), photo('photo-1566073771259-6a8506099945')],
     details: ['غرفة إطلالة أهرامات', 'مسبح', 'عشاء'],
     detailsEn: ['Pyramid View Room', 'Pool', 'Dinner'],
     description: 'فندق بإطلالة مباشرة على الأهرامات، مع مسبح خارجي وخدمة نقل للمناطق السياحية.',
@@ -363,8 +363,8 @@ export const propertySeed = [
     guests: 3,
     rating: 4.5,
     reviews: 132,
-    image: photo('photo-1553913861-c0fddf2619ee'),
-    images: [photo('photo-1596436889106-be35e843f974'), photo('photo-1611892440504-42a792e24d32')],
+    image: photo('photo-1611892440504-42a792e24d32'),
+    images: [photo('photo-1553913861-c0fddf2619ee'), photo('photo-1596436889106-be35e843f974')],
     details: ['غرفة كوين', 'تراس', 'إفطار'],
     detailsEn: ['Queen Room', 'Terrace', 'Breakfast'],
     description: 'فندق قريب من أبو الهول والأهرامات، مناسب للرحلات السياحية والعائلات الصغيرة.',
@@ -535,6 +535,7 @@ const writeStorage = (key, value) => {
 }
 
 const propertySeedById = Object.fromEntries(propertySeed.map((item) => [String(item.id), item]))
+const propertiesWithSeedPhotoOverrides = new Set(['giza-pyramid-hotel', 'giza-sphinx-hotel'])
 
 const normalizeProperty = (property) => {
   const seed = propertySeedById[String(property?.id)] || {}
@@ -727,12 +728,13 @@ export const fetchProperties = async () => {
       const remoteById = new Map(data.map((item) => [String(item.id), item]))
       const mergedCatalog = propertySeed.map((seed) => {
         const remote = remoteById.get(String(seed.id))
+        const useSeedPhotos = propertiesWithSeedPhotoOverrides.has(String(seed.id))
         return remote
           ? {
               ...remote,
               ...seed,
-              image: remote.image || seed.image,
-              images: remote.images?.length ? remote.images : seed.images,
+              image: useSeedPhotos ? seed.image : remote.image || seed.image,
+              images: useSeedPhotos || !remote.images?.length ? seed.images : remote.images,
             }
           : seed
       })
