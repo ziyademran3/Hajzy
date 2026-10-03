@@ -390,10 +390,27 @@ export default function ProfilePage({
               )}
             </div>
             <div className="space-y-1">
-              <div className="flex items-center justify-center sm:justify-start gap-2">
+              <div className="profile-identity-row">
                 <h2 className="text-xl font-black text-slate-900 dark:text-white">
                   {displayName || (language === 'en' ? 'Welcome' : 'أهلاً بيك')}
                 </h2>
+                {!editing && (
+                  <button
+                    type="button"
+                    className="profile-edit-button"
+                    aria-label={t('profileDetails.edit')}
+                    title={t('profileDetails.edit')}
+                    onClick={() => {
+                      setEditing(true)
+                      setError('')
+                      setMessage('')
+                    }}
+                  >
+                    <span className="material-symbols-outlined" aria-hidden="true">edit</span>
+                  </button>
+                )}
+              </div>
+              <div className="profile-verification-row">
                 <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 text-[10px] font-bold px-2 py-0.5">
                   <span className="material-symbols-outlined text-xs">verified</span>
                   <span>{language === 'en' ? 'Verified' : 'موثق'}</span>
@@ -442,20 +459,7 @@ export default function ProfilePage({
       <section className="profile-details mt-6">
         <div className="profile-details-header">
           <h3>{language === 'en' ? 'Account details' : 'تفاصيل الحساب'}</h3>
-          {!editing ? (
-            <button
-              type="button"
-              className="secondary-button profile-edit-action"
-              onClick={() => {
-                setEditing(true)
-                setError('')
-                setMessage('')
-              }}
-            >
-              <span className="material-symbols-outlined" aria-hidden="true">edit</span>
-              <span>{t('profileDetails.edit')}</span>
-            </button>
-          ) : (
+          {editing && (
             <div className="profile-form-actions">
               <button className="secondary-button" type="button" onClick={handleEditCancel} disabled={loading}>
                 {t('profileDetails.cancel')}

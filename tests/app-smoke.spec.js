@@ -159,14 +159,29 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
     });
     await page.reload();
     await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.locator('.bottom-nav .nav-item').filter({ hasText: 'حسابي' }).click();
 
     const accountDetails = page.locator('.profile-details').filter({ has: page.getByRole('heading', { name: 'تفاصيل الحساب' }) });
+    const headerEditButton = page.locator('.profile-edit-button');
+    const profileName = page.locator('.profile-identity-row h2');
+    const verificationBadge = page.locator('.profile-verification-row');
+    const editButtonBounds = await headerEditButton.boundingBox();
+    const nameBounds = await profileName.boundingBox();
+    const badgeBounds = await verificationBadge.boundingBox();
+    expect(editButtonBounds.width).toBeGreaterThanOrEqual(44);
+    expect(editButtonBounds.height).toBeGreaterThanOrEqual(44);
+    const horizontalGap = Math.max(
+      0,
+      Math.max(nameBounds.x, editButtonBounds.x) - Math.min(nameBounds.x + nameBounds.width, editButtonBounds.x + editButtonBounds.width),
+    );
+    expect(horizontalGap).toBeLessThan(16);
+    expect(badgeBounds.y).toBeGreaterThanOrEqual(nameBounds.y + nameBounds.height);
     await expect(accountDetails.getByText('لم يحدد')).toBeVisible();
     await expect(accountDetails.locator('input[name="email"]')).toHaveCount(0);
     await expect(accountDetails.getByLabel('البريد الإلكتروني غير قابل للتعديل')).toBeVisible();
 
-    await accountDetails.getByRole('button', { name: 'تعديل' }).click();
+    await headerEditButton.click();
     const nameInput = accountDetails.locator('#profile-name-input');
     const phoneInput = accountDetails.locator('#profile-phone-input');
     await expect(nameInput).toBeVisible();
@@ -181,7 +196,7 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
     await expect(accountDetails.getByText('+201012345678')).toBeVisible();
     await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('hajzy_user')).name)).toBe('الاسم الجديد');
 
-    await accountDetails.getByRole('button', { name: 'تعديل' }).click();
+    await page.locator('.profile-edit-button').click();
     await accountDetails.locator('#profile-name-input').fill('تغيير غير محفوظ');
     await accountDetails.getByRole('button', { name: 'إلغاء' }).click();
     await expect(accountDetails.getByText('الاسم الجديد')).toBeVisible();

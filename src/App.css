@@ -5764,11 +5764,46 @@ body::-webkit-scrollbar,
 }
 
 .profile-edit-button {
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
   border-radius: 12px;
   padding: 0;
+  border: 1px solid var(--line);
+  background: var(--bg-card-alt);
+  color: var(--primary-strong);
+  cursor: pointer;
+}
+
+.profile-edit-button:focus-visible {
+  outline: 2px solid var(--primary-strong);
+  outline-offset: 2px;
+}
+
+.profile-identity-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.profile-identity-row h2 {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.profile-verification-row {
+  display: flex;
+  justify-content: center;
+}
+
+@media (min-width: 640px) {
+  .profile-identity-row,
+  .profile-verification-row {
+    justify-content: flex-start;
+  }
 }
 
 .profile-form-actions {
@@ -5791,7 +5826,6 @@ body::-webkit-scrollbar,
   margin: 0;
 }
 
-.profile-edit-action,
 .profile-form-actions .primary-button,
 .profile-form-actions .secondary-button {
   display: inline-flex;
