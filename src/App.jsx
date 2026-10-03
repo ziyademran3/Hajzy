@@ -3551,7 +3551,7 @@ function App() {
                 </div>
 
                 <div className="property-meta-row">
-                  <span><span className="material-symbols-outlined">group</span> {pluralize(property.guests || 2, 'guest', language)}</span>
+                  <span><span className="material-symbols-outlined">people</span> {pluralize(property.guests || 2, 'guest', language)}</span>
                   <span><span className="material-symbols-outlined">wifi</span> Wi‑Fi</span>
                   <span><span className="material-symbols-outlined">local_parking</span> {language === 'en' ? 'Parking' : 'موقف'}</span>
                 </div>

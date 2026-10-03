@@ -429,7 +429,7 @@ export default function CityPage({
                   {/* Meta features */}
                   <div className="property-meta-row flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mb-3 pb-3 border-b border-slate-100 dark:border-slate-800">
                     <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-sm">group</span>
+                      <span className="material-symbols-outlined text-sm">people</span>
                       {pluralize(property.guests || 2, 'guest', isEn ? 'en' : 'ar')}
                     </span>
                     <span className="flex items-center gap-1">

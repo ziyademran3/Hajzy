@@ -36,6 +36,20 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
     const count = await cards.count();
     expect(count).toBeGreaterThan(0);
 
+    const featureIcons = cards.first().locator('.property-meta-row .material-symbols-outlined');
+    await expect(featureIcons).toHaveText(['people', 'wifi', 'local_parking']);
+    const iconStyles = await featureIcons.evaluateAll((icons) => icons.map((icon) => {
+      const style = getComputedStyle(icon);
+      return {
+        fontFamily: style.fontFamily,
+        fontSize: style.fontSize,
+        fontVariationSettings: style.fontVariationSettings,
+      };
+    }));
+    expect(iconStyles.every((style) => style.fontFamily.includes('Material Symbols Outlined'))).toBe(true);
+    expect(new Set(iconStyles.map((style) => style.fontSize)).size).toBe(1);
+    expect(new Set(iconStyles.map((style) => style.fontVariationSettings)).size).toBe(1);
+
     // Verify bottom navigation is rendered
     await expect(page.locator('.bottom-nav, nav')).toBeVisible();
 

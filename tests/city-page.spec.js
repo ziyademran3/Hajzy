@@ -32,6 +32,8 @@ test.describe('City Cards and City Page Tests', () => {
     await expect(propertyCards.first()).toBeVisible({ timeout: 10000 });
     const count = await propertyCards.count();
     expect(count).toBeGreaterThanOrEqual(1);
+    await expect(propertyCards.first().locator('.property-meta-row .material-symbols-outlined'))
+      .toHaveText(['people', 'wifi', 'local_parking']);
 
     // Verify card contains price, title, and book button
     await expect(propertyCards.first().locator('.price-box')).toBeVisible();
