@@ -2,6 +2,25 @@ import { useEffect, useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../hooks/useAuth'
 import { getSafeBookings, normalizeBookingStatus, calculateBookingPricing } from '../lib/dataService'
+import { getNotificationPreferences, saveNotificationPreferences } from '../lib/notificationService'
+
+const getPrivateAccountPreference = (userId, fallback = true) => {
+  try {
+    const stored = window.localStorage.getItem(`hajzy_private_account_${userId}`)
+    return stored === null ? fallback : stored === 'true'
+  } catch (error) {
+    console.warn('Failed to load account privacy preference:', error)
+    return fallback
+  }
+}
+
+const savePrivateAccountPreference = (userId, isPrivate) => {
+  try {
+    window.localStorage.setItem(`hajzy_private_account_${userId}`, String(isPrivate))
+  } catch (error) {
+    console.warn('Failed to save account privacy preference:', error)
+  }
+}
 
 export default function ProfilePage({
   user: initialUser,
@@ -10,11 +29,13 @@ export default function ProfilePage({
   onEdit: _onEdit = () => {},
   onUpdateProfile,
   onToggleLanguage = () => {},
+  onNavigate = () => {},
   onLogout,
 }) {
   const { t } = useTranslation()
   const { updateProfile: fallbackUpdateProfile, changeUserPassword, logout } = useAuth()
   const updateProfile = onUpdateProfile || fallbackUpdateProfile
+  const settingsUserId = String(initialUser?.id || initialUser?.email || 'guest')
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({
     name: initialUser?.name || initialUser?.fullName || '',
@@ -26,6 +47,13 @@ export default function ProfilePage({
   const [error, setError] = useState('')
   const [avatarPreview, setAvatarPreview] = useState(initialUser?.avatar || initialUser?.avatar_url || '')
   const [passwordForm, setPasswordForm] = useState({ current: '', newPassword: '', confirmNewPassword: '' })
+  const [notificationsEnabled, setNotificationsEnabled] = useState(() => getNotificationPreferences(settingsUserId).inApp)
+  const [isPrivateAccount, setIsPrivateAccount] = useState(() => getPrivateAccountPreference(settingsUserId, initialUser?.isPrivate !== false))
+
+  useEffect(() => {
+    setNotificationsEnabled(getNotificationPreferences(settingsUserId).inApp)
+    setIsPrivateAccount(getPrivateAccountPreference(settingsUserId, initialUser?.isPrivate !== false))
+  }, [settingsUserId, initialUser?.isPrivate])
 
   const clubPoints = useMemo(() => {
     const safe = getSafeBookings(bookings)
@@ -268,21 +296,39 @@ export default function ProfilePage({
 
   const settingsCards = [
     {
+      id: 'notifications',
       icon: 'notifications',
-      title: language === 'en' ? 'Push notifications' : 'الإشعارات',
-      value: language === 'en' ? 'Enabled' : 'مفعلة',
+      title: t('profileSettings.notifications'),
+      value: t(notificationsEnabled ? 'profileSettings.enabled' : 'profileSettings.disabled'),
     },
     {
+      id: 'privacy',
       icon: 'security',
-      title: language === 'en' ? 'Privacy' : 'الخصوصية',
-      value: language === 'en' ? 'Private account' : 'حساب خاص',
+      title: t('profileSettings.privacy'),
+      value: t(isPrivateAccount ? 'profileSettings.privateAccount' : 'profileSettings.publicAccount'),
     },
     {
+      id: 'language',
       icon: 'language',
-      title: language === 'en' ? 'Language' : 'اللغة',
+      title: t('profileSettings.language'),
       value: language === 'en' ? 'English' : 'العربية',
     },
   ]
+
+  const handleNotificationsToggle = () => {
+    const nextEnabled = !notificationsEnabled
+    setNotificationsEnabled(nextEnabled)
+    saveNotificationPreferences(settingsUserId, {
+      ...getNotificationPreferences(settingsUserId),
+      inApp: nextEnabled,
+    })
+  }
+
+  const handlePrivacyToggle = () => {
+    const nextPrivate = !isPrivateAccount
+    setIsPrivateAccount(nextPrivate)
+    savePrivateAccountPreference(settingsUserId, nextPrivate)
+  }
 
   const displayName = initialUser?.name || initialUser?.fullName || initialUser?.email || ''
   const firstLetter = useMemo(() => {
@@ -498,7 +544,7 @@ export default function ProfilePage({
                   <small>{item.value}</small>
                 </div>
               </div>
-              {item.icon === 'language' ? (
+              {item.id === 'language' ? (
                 <button
                   type="button"
                   className="language-toggle"
@@ -510,9 +556,31 @@ export default function ProfilePage({
                   <span className="language-toggle-text">{language === 'en' ? 'العربية' : 'English'}</span>
                 </button>
               ) : (
-                <button type="button" className="secondary-button small-button">
-                  {language === 'en' ? 'Manage' : 'إدارة'}
-                </button>
+                <div className="settings-card-actions">
+                  <button
+                    type="button"
+                    role="switch"
+                    className="settings-switch"
+                    aria-checked={item.id === 'notifications' ? notificationsEnabled : isPrivateAccount}
+                    aria-label={t(item.id === 'notifications' ? 'profileSettings.toggleNotifications' : 'profileSettings.togglePrivacy')}
+                    onClick={item.id === 'notifications' ? handleNotificationsToggle : handlePrivacyToggle}
+                  >
+                    <span className="settings-switch-thumb" aria-hidden="true" />
+                  </button>
+                  {item.id === 'notifications' && (
+                    <button
+                      type="button"
+                      className="settings-card-details"
+                      aria-label={t('profileSettings.notificationDetails')}
+                      title={t('profileSettings.notificationDetails')}
+                      onClick={() => onNavigate('notifications')}
+                    >
+                      <span className="material-symbols-outlined" aria-hidden="true">
+                        {language === 'en' ? 'chevron_right' : 'chevron_left'}
+                      </span>
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           ))}

@@ -6059,6 +6059,7 @@ function App() {
             onEdit={() => navigate('profile-edit')}
             onUpdateProfile={updateProfile}
             onToggleLanguage={handleLanguageToggle}
+            onNavigate={navigate}
             onLogout={handleLogout}
           />
         )}
@@ -6098,6 +6099,7 @@ function App() {
           onEdit={() => navigate('profile-edit')}
           onUpdateProfile={updateProfile}
           onToggleLanguage={handleLanguageToggle}
+          onNavigate={navigate}
           onLogout={handleLogout}
         />
       )
@@ -6157,6 +6159,7 @@ function App() {
         onEdit={() => navigate('profile-edit')}
         onUpdateProfile={updateProfile}
         onToggleLanguage={handleLanguageToggle}
+        onNavigate={navigate}
         onLogout={handleLogout}
       />
     )

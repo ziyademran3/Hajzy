@@ -147,5 +147,42 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
     await expect(page.locator('.profile-shell')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('#profile-settings')).toBeVisible({ timeout: 10000 });
   });
-});
 
+  test('Profile settings expose persistent notification and privacy switches with notification details', async ({ page }) => {
+    await page.goto('/');
+    await page.evaluate(() => {
+      localStorage.clear();
+      localStorage.setItem('hajzy_guest_mode', 'true');
+    });
+    await page.goto('/');
+    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: 'حسابي' }).click();
+
+    const notificationsSwitch = page.getByRole('switch', { name: 'تشغيل أو إيقاف الإشعارات' });
+    const privacySwitch = page.getByRole('switch', { name: 'تفعيل أو إيقاف خصوصية الحساب' });
+    await expect(notificationsSwitch).toHaveAttribute('aria-checked', 'true');
+    await expect(privacySwitch).toHaveAttribute('aria-checked', 'true');
+    const switchBounds = await notificationsSwitch.boundingBox();
+    expect(Math.abs(switchBounds.width - 46)).toBeLessThan(1);
+    expect(Math.abs(switchBounds.height - 26)).toBeLessThan(1);
+
+    await notificationsSwitch.click();
+    await privacySwitch.click();
+    await expect(notificationsSwitch).toHaveAttribute('aria-checked', 'false');
+    await expect(privacySwitch).toHaveAttribute('aria-checked', 'false');
+    await expect.poll(() => page.evaluate(async () => {
+      const { createNotification, getUserNotifications } = await import('/src/lib/notificationService.js');
+      createNotification('guest-demo', { title: { ar: 'اختبار', en: 'Test' } });
+      return getUserNotifications('guest-demo').length;
+    })).toBe(0);
+
+    await page.reload();
+    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: 'حسابي' }).click();
+    await expect(page.getByRole('switch', { name: 'تشغيل أو إيقاف الإشعارات' })).toHaveAttribute('aria-checked', 'false');
+    await expect(page.getByRole('switch', { name: 'تفعيل أو إيقاف خصوصية الحساب' })).toHaveAttribute('aria-checked', 'false');
+
+    await page.getByRole('button', { name: 'تفاصيل الإشعارات' }).click();
+    await expect(page.locator('.notifications-shell')).toBeVisible({ timeout: 10000 });
+  });
+});

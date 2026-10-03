@@ -63,6 +63,18 @@
       "checkOut": "المغادرة"
     }
   },
+  "profileSettings": {
+    "notifications": "الإشعارات",
+    "privacy": "خصوصية الحساب",
+    "language": "اللغة",
+    "enabled": "الإشعارات مفعلة",
+    "disabled": "الإشعارات متوقفة",
+    "privateAccount": "حساب خاص",
+    "publicAccount": "حساب عام",
+    "toggleNotifications": "تشغيل أو إيقاف الإشعارات",
+    "togglePrivacy": "تفعيل أو إيقاف خصوصية الحساب",
+    "notificationDetails": "تفاصيل الإشعارات"
+  },
   "welcome": "أهلًا يا {{name}}",
   "welcomeBack": "أهلاً بيك",
   "upcomingStay": "إقامتك القادمة",

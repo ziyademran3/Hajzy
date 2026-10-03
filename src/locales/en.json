@@ -63,6 +63,18 @@
       "checkOut": "Check-out"
     }
   },
+  "profileSettings": {
+    "notifications": "Notifications",
+    "privacy": "Account privacy",
+    "language": "Language",
+    "enabled": "Notifications on",
+    "disabled": "Notifications off",
+    "privateAccount": "Private account",
+    "publicAccount": "Public account",
+    "toggleNotifications": "Toggle notifications",
+    "togglePrivacy": "Toggle account privacy",
+    "notificationDetails": "Notification details"
+  },
   "welcome": "Hi {{name}}",
   "welcomeBack": "Welcome back",
   "upcomingStay": "Upcoming stay",

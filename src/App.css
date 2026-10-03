@@ -5955,6 +5955,77 @@ body::-webkit-scrollbar,
   margin-top: 2px;
 }
 
+.settings-card-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex: none;
+}
+
+.settings-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 46px;
+  height: 26px;
+  min-width: 46px;
+  min-height: 26px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--muted);
+  cursor: pointer;
+  flex: none;
+  transition: background-color 180ms ease, border-color 180ms ease;
+}
+
+.settings-switch[aria-checked='true'] {
+  border-color: var(--primary-strong);
+  background: var(--primary-strong);
+}
+
+.settings-switch:focus-visible,
+.settings-card-details:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 2px;
+}
+
+.settings-switch-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  box-shadow: var(--shadow-ambient);
+  transform: translateX(0);
+  transition: transform 180ms ease;
+}
+
+.settings-switch[aria-checked='true'] .settings-switch-thumb {
+  transform: translateX(20px);
+}
+
+html[dir='rtl'] .settings-switch[aria-checked='true'] .settings-switch-thumb {
+  transform: translateX(-20px);
+}
+
+.settings-card-details {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.settings-card-details:hover {
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+}
+
 .profile-header {
   text-align: center;
   margin-top: 20px;

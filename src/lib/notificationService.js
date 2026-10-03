@@ -205,25 +205,27 @@ export const createNotification = (userId, {
     read: false,
   }
 
-  const existing = getUserNotifications(targetUserId)
-  const updated = [newNotification, ...existing].slice(0, 50)
-  saveUserNotifications(targetUserId, updated)
+  const prefs = getNotificationPreferences(targetUserId)
+  if (prefs.inApp) {
+    const existing = getUserNotifications(targetUserId)
+    const updated = [newNotification, ...existing].slice(0, 50)
+    saveUserNotifications(targetUserId, updated)
 
-  // Broadcast event in window for instant UI reactivity without page reload
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('hajzy_notification_created', {
-      detail: { userId: targetUserId, notification: newNotification },
-    }))
+    // Broadcast event in window for instant UI reactivity without page reload
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('hajzy_notification_created', {
+        detail: { userId: targetUserId, notification: newNotification },
+      }))
 
-    // Check user preferences for native browser push notification
-    const prefs = getNotificationPreferences(targetUserId)
-    if (prefs.browserPush) {
-      const textTitle = normalizedTitle.ar || normalizedTitle.en
-      const textBody = normalizedBody.ar || normalizedBody.en
-      triggerBrowserNotification(textTitle, {
-        body: textBody,
-        tag: newNotification.id,
-      })
+      // Check user preferences for native browser push notification
+      if (prefs.browserPush) {
+        const textTitle = normalizedTitle.ar || normalizedTitle.en
+        const textBody = normalizedBody.ar || normalizedBody.en
+        triggerBrowserNotification(textTitle, {
+          body: textBody,
+          tag: newNotification.id,
+        })
+      }
     }
   }
 
