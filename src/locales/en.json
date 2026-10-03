@@ -54,7 +54,7 @@
   "badges": {
     "mostRequested": "Most requested"
   },
-  "welcome": "Welcome {{name}}",
+  "welcome": "Hi {{name}}",
   "welcomeBack": "Welcome back",
   "upcomingStay": "Upcoming stay",
   "noBookingsYet": "No bookings yet",

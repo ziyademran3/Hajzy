@@ -54,7 +54,7 @@
   "badges": {
     "mostRequested": "الأكثر طلباً"
   },
-  "welcome": "مرحبا {{name}}",
+  "welcome": "أهلًا يا {{name}}",
   "welcomeBack": "أهلاً بيك",
   "upcomingStay": "إقامتك القادمة",
   "noBookingsYet": "لا توجد حجوزات بعد",

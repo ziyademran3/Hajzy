@@ -3038,7 +3038,8 @@ function App() {
       <div className="page-shell home-shell">
         <div className="home-header home-header-compact">
           <div className="home-header-copy">
-            <p>{t('welcome', { name: user?.name || 'Ziad' })} 👋</p>
+            <h2>{t('welcome', { name: user?.name || 'Ziad' })} 👋</h2>
+            <p>{t('home.subtitle')}</p>
           </div>
         </div>
 
@@ -6609,10 +6610,7 @@ function App() {
 
           <h1 className="topbar-brand topbar-logo-wrap" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => navigate(isOwner ? 'owner' : 'home')}>
             {topBarTitle === 'Hajzy' ? (
-              <>
-                <Logo size={30} showText={false} />
-                <span>Hajzy</span>
-              </>
+              <Logo size={30} showText={false} />
             ) : (
               topBarTitle
             )}
