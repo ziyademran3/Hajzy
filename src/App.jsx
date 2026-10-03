@@ -3036,82 +3036,10 @@ function App() {
 
     return (
       <div className="page-shell home-shell">
-        <div className="home-header">
+        <div className="home-header home-header-compact">
           <div className="home-header-copy">
-            <h2>{activeText.homeTitle}</h2>
             <p>{t('welcome', { name: user?.name || 'Ziad' })} 👋</p>
           </div>
-        </div>
-
-        <div className="hero-banner">
-          <div className="hero-copy">
-            <span className="hero-kicker">
-              {language === 'en' ? 'Verified Luxury Stays' : 'إقامات فاخرة موثقة'}
-            </span>
-            <h3>{language === 'en' ? 'Find Your Perfect Haven in Egypt' : 'اعثر على إقامتك المثالية في مصر'}</h3>
-            <p className="hero-subtext">
-              {language === 'en' ? 'Handpicked villas & premium apartments with instant secure booking.' : 'فيلات وشاليهات وشقق مختارة بعناية مع حجز ودفع إلكتروني آمن.'}
-            </p>
-            <div className="hero-actions">
-              <button type="button" className="primary-button hero-cta" onClick={runHomeSearch}>
-                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>search</span>
-                <span>{language === 'en' ? 'Explore homes' : 'استكشف الإقامات'}</span>
-              </button>
-              <button
-                type="button"
-                className="secondary-button hero-secondary"
-                onClick={() => {
-                  setHomeQuickSearch((current) => ({ ...current, destination: 'الإسكندرية' }))
-                  setActiveFilter('الإسكندرية')
-                }}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>near_me</span>
-                <span>{language === 'en' ? 'Alexandria stays' : 'عقارات الإسكندرية'}</span>
-              </button>
-            </div>
-          </div>
-          <div className="hero-mini-stat">
-            <div className="hero-rating-stars">
-              <span className="material-symbols-outlined" style={{ fontSize: '17px', color: '#f59e0b' }}>star</span>
-              <strong>4.95</strong>
-            </div>
-            <span>{language === 'en' ? 'Guest Rating' : 'تقييم النزلاء'}</span>
-            <small className="hero-stat-badge">{language === 'en' ? 'Top Rated' : 'الأعلى تقييماً'}</small>
-          </div>
-        </div>
-
-        {/* Exclusive Promotional Offer */}
-        <div
-          className="exclusive-deal-banner rounded-3xl border border-emerald-200/80 bg-gradient-to-r from-emerald-600 via-teal-600 to-teal-700 p-5 text-white shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer transition-all hover:shadow-xl hover:scale-[1.005] active:scale-[0.995]"
-          onClick={() => setShowDealModal(true)}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && setShowDealModal(true)}
-          aria-label={language === 'en' ? 'Open promotional offer details' : 'عرض تفاصيل العرض الترويجي'}
-        >
-          <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-bold text-white backdrop-blur-sm">
-              <span>🔥</span>
-              <span>{language === 'en' ? 'Limited Time Offer' : 'عرض حصري لفترة محدودة'}</span>
-            </div>
-            <h4 className="text-lg font-black tracking-tight">
-              {language === 'en' ? 'Save up to 20% on luxury coastal stays' : 'وفر حتى 20% على أفخم الفيلات والشاليهات الساحلية'}
-            </h4>
-            <p className="text-xs text-white/85">
-              {language === 'en' ? 'Instant confirmation with free cancellation options' : 'تأكيد فوري مع خيارات إلغاء مرنة وضمان أفضل سعر'}
-            </p>
-          </div>
-          <button
-            type="button"
-            className="shrink-0 rounded-2xl bg-white px-5 py-2.5 text-xs font-extrabold text-emerald-800 shadow-md hover:bg-emerald-50 transition active:scale-95 flex items-center gap-1.5"
-            onClick={(e) => {
-              e.stopPropagation()
-              setShowDealModal(true)
-            }}
-          >
-            <span className="material-symbols-outlined text-sm">local_fire_department</span>
-            <span>{language === 'en' ? 'Explore Deals' : 'استفد من العرض'}</span>
-          </button>
         </div>
 
         <div className="home-compact-search">
@@ -3362,6 +3290,39 @@ function App() {
           )}
         </div>
 
+        <div
+          className="exclusive-deal-banner rounded-3xl border border-emerald-200/80 bg-gradient-to-r from-emerald-600 via-teal-600 to-teal-700 p-5 text-white shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer transition-all hover:shadow-xl hover:scale-[1.005] active:scale-[0.995]"
+          onClick={() => setShowDealModal(true)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && setShowDealModal(true)}
+          aria-label={language === 'en' ? 'Open promotional offer details' : 'عرض تفاصيل العرض الترويجي'}
+        >
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-bold text-white backdrop-blur-sm">
+              <span>🔥</span>
+              <span>{language === 'en' ? 'Limited Time Offer' : 'عرض حصري لفترة محدودة'}</span>
+            </div>
+            <h4 className="text-lg font-black tracking-tight">
+              {language === 'en' ? 'Save up to 20% on luxury coastal stays' : 'وفر حتى 20% على أفخم الفيلات والشاليهات الساحلية'}
+            </h4>
+            <p className="text-xs text-white/85">
+              {language === 'en' ? 'Instant confirmation with free cancellation options' : 'تأكيد فوري مع خيارات إلغاء مرنة وضمان أفضل سعر'}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="shrink-0 rounded-2xl bg-white px-5 py-2.5 text-xs font-extrabold text-emerald-800 shadow-md hover:bg-emerald-50 transition active:scale-95 flex items-center gap-1.5"
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowDealModal(true)
+            }}
+          >
+            <span className="material-symbols-outlined text-sm">local_fire_department</span>
+            <span>{language === 'en' ? 'Explore Deals' : 'استفد من العرض'}</span>
+          </button>
+        </div>
+
         <div className="mini-city-grid">
           {destinationCards.map((item) => (
             <a
@@ -3397,6 +3358,30 @@ function App() {
               </div>
             </a>
           ))}
+        </div>
+
+        <div className="featured-collection">
+          <div className="section-head-row">
+            <h3>{language === 'en' ? 'Selected stays' : 'عروض مختارة'}</h3>
+            <button type="button" className="text-button" onClick={handleViewAllProperties}>{language === 'en' ? 'View all' : 'عرض الكل'}</button>
+          </div>
+          <div className="collection-strip">
+            {topThree.map((property) => (
+              <button
+                key={property.id}
+                type="button"
+                className="collection-item"
+                onClick={() => navigate('details', property)}
+              >
+                <img src={property.image} alt={getPropertyTitle(property)} onError={handleStayImageError} />
+                <div>
+                  <span>{getPropertyCity(property)}</span>
+                  <strong>{getPropertyTitle(property)}</strong>
+                  <small>{formatCurrency(property.priceValue, property.currency, language)} / {language === 'en' ? 'night' : 'ليلة'}</small>
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
 
         {filteredProperties.length > 0 && (
@@ -3462,30 +3447,6 @@ function App() {
             )}
           </div>
         )}
-
-        <div className="featured-collection">
-          <div className="section-head-row">
-            <h3>{language === 'en' ? 'Selected stays' : 'عروض مختارة'}</h3>
-            <button type="button" className="text-button" onClick={handleViewAllProperties}>{language === 'en' ? 'View all' : 'عرض الكل'}</button>
-          </div>
-          <div className="collection-strip">
-            {topThree.map((property) => (
-              <button
-                key={property.id}
-                type="button"
-                className="collection-item"
-                onClick={() => navigate('details', property)}
-              >
-                <img src={property.image} alt={getPropertyTitle(property)} onError={handleStayImageError} />
-                <div>
-                  <span>{getPropertyCity(property)}</span>
-                  <strong>{getPropertyTitle(property)}</strong>
-                  <small>{formatCurrency(property.priceValue, property.currency, language)} / {language === 'en' ? 'night' : 'ليلة'}</small>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
 
         <div className="filter-chips flex gap-3 overflow-x-auto py-2 my-3" role="tablist" aria-label={language === 'en' ? 'Filter properties by destination' : 'تصفية الإقامات حسب الوجهة'}>
           {filterOptions.map((option) => (
