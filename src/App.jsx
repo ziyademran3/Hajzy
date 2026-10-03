@@ -3050,34 +3050,6 @@ function App() {
                 <span className="search-panel-kicker">{language === 'en' ? 'Find your stay' : 'ابحث عن الإقامة'}</span>
                 <h3>{language === 'en' ? 'Where are you going?' : 'إلى أين تريد الذهاب؟'}</h3>
               </div>
-              <button type="button" className="secondary-button small-button" data-testid="filter-toggle-button" onClick={() => setShowFilterPanel((open) => !open)}>
-                <span className="material-symbols-outlined">tune</span>
-                {language === 'en' ? 'Filters' : 'تصفية'}
-              </button>
-            </div>
-
-            <div className="search-panel-row full-width-row">
-              <label htmlFor="destination" className="search-field">
-                <span>{language === 'en' ? 'Destination' : 'الوجهة'}</span>
-                <div className="input-with-icon">
-                  <span className="field-icon material-symbols-outlined">location_on</span>
-                  <select
-                    id="destination"
-                    name="destination"
-                    data-testid="search-destination"
-                    aria-label={language === 'en' ? 'Destination' : 'الوجهة'}
-                    value={homeQuickSearch.destination}
-                    onChange={(event) => {
-                      setHomeQuickSearch((current) => ({ ...current, destination: event.target.value }))
-                    }}
-                  >
-                    <option value="">{language === 'en' ? 'Any city' : 'أي مدينة'}</option>
-                    {destinationOptions.map((city) => (
-                      <option key={city.id} value={city.id}>{city.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </label>
             </div>
 
             <form
@@ -3090,6 +3062,40 @@ function App() {
                 runHomeSearch()
               }}
             >
+              <div className="search-panel-row search-destination-row">
+                <label htmlFor="destination" className="search-field">
+                  <span>{language === 'en' ? 'Destination' : 'الوجهة'}</span>
+                  <div className="input-with-icon">
+                    <span className="field-icon material-symbols-outlined">location_on</span>
+                    <select
+                      id="destination"
+                      name="destination"
+                      data-testid="search-destination"
+                      aria-label={language === 'en' ? 'Destination' : 'الوجهة'}
+                      value={homeQuickSearch.destination}
+                      onChange={(event) => {
+                        setHomeQuickSearch((current) => ({ ...current, destination: event.target.value }))
+                      }}
+                    >
+                      <option value="">{language === 'en' ? 'Any city' : 'أي مدينة'}</option>
+                      {destinationOptions.map((city) => (
+                        <option key={city.id} value={city.id}>{city.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </label>
+                <button
+                  type="button"
+                  className="secondary-button search-filter-button"
+                  data-testid="filter-toggle-button"
+                  aria-label={language === 'en' ? 'Filters' : 'تصفية'}
+                  aria-expanded={showFilterPanel}
+                  onClick={() => setShowFilterPanel((open) => !open)}
+                >
+                  <span className="material-symbols-outlined" aria-hidden="true">tune</span>
+                </button>
+              </div>
+
               <div className="search-panel-row search-dates-row">
                 <label htmlFor="check-in" className="search-field">
                   <span>{language === 'en' ? 'Check-in' : 'تاريخ الوصول'}</span>
@@ -3170,20 +3176,21 @@ function App() {
                     </select>
                   </div>
                 </label>
-                <button
-                  type="submit"
-                  className="primary-button search-submit-button"
-                  data-testid="search-submit"
-                  aria-label={language === 'en' ? 'Search' : 'بحث'}
-                >
-                  {t('search')}
-                </button>
               </div>
+
+              <button
+                type="submit"
+                className="primary-button search-submit-button"
+                data-testid="search-submit"
+                aria-label={language === 'en' ? 'Search' : 'بحث'}
+              >
+                {t('search')}
+              </button>
             </form>
           </div>
 
           {showFilterPanel && (
-            <div className="filter-drawer">
+            <div id="home-filter-drawer" className="filter-drawer">
               <div className="filter-drawer-grid">
                 <div className="filter-section">
                   <label>

@@ -38,6 +38,42 @@ test.describe('Guest Flow & Auth Fix Verification', () => {
     await submitBtn.click();
   });
 
+  test('Search card orders fields and keeps the search action full-width', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+
+    const form = page.locator('#home-search-form');
+    const destination = page.locator('#destination');
+    const filterButton = page.locator('[data-testid="filter-toggle-button"]');
+    const checkIn = page.locator('#check-in');
+    const checkOut = page.locator('#check-out');
+    const guests = page.locator('#guests');
+    const submitButton = page.locator('[data-testid="search-submit"]');
+
+    await expect(form).toBeVisible();
+    const [formBox, destinationBox, filterBox, checkInBox, checkOutBox, guestsBox, submitBox] = await Promise.all([
+      form.boundingBox(),
+      destination.boundingBox(),
+      filterButton.boundingBox(),
+      checkIn.boundingBox(),
+      checkOut.boundingBox(),
+      guests.boundingBox(),
+      submitButton.boundingBox(),
+    ]);
+
+    expect(destinationBox.y).toBeLessThan(checkInBox.y);
+    expect(checkInBox.y).toBe(checkOutBox.y);
+    expect(Math.abs(checkInBox.width - checkOutBox.width)).toBeLessThanOrEqual(1);
+    expect(checkInBox.y).toBeLessThan(guestsBox.y);
+    expect(guestsBox.y).toBeLessThan(submitBox.y);
+    expect(submitBox.width).toBeCloseTo(formBox.width, 0);
+    expect(filterBox.x + filterBox.width).toBeLessThanOrEqual(destinationBox.x);
+
+    await filterButton.click();
+    await expect(filterButton).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('#home-filter-drawer')).toBeVisible();
+  });
+
   test('2) Cold start on /search: search panel is visible and interactive', async ({ page }) => {
     await page.goto('/search?city=cairo');
 
