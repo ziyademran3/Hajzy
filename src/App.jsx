@@ -6717,7 +6717,7 @@ function App() {
               onClick={handleLanguageToggle}
             >
               <span className="material-symbols-outlined text-[18px]" aria-hidden="true">language</span>
-              <span className="text-xs font-bold">{language === 'en' ? 'AR' : 'EN'}</span>
+              <span className="language-toggle-text">{language === 'en' ? 'العربية' : 'English'}</span>
             </button>
 
             <button

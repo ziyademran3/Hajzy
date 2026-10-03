@@ -51,11 +51,15 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
 
     const langToggle = page.locator('.language-toggle').first();
     if (await langToggle.isVisible()) {
+      await expect(langToggle.locator('.language-toggle-text')).toHaveText('English');
+      await expect(langToggle.locator('.material-symbols-outlined')).toHaveText('language');
+      await expect(langToggle).not.toContainText(/[🇪🇬🇬🇧]/);
       const initialDir = await page.locator('html').getAttribute('dir');
       await langToggle.click();
 
       const newDir = await page.locator('html').getAttribute('dir');
       expect(newDir).not.toBe(initialDir);
+      await expect(page.locator('.language-toggle').first().locator('.language-toggle-text')).toHaveText('العربية');
     }
   });
 
@@ -211,6 +215,15 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
     await page.goto('/');
     await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
     await page.locator('.bottom-nav .nav-item').filter({ hasText: 'حسابي' }).click();
+
+    const languageToggle = page.locator('#profile-settings .language-toggle');
+    await expect(languageToggle.locator('.language-toggle-text')).toHaveText('English');
+    await expect(languageToggle.locator('.material-symbols-outlined')).toHaveText('language');
+    await expect(languageToggle).not.toContainText(/[🇪🇬🇬🇧]/);
+    await languageToggle.click();
+    await expect(page.locator('#profile-settings .language-toggle-text')).toHaveText('العربية');
+    await languageToggle.click();
+    await expect(page.locator('#profile-settings .language-toggle-text')).toHaveText('English');
 
     const notificationsSwitch = page.getByRole('switch', { name: 'تشغيل أو إيقاف الإشعارات' });
     const privacySwitch = page.getByRole('switch', { name: 'تفعيل أو إيقاف خصوصية الحساب' });

@@ -2,14 +2,13 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
 // LanguageSwitcher
-// - Dropdown that shows current language (flag + name) in header
-// - Options: 🇪🇬 العربية (EG), 🇬🇧 English (GB)
+// - Dropdown that offers language choices without country flags
 // - On select: calls i18n.changeLanguage(lang), sets document.dir and localStorage
 // - Accessible: button with aria-haspopup and menu role
 
 const OPTIONS = [
-  { code: 'ar', label: 'العربية', flag: '🇪🇬', region: 'EG' },
-  { code: 'en', label: 'English', flag: '🇬🇧', region: 'GB' },
+  { code: 'ar', label: 'العربية' },
+  { code: 'en', label: 'English' },
 ]
 
 export default function LanguageSwitcher({ className = '' }) {
@@ -18,7 +17,7 @@ export default function LanguageSwitcher({ className = '' }) {
   const ref = useRef(null)
 
   const currentCode = i18n.language?.startsWith('en') ? 'en' : 'ar'
-  const current = OPTIONS.find((o) => o.code === currentCode) || OPTIONS[0]
+  const target = OPTIONS.find((option) => option.code !== currentCode) || OPTIONS[0]
 
   useEffect(() => {
     const onClick = (e) => {
@@ -52,13 +51,14 @@ export default function LanguageSwitcher({ className = '' }) {
     <div className={`relative inline-block text-left ${className}`} ref={ref}>
       <button
         type="button"
+        aria-label={currentCode === 'en' ? 'Switch to Arabic' : 'Switch to English'}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((s) => !s)}
         className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-white dark:bg-hajzy-card border border-gray-200 dark:border-hajzy-border text-sm focus:outline-none focus:ring-2 focus:ring-hajzy-primary"
       >
-        <span className="text-sm">{current.label}</span>
-        <span aria-hidden className="text-lg">{current.flag}</span>
+        <span className="material-symbols-outlined" aria-hidden="true">language</span>
+        <span className="text-sm">{target.label}</span>
       </button>
 
       {open && (
@@ -77,11 +77,8 @@ export default function LanguageSwitcher({ className = '' }) {
                   opt.code === currentCode ? 'font-semibold' : 'font-normal'
                 }`}
               >
-                <span className="flex items-center gap-2">
-                  <span className="text-lg">{opt.flag}</span>
-                  <span>{opt.label}</span>
-                </span>
-                <span className="text-xs text-gray-400">{opt.region}</span>
+                <span>{opt.label}</span>
+                {opt.code === currentCode && <span className="material-symbols-outlined text-sm" aria-label="Current language">check</span>}
               </button>
             ))}
           </div>
