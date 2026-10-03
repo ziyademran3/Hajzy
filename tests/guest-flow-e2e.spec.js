@@ -79,6 +79,76 @@ test.describe('Guest Flow & Auth Fix Verification', () => {
     await expect(page.getByRole('dialog')).toBeVisible();
   });
 
+  test('Booking progress is readable, localized, and tracks the active step in both themes', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+    await page.evaluate(() => {
+      localStorage.setItem('hajzy_bookings', JSON.stringify([{
+        id: 'booking-progress-contrast',
+        propertyId: 'alex-vista',
+        checkIn: '2099-11-10',
+        checkOut: '2099-11-12',
+        guests: 2,
+        status: 'confirmed',
+        total: 8400,
+        currency: 'EGP',
+      }]));
+    });
+    await page.reload();
+    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: 'حجوزاتي' }).click();
+
+    const card = page.locator('.booking-card').first();
+    const progress = card.locator('.booking-progress-track');
+    await expect(progress).toHaveAttribute('aria-label', 'مراحل الحجز');
+    await expect(progress.locator('.booking-progress-label')).toHaveCount(4);
+    await expect(progress.locator('.booking-progress-dot')).toHaveCount(4);
+    await expect(progress.locator('[aria-current="step"]')).toHaveText('مؤكد');
+
+    const contrastMetrics = async () => progress.evaluate((element) => {
+      const parseColor = (value) => value.match(/[\d.]+/g).slice(0, 3).map(Number);
+      const luminance = ([r, g, b]) => {
+        const channels = [r, g, b].map((channel) => {
+          const normalized = channel / 255;
+          return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+        });
+        return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+      };
+      const contrast = (foreground, background) => {
+        const values = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+        return (values[0] + 0.05) / (values[1] + 0.05);
+      };
+      const dark = element.closest('.app-shell').dataset.theme === 'dark';
+      const backgrounds = dark ? [[18, 22, 28], [24, 30, 38]] : [[255, 255, 255], [246, 250, 248]];
+      return ['current', 'upcoming']
+        .map((state) => element.querySelector(`.booking-progress-label[data-state="${state}"]`))
+        .filter(Boolean)
+        .map((label) => {
+          const foreground = parseColor(getComputedStyle(label).color);
+          const fontSize = Number.parseFloat(getComputedStyle(label).fontSize);
+          return {
+            fontSize,
+            contrast: Math.min(...backgrounds.map((background) => contrast(foreground, background))),
+          };
+        });
+    });
+
+    const assertReadable = async () => {
+      const metrics = await contrastMetrics();
+      expect(metrics).toHaveLength(2);
+      for (const metric of metrics) {
+        expect(metric.fontSize).toBeGreaterThanOrEqual(12);
+        expect(metric.fontSize).toBeLessThanOrEqual(13);
+        expect(metric.contrast).toBeGreaterThanOrEqual(4.5);
+      }
+    };
+
+    await assertReadable();
+    await page.locator('.theme-toggle').click();
+    await expect(page.locator('.app-shell')).toHaveAttribute('data-theme', 'dark');
+    await assertReadable();
+  });
+
   test('Search card orders fields and keeps the search action full-width', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');

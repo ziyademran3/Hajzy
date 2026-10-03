@@ -5514,6 +5514,21 @@ function App() {
               const displayDateRange = checkInVal || checkOutVal
                 ? `${booking?.checkIn ? formatDate(booking.checkIn, language) : '—'} ${language === 'en' ? 'to' : 'إلى'} ${booking?.checkOut ? formatDate(booking.checkOut, language) : '—'}`
                 : '—'
+              const today = formatISODate(new Date())
+              const isCancelled = normalizedStatus === 'cancelled'
+              const currentProgressStep = isCancelled
+                ? -1
+                : normalizedStatus !== 'confirmed'
+                  ? 0
+                  : checkInVal && checkInVal <= today
+                    ? checkOutVal && checkOutVal <= today ? 3 : 2
+                    : 1
+              const progressSteps = [
+                { key: 'booked', label: t('bookingProgress.steps.booked') },
+                { key: 'confirmed', label: t('bookingProgress.steps.confirmed') },
+                { key: 'checkIn', label: t('bookingProgress.steps.checkIn') },
+                { key: 'checkOut', label: t('bookingProgress.steps.checkOut') },
+              ]
 
               return (
                 <article key={booking.id || `${booking.propertyId || 'booking'}-${index}`} className="booking-card">
@@ -5536,15 +5551,51 @@ function App() {
                     </div>
 
                     {/* Visual Status Progress Tracker */}
-                    <div className="booking-progress-track my-2.5 px-1">
-                      <div className="flex items-center justify-between text-[10px] text-slate-500 font-bold mb-1">
-                        <span className="text-emerald-600 dark:text-emerald-400">{language === 'en' ? 'Booked' : 'محجوز'}</span>
-                        <span className={normalizedStatus === 'confirmed' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}>{language === 'en' ? 'Confirmed' : 'مؤكد'}</span>
-                        <span className="text-slate-400">{language === 'en' ? 'Check-in' : 'الوصول'}</span>
-                        <span className="text-slate-400">{language === 'en' ? 'Check-out' : 'المغادرة'}</span>
+                    <div className="booking-progress-track my-2.5 px-1" role="group" aria-label={t('bookingProgress.label')}>
+                      <div className="booking-progress-labels">
+                        {progressSteps.map((step, stepIndex) => {
+                          const stepState = isCancelled
+                            ? 'cancelled'
+                            : stepIndex === currentProgressStep
+                              ? 'current'
+                              : stepIndex < currentProgressStep
+                                ? 'complete'
+                                : 'upcoming'
+
+                          return (
+                            <span
+                              key={step.key}
+                              className="booking-progress-label"
+                              data-state={stepState}
+                              aria-current={stepState === 'current' ? 'step' : undefined}
+                            >
+                              {step.label}
+                            </span>
+                          )
+                        })}
                       </div>
-                      <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden flex">
-                        <div className={`h-full ${normalizedStatus === 'cancelled' ? 'w-full bg-rose-500' : normalizedStatus === 'confirmed' ? 'w-2/3 bg-emerald-500' : 'w-1/3 bg-amber-500'}`} />
+                      <div className="booking-progress-dots" aria-hidden="true">
+                        <div className="booking-progress-line">
+                          <span
+                            className={isCancelled ? 'booking-progress-fill cancelled' : 'booking-progress-fill'}
+                            style={{ width: isCancelled ? '100%' : `${(Math.max(0, currentProgressStep) / (progressSteps.length - 1)) * 100}%` }}
+                          />
+                        </div>
+                        {progressSteps.map((step, stepIndex) => (
+                          <span
+                            key={step.key}
+                            className="booking-progress-dot"
+                            data-state={
+                              isCancelled
+                                ? 'cancelled'
+                                : stepIndex === currentProgressStep
+                                  ? 'current'
+                                  : stepIndex < currentProgressStep
+                                    ? 'complete'
+                                    : 'upcoming'
+                            }
+                          />
+                        ))}
                       </div>
                     </div>
 

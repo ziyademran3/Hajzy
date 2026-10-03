@@ -54,6 +54,15 @@
   "badges": {
     "mostRequested": "Most requested"
   },
+  "bookingProgress": {
+    "label": "Booking progress",
+    "steps": {
+      "booked": "Booked",
+      "confirmed": "Confirmed",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out"
+    }
+  },
   "welcome": "Hi {{name}}",
   "welcomeBack": "Welcome back",
   "upcomingStay": "Upcoming stay",

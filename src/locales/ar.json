@@ -54,6 +54,15 @@
   "badges": {
     "mostRequested": "الأكثر طلباً"
   },
+  "bookingProgress": {
+    "label": "مراحل الحجز",
+    "steps": {
+      "booked": "محجوز",
+      "confirmed": "مؤكد",
+      "checkIn": "الوصول",
+      "checkOut": "المغادرة"
+    }
+  },
   "welcome": "أهلًا يا {{name}}",
   "welcomeBack": "أهلاً بيك",
   "upcomingStay": "إقامتك القادمة",

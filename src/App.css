@@ -7790,6 +7790,106 @@ input {
   padding: 16px;
 }
 
+.booking-progress-track {
+  --booking-progress-label: #334155;
+  --booking-progress-current: #006b5f;
+  --booking-progress-track-color: #cbd5e1;
+  --booking-progress-fill: #0f766e;
+  --booking-progress-dot-surface: #ffffff;
+  --booking-progress-dot-border: #64748b;
+}
+
+.booking-progress-labels {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--space-1);
+}
+
+.booking-progress-label {
+  min-width: 0;
+  color: var(--booking-progress-label);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.booking-progress-label[data-state='current'] {
+  color: var(--booking-progress-current);
+  font-weight: 800;
+}
+
+.booking-progress-dots {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: center;
+  justify-items: center;
+  min-height: 16px;
+  margin-top: var(--space-2);
+}
+
+.booking-progress-line {
+  position: absolute;
+  inset-inline: 12.5%;
+  top: 50%;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--booking-progress-track-color);
+  transform: translateY(-50%);
+}
+
+.booking-progress-fill {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  border-radius: inherit;
+  background: var(--booking-progress-fill);
+}
+
+.booking-progress-fill.cancelled {
+  background: #be123c;
+}
+
+.booking-progress-dot {
+  position: relative;
+  z-index: 1;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--booking-progress-dot-border);
+  border-radius: 50%;
+  background: var(--booking-progress-dot-surface);
+}
+
+.booking-progress-dot[data-state='complete'] {
+  border-color: var(--booking-progress-fill);
+  background: var(--booking-progress-fill);
+}
+
+.booking-progress-dot[data-state='current'] {
+  width: 14px;
+  height: 14px;
+  border-color: var(--booking-progress-current);
+  background: var(--booking-progress-current);
+  box-shadow: 0 0 0 3px var(--bg-card);
+}
+
+.booking-progress-dot[data-state='cancelled'] {
+  border-color: #be123c;
+}
+
+.app-shell[data-theme='dark'] .booking-progress-track {
+  --booking-progress-label: #cbd5e1;
+  --booking-progress-current: #5eead4;
+  --booking-progress-track-color: #475569;
+  --booking-progress-fill: #2dd4bf;
+  --booking-progress-dot-surface: #12161c;
+  --booking-progress-dot-border: #94a3b8;
+}
+
 .status {
   position: absolute;
   top: 14px;
