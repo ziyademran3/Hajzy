@@ -80,5 +80,6 @@
   "search": "ابحث",
   "searchApplied": "تم عرض نتائج البحث",
   "addedToFavorites": "تمت الإضافة إلى المفضلة",
-  "removedFromFavorites": "تمت الإزالة من المفضلة"
+  "removedFromFavorites": "تمت الإزالة من المفضلة",
+  "memberSince": "عضو منذ {{date}}"
 }

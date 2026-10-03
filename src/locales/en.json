@@ -80,5 +80,6 @@
   "search": "Search",
   "searchApplied": "Showing search results",
   "addedToFavorites": "Added to favorites",
-  "removedFromFavorites": "Removed from favorites"
+  "removedFromFavorites": "Removed from favorites",
+  "memberSince": "Member since {{date}}"
 }

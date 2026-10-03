@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../hooks/useAuth'
 import { getSafeBookings, normalizeBookingStatus, calculateBookingPricing } from '../lib/dataService'
 
@@ -11,6 +12,7 @@ export default function ProfilePage({
   onToggleLanguage = () => {},
   onLogout,
 }) {
+  const { t } = useTranslation()
   const { updateProfile: fallbackUpdateProfile, changeUserPassword, logout } = useAuth()
   const updateProfile = onUpdateProfile || fallbackUpdateProfile
   const [editing, setEditing] = useState(false)
@@ -88,6 +90,29 @@ export default function ProfilePage({
   useEffect(() => {
     setAvatarPreview(initialUser?.avatar || initialUser?.avatar_url || '')
   }, [initialUser?.avatar, initialUser?.avatar_url])
+
+  const formattedJoinedDate = useMemo(() => {
+    const rawDate = initialUser?.created_at || initialUser?.createdAt
+    if (!rawDate) return null
+    const date = new Date(rawDate)
+    if (isNaN(date.getTime())) return null
+
+    try {
+      const locale = language === 'en' ? 'en-US' : 'ar-EG-u-nu-latn'
+      const monthYear = new Intl.DateTimeFormat(locale, {
+        month: 'long',
+        year: 'numeric',
+      }).format(date)
+
+      return t('memberSince', {
+        lng: language,
+        date: monthYear,
+        defaultValue: language === 'en' ? `Member since ${monthYear}` : `عضو منذ ${monthYear}`,
+      })
+    } catch {
+      return null
+    }
+  }, [initialUser?.created_at, initialUser?.createdAt, language, t])
 
   const text = language === 'en' ? {
     title: 'Profile',
@@ -295,9 +320,11 @@ export default function ProfilePage({
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {text.email}: {initialUser?.email ? initialUser.email : <span className="empty-field">{emptyPlaceholderFor('email')}</span>}
               </p>
-              <p className="text-[11px] text-slate-400">
-                {text.joined}: {initialUser?.createdAt ? new Date(initialUser.createdAt).toLocaleDateString() : (language === 'en' ? 'Active Member' : 'عضو نشط')}
-              </p>
+              {formattedJoinedDate && (
+                <p className="text-[11px] text-slate-400">
+                  {formattedJoinedDate}
+                </p>
+              )}
             </div>
           </div>
 
