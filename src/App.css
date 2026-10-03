@@ -6892,6 +6892,19 @@ body::-webkit-scrollbar,
   padding-inline: 16px;
 }
 
+.booking-actions .booking-actions-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 40px;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  border-radius: 50%;
+}
+
 .booking-actions .secondary-button.booking-cancel {
   background: transparent;
   border-color: rgba(77, 79, 87, 0.25);
@@ -8087,7 +8100,7 @@ body[data-theme='dark'] .app-shell {
 
   .bookings-shell .booking-actions {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 40px;
     width: 100%;
     gap: 6px;
   }
@@ -8098,6 +8111,15 @@ body[data-theme='dark'] .app-shell {
     min-height: 34px;
     padding: 6px 4px;
     font-size: 0.7rem;
+  }
+
+  .bookings-shell .booking-actions .booking-actions-more {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0;
+    border-radius: 50%;
   }
 }
 
@@ -9885,4 +9907,3 @@ body[data-theme='dark'] .profile-item:hover,
   padding-top: 10px;
   border-top: 1px dashed rgba(148, 163, 184, 0.25);
 }
-

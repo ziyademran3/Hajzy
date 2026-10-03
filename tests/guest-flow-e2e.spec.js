@@ -38,6 +38,47 @@ test.describe('Guest Flow & Auth Fix Verification', () => {
     await submitBtn.click();
   });
 
+  test('Booking overflow action is a labeled 40px circle beside invoice and details', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+    await page.evaluate(() => {
+      localStorage.setItem('hajzy_bookings', JSON.stringify([{
+        id: 'booking-actions-layout',
+        propertyId: 'alex-vista',
+        checkIn: '2026-11-10',
+        checkOut: '2026-11-12',
+        guests: 2,
+        status: 'confirmed',
+        total: 8400,
+        currency: 'EGP',
+      }]));
+    });
+    await page.reload();
+    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: 'حجوزاتي' }).click();
+    const bookingCard = page.locator('.booking-card').first();
+    await expect(bookingCard).toBeVisible();
+
+    const actions = bookingCard.locator('.booking-actions');
+    const details = actions.locator('.booking-cta');
+    const invoice = actions.locator('.booking-receipt');
+    const more = actions.locator('.booking-actions-more');
+    const [detailsBox, invoiceBox, moreBox] = await Promise.all([
+      details.boundingBox(),
+      invoice.boundingBox(),
+      more.boundingBox(),
+    ]);
+
+    expect(Math.abs(detailsBox.y + detailsBox.height / 2 - invoiceBox.y - invoiceBox.height / 2)).toBeLessThanOrEqual(1);
+    expect(Math.abs(invoiceBox.y + invoiceBox.height / 2 - moreBox.y - moreBox.height / 2)).toBeLessThanOrEqual(1);
+    expect(moreBox.width).toBe(40);
+    expect(moreBox.height).toBe(40);
+    await expect(more).toHaveAttribute('aria-label', 'خيارات الحجز الإضافية');
+    await more.click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+  });
+
   test('Search card orders fields and keeps the search action full-width', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');

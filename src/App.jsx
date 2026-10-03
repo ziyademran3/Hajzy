@@ -5590,9 +5590,9 @@ function App() {
                         {/* 3-Dots Action Trigger for mobile-friendly full action sheet */}
                         <button
                           type="button"
-                          className="secondary-button small-button px-2.5 flex items-center justify-center text-slate-600 dark:text-slate-300"
+                          className="secondary-button small-button booking-actions-more"
                           onClick={() => setActiveBookingActionsTarget({ booking, property, normalizedStatus })}
-                          aria-label={language === 'en' ? 'More actions' : 'خيارات إضافية'}
+                          aria-label={language === 'en' ? 'More booking actions' : 'خيارات الحجز الإضافية'}
                           title={language === 'en' ? 'More actions' : 'خيارات إضافية'}
                         >
                           <span className="material-symbols-outlined text-lg leading-none">more_vert</span>
