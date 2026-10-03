@@ -5634,7 +5634,7 @@ body::-webkit-scrollbar,
 .avatar-preview {
   width: 96px;
   height: 96px;
-  border-radius: 14px;
+  border-radius: 9999px;
   object-fit: cover;
   display: block;
   border: 1px solid rgba(0,67,63,0.08);
@@ -5643,13 +5643,13 @@ body::-webkit-scrollbar,
 .avatar-initials {
   width: 96px;
   height: 96px;
-  border-radius: 14px;
+  border-radius: 9999px;
   display: grid;
   place-items: center;
   font-weight: 800;
   color: white;
-  background: linear-gradient(135deg, #0d7f73 0%, #0b5b53 100%);
-  font-size: 1.4rem;
+  background: var(--primary, #00433f);
+  font-size: 1.5rem;
 }
 
 .avatar-preview-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }

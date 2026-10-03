@@ -81,5 +81,9 @@
   "searchApplied": "تم عرض نتائج البحث",
   "addedToFavorites": "تمت الإضافة إلى المفضلة",
   "removedFromFavorites": "تمت الإزالة من المفضلة",
-  "memberSince": "عضو منذ {{date}}"
+  "memberSince": "عضو منذ {{date}}",
+  "choosePhoto": "اختر صورة",
+  "deletePhoto": "حذف الصورة",
+  "photoDeleted": "تم حذف صورة الملف الشخصي بنجاح.",
+  "photoHint": "ارفع صورة مربعة للملف الشخصي (PNG أو JPG)."
 }

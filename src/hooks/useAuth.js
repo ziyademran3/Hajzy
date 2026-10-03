@@ -31,7 +31,7 @@ const DEFAULT_ACCOUNTS = [
     email: DEMO_OWNER.email,
     password: DEMO_OWNER.password,
     role: 'owner',
-    avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${DEMO_OWNER.email}`,
+    avatar: '',
     createdAt: new Date().toISOString(),
   },
   {
@@ -40,7 +40,7 @@ const DEFAULT_ACCOUNTS = [
     email: 'user@hajzy.com',
     password: DEFAULT_TEST_PASSWORD,
     role: 'user',
-    avatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=user@hajzy.com',
+    avatar: '',
     createdAt: new Date().toISOString(),
   },
   {
@@ -49,7 +49,7 @@ const DEFAULT_ACCOUNTS = [
     email: 'test@example.com',
     password: DEFAULT_TEST_PASSWORD,
     role: 'user',
-    avatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=test@example.com',
+    avatar: '',
     createdAt: new Date().toISOString(),
   },
   {
@@ -58,7 +58,7 @@ const DEFAULT_ACCOUNTS = [
     email: 'e2e+tester@example.com',
     password: DEFAULT_TEST_PASSWORD,
     role: 'user',
-    avatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=e2e@example.com',
+    avatar: '',
     createdAt: new Date().toISOString(),
   },
 ]
@@ -277,7 +277,7 @@ export const useAuth = () => {
       email: normalizedEmail,
       password: normalizedPassword,
       role: 'user',
-      avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${normalizedEmail}`,
+      avatar: '',
       createdAt: new Date().toISOString(),
     }
 
@@ -307,7 +307,7 @@ export const useAuth = () => {
           name: profile.user.fullName || profile.user.name || profile.user.email,
           email: profile.user.email,
           role: profile.user.role || 'user',
-          avatar: profile.user.avatar_url || profile.user.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${profile.user.email}`,
+          avatar: profile.user.avatar_url || profile.user.avatar || '',
           createdAt: profile.user.created_at || profile.user.createdAt,
         }
         persistUser(authUser)
@@ -328,7 +328,7 @@ export const useAuth = () => {
           name: response.user.fullName || response.user.name || response.user.email,
           email: response.user.email,
           role: response.user.role || 'user',
-          avatar: data.avatar_url || response.user.avatar_url || response.user.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${response.user.email}`,
+          avatar: data.avatar_url !== undefined ? data.avatar_url : (data.avatar !== undefined ? data.avatar : (response.user.avatar_url || response.user.avatar || '')),
           createdAt: response.user.created_at || response.user.createdAt,
           phone: data.phone || response.user.phone || '',
         }
@@ -344,7 +344,7 @@ export const useAuth = () => {
         ...user,
         name: data.fullName || data.name || user.name,
         email: data.email || user.email,
-        avatar: data.avatar_url || user.avatar,
+        avatar: data.avatar_url !== undefined ? data.avatar_url : (data.avatar !== undefined ? data.avatar : user.avatar),
         phone: data.phone !== undefined ? data.phone : (user.phone || ''),
       }
 

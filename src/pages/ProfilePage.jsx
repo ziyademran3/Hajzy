@@ -185,12 +185,13 @@ export default function ProfilePage({
       if (!avatarUrl) return
 
       setAvatarPreview(avatarUrl)
+      setAvatarBroken(false)
       setLoading(true)
       setError('')
       setMessage('')
 
       try {
-        const updated = await updateProfile({ avatar_url: avatarUrl })
+        const updated = await updateProfile({ avatar_url: avatarUrl, avatar: avatarUrl })
         if (updated) {
           setMessage(language === 'en' ? 'Profile photo updated successfully.' : 'تم تحديث صورة الملف الشخصي بنجاح.')
         }
@@ -201,6 +202,27 @@ export default function ProfilePage({
       }
     }
     reader.readAsDataURL(file)
+  }
+
+  const handleDeleteAvatar = async () => {
+    setLoading(true)
+    setError('')
+    setMessage('')
+    try {
+      setAvatarPreview('')
+      setAvatarBroken(false)
+      const updated = await updateProfile({ avatar_url: '', avatar: '' })
+      if (updated) {
+        setMessage(t('photoDeleted', {
+          lng: language,
+          defaultValue: language === 'en' ? 'Profile photo removed successfully.' : 'تم حذف صورة الملف الشخصي بنجاح.',
+        }))
+      }
+    } catch (err) {
+      setError(err.message || (language === 'en' ? 'Unable to remove photo.' : 'تعذر حذف الصورة.'))
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handlePasswordChange = async () => {
@@ -263,16 +285,24 @@ export default function ProfilePage({
   ]
 
   const displayName = initialUser?.name || initialUser?.fullName || initialUser?.email || ''
-  const initials = (displayName || 'U').split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase() || '').join('') || 'U'
+  const firstLetter = useMemo(() => {
+    const trimmed = (displayName || '').trim()
+    if (!trimmed) return language === 'en' ? 'U' : 'م'
+    const char = Array.from(trimmed)[0]
+    return char ? char.toUpperCase() : (language === 'en' ? 'U' : 'م')
+  }, [displayName, language])
 
   // Only show real user photos (Google profile pics, uploaded photos, data URIs).
-  // Exclude auto-generated placeholder services (dicebear, ui-avatars, placeholder.com).
+  // Exclude auto-generated placeholder services and app logos.
   const rawAvatar = avatarPreview || initialUser?.avatar || initialUser?.avatar_url || ''
   const isPlaceholderUrl = rawAvatar && (
     rawAvatar.includes('dicebear.com') ||
     rawAvatar.includes('ui-avatars.com') ||
     rawAvatar.includes('placeholder.com') ||
-    rawAvatar.includes('via.placeholder')
+    rawAvatar.includes('via.placeholder') ||
+    rawAvatar.includes('hajzy-logo') ||
+    rawAvatar.includes('hajzy-brand') ||
+    rawAvatar.includes('logo')
   )
   const [avatarBroken, setAvatarBroken] = useState(false)
   const avatarSrc = (!isPlaceholderUrl && !avatarBroken) ? rawAvatar : ''
@@ -294,12 +324,14 @@ export default function ProfilePage({
         <div className="p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-start">
             <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full border-2 border-emerald-500/20 overflow-hidden shadow-sm shrink-0 flex items-center justify-center"
-              style={!avatarSrc ? { background: 'linear-gradient(135deg, #0d9488 0%, #065f46 100%)' } : { backgroundColor: '#f1f5f9' }}
+              style={!avatarSrc ? { backgroundColor: 'var(--primary, #00433f)' } : { backgroundColor: '#f1f5f9' }}
             >
               {avatarSrc ? (
                 <img src={avatarSrc} alt="avatar" className="h-full w-full object-cover" onError={() => setAvatarBroken(true)} />
               ) : (
-                <div className="text-2xl sm:text-3xl font-black text-white tracking-wide" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>{initials}</div>
+                <div className="text-3xl sm:text-4xl font-black text-white tracking-wide select-none" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>
+                  {firstLetter}
+                </div>
               )}
             </div>
             <div className="space-y-1">
@@ -382,29 +414,57 @@ export default function ProfilePage({
 
         <div className="avatar-section">
           <h4>{language === 'en' ? 'Avatar' : 'الصورة'}</h4>
-          <div className="avatar-row">
-            <div className="avatar-preview-wrap">
-              {avatarPreview ? (
-                <img src={avatarPreview} alt="avatar-preview" className="avatar-preview" />
+          <div className="avatar-row flex flex-col sm:flex-row items-center gap-5">
+            <div
+              className="h-24 w-24 rounded-full border-2 border-emerald-500/20 overflow-hidden shadow-sm shrink-0 flex items-center justify-center"
+              style={!avatarSrc ? { backgroundColor: 'var(--primary, #00433f)' } : { backgroundColor: '#f1f5f9' }}
+            >
+              {avatarSrc ? (
+                <img src={avatarSrc} alt="avatar-preview" className="h-full w-full object-cover" onError={() => setAvatarBroken(true)} />
               ) : (
-                <div className="avatar-preview avatar-initials" aria-hidden="true">{initials}</div>
+                <div className="text-3xl font-black text-white tracking-wide select-none">
+                  {firstLetter}
+                </div>
               )}
+            </div>
 
+            <div className="flex flex-col items-center sm:items-start gap-2.5">
               <input
                 id="profile-avatar-upload"
                 type="file"
                 accept="image/*"
-                className="hidden-file-input"
+                className="hidden-file-input sr-only"
                 onChange={(e) => handleAvatarFile(e.target.files[0])}
               />
 
-              <label htmlFor="profile-avatar-upload" className="custom-file-button large">
-                <span className="material-symbols-outlined">upload_file</span>
-                <span>{language === 'en' ? 'Choose photo' : 'اختر صورة'}</span>
-              </label>
+              <div className="flex items-center flex-wrap gap-2.5">
+                <label
+                  htmlFor="profile-avatar-upload"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl text-white px-4 py-2.5 text-xs font-bold shadow-sm hover:opacity-95 transition cursor-pointer active:scale-95"
+                  style={{ backgroundColor: 'var(--primary, #00433f)', minHeight: '44px' }}
+                >
+                  <span className="material-symbols-outlined text-base">photo_camera</span>
+                  <span>{t('choosePhoto', { lng: language, defaultValue: language === 'en' ? 'Choose photo' : 'اختر صورة' })}</span>
+                </label>
 
+                {avatarSrc && (
+                  <button
+                    type="button"
+                    onClick={handleDeleteAvatar}
+                    disabled={loading}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300 px-3.5 py-2.5 text-xs font-bold hover:bg-rose-100 dark:hover:bg-rose-900/40 transition active:scale-95"
+                    style={{ minHeight: '44px' }}
+                  >
+                    <span className="material-symbols-outlined text-base">delete</span>
+                    <span>{t('deletePhoto', { lng: language, defaultValue: language === 'en' ? 'Delete photo' : 'حذف الصورة' })}</span>
+                  </button>
+                )}
+              </div>
+
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {t('photoHint', { lng: language, defaultValue: language === 'en' ? 'Upload a square profile photo (PNG or JPG).' : 'ارفع صورة مربعة للملف الشخصي (PNG أو JPG).' })}
+              </p>
             </div>
-            <p className="muted small">{language === 'en' ? 'Upload a square avatar image.' : 'ارفع صورة مربعة للملف الشخصي.'}</p>
           </div>
         </div>
 
