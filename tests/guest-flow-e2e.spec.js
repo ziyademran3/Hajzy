@@ -153,6 +153,58 @@ test.describe('Guest Flow & Auth Fix Verification', () => {
     await assertReadable();
   });
 
+  test('Bookings show unique references, emphasize stay dates, and sort by arrival', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+    await page.evaluate(() => {
+      localStorage.setItem('hajzy_bookings', JSON.stringify([
+        {
+          id: 'booking-later-arrival',
+          propertyId: 'alex-vista',
+          reference: '#HZ-10235',
+          checkIn: '2099-11-20',
+          checkOut: '2099-11-22',
+          guests: 2,
+          status: 'confirmed',
+          total: 8400,
+          currency: 'EGP',
+        },
+        {
+          id: 'booking-nearer-arrival',
+          propertyId: 'alex-vista',
+          reference: '#HZ-10234',
+          checkIn: '2099-11-10',
+          checkOut: '2099-11-12',
+          guests: 2,
+          status: 'confirmed',
+          total: 8400,
+          currency: 'EGP',
+        },
+      ]));
+    });
+    await page.reload();
+    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: 'حجوزاتي' }).click();
+
+    const cards = page.locator('.booking-card');
+    await expect(cards).toHaveCount(2);
+    await expect(cards.nth(0).locator('.booking-reservation-reference')).toHaveText('#HZ-10234');
+    await expect(cards.nth(1).locator('.booking-reservation-reference')).toHaveText('#HZ-10235');
+    await expect(cards.nth(0).locator('.booking-date-range')).toContainText('10 نوفمبر 2099');
+    await expect(cards.nth(1).locator('.booking-date-range')).toContainText('20 نوفمبر 2099');
+
+    const [referenceStyle, dateStyle] = await Promise.all([
+      cards.nth(0).locator('.booking-reservation-reference').evaluate((element) => ({
+        direction: getComputedStyle(element).direction,
+        fontSize: getComputedStyle(element).fontSize,
+      })),
+      cards.nth(0).locator('.booking-date-range').evaluate((element) => getComputedStyle(element).fontSize),
+    ]);
+    expect(referenceStyle.direction).toBe('ltr');
+    expect(Number.parseFloat(referenceStyle.fontSize)).toBeLessThanOrEqual(12);
+    expect(Number.parseFloat(dateStyle)).toBeGreaterThanOrEqual(14);
+  });
+
   test('Search card orders fields and keeps the search action full-width', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');

@@ -10011,3 +10011,47 @@ body[data-theme='dark'] .profile-item:hover,
   padding-top: 10px;
   border-top: 1px dashed rgba(148, 163, 184, 0.25);
 }
+
+.bookings-shell .booking-reservation-reference {
+  direction: ltr;
+  margin-block-start: var(--space-1);
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.35;
+  text-align: right;
+  unicode-bidi: isolate;
+}
+
+.bookings-shell .booking-date-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  width: fit-content;
+  max-width: 100%;
+  margin-block-end: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-xs);
+  background: var(--primary-soft);
+}
+
+.bookings-shell .booking-date-summary > .material-symbols-outlined {
+  flex: none;
+  color: var(--primary-strong);
+  font-size: 1rem;
+}
+
+.bookings-shell .booking-date-range {
+  color: var(--text);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.app-shell[data-theme='dark'] .bookings-shell .booking-date-range {
+  color: var(--text);
+}

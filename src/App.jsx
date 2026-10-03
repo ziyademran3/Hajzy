@@ -5319,6 +5319,13 @@ function App() {
       }
 
       return true
+    }).sort((bookingA, bookingB) => {
+      const arrivalA = new Date(bookingA?.checkIn || bookingA?.checkOut || '').getTime()
+      const arrivalB = new Date(bookingB?.checkIn || bookingB?.checkOut || '').getTime()
+
+      if (Number.isNaN(arrivalA)) return Number.isNaN(arrivalB) ? 0 : 1
+      if (Number.isNaN(arrivalB)) return -1
+      return arrivalA - arrivalB
     })
 
     const activeCount = safeBookings.filter((b) => {
@@ -5514,6 +5521,9 @@ function App() {
               const displayDateRange = checkInVal || checkOutVal
                 ? `${booking?.checkIn ? formatDate(booking.checkIn, language) : '—'} ${language === 'en' ? 'to' : 'إلى'} ${booking?.checkOut ? formatDate(booking.checkOut, language) : '—'}`
                 : '—'
+              const bookingReference = booking?.reference && booking.reference !== '#REF-00000'
+                ? booking.reference
+                : `#HZ-${booking?.id || index + 1}`
               const today = formatISODate(new Date())
               const isCancelled = normalizedStatus === 'cancelled'
               const currentProgressStep = isCancelled
@@ -5542,6 +5552,7 @@ function App() {
                     <div className="booking-head">
                       <div>
                         <h3>{getPropertyTitle(property) || booking.title || (language === 'en' ? 'Stay' : 'إقامة')}</h3>
+                        <div className="booking-reservation-reference">{bookingReference}</div>
                         <p>{getPropertyLocation(property) || booking.location || (language === 'en' ? 'Location not available' : 'موقع غير متوفر')}</p>
                       </div>
                       <div className="rating-chip small">
@@ -5601,9 +5612,11 @@ function App() {
 
                     <div className="booking-footer">
                       <div className="booking-details">
-                        <small>
-                          {displayDateRange} • {pluralize(pricing.nights, 'night', language)}
-                        </small>
+                        <div className="booking-date-summary">
+                          <span className="material-symbols-outlined" aria-hidden="true">calendar_month</span>
+                          <span className="booking-date-range">{displayDateRange}</span>
+                          <small>{pluralize(pricing.nights, 'night', language)}</small>
+                        </div>
                         <div className="booking-pricing flex flex-col items-start gap-0.5">
                           <div className="flex items-baseline gap-2">
                             <span className="per-night">
