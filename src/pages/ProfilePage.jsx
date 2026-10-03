@@ -75,6 +75,7 @@ export default function ProfilePage({
   const [passwordError, setPasswordError] = useState('')
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [copiedShare, setCopiedShare] = useState(false)
 
   // Password strength meter
@@ -90,11 +91,15 @@ export default function ProfilePage({
   }, [passwordForm.newPassword])
 
   const passwordStrengthLabel = useMemo(() => {
-    if (passwordStrength <= 1) return { text: language === 'en' ? 'Weak' : 'ضعيفة', color: 'bg-rose-500', width: 'w-1/4' }
-    if (passwordStrength === 2) return { text: language === 'en' ? 'Fair' : 'متوسطة', color: 'bg-amber-500', width: 'w-2/4' }
-    if (passwordStrength === 3) return { text: language === 'en' ? 'Good' : 'جيدة', color: 'bg-teal-500', width: 'w-3/4' }
-    return { text: language === 'en' ? 'Strong' : 'قوية جداً', color: 'bg-emerald-500', width: 'w-full' }
-  }, [passwordStrength, language])
+    if (passwordStrength <= 1) return { text: t('profileSecurity.strength.weak'), color: 'bg-rose-500', width: 'w-1/4' }
+    if (passwordStrength === 2) return { text: t('profileSecurity.strength.fair'), color: 'bg-amber-500', width: 'w-2/4' }
+    if (passwordStrength === 3) return { text: t('profileSecurity.strength.good'), color: 'bg-teal-500', width: 'w-3/4' }
+    return { text: t('profileSecurity.strength.strong'), color: 'bg-emerald-500', width: 'w-full' }
+  }, [passwordStrength, t])
+
+  const canChangePassword = Boolean(
+    passwordForm.current && passwordForm.newPassword && passwordForm.confirmNewPassword && !passwordLoading,
+  )
 
   const handleShareApp = async () => {
     const shareData = {
@@ -587,57 +592,64 @@ export default function ProfilePage({
         </div>
       </section>
 
-      <section className="profile-details mt-6">
+      <section className="profile-details mt-6 profile-security-section">
         <h3>{language === 'en' ? 'Security' : 'الأمان'}</h3>
         <div className="details-grid">
           <div className="detail-item">
-            <label>{language === 'en' ? 'Current password' : 'كلمة المرور الحالية'}</label>
+            <label htmlFor="current-password-input">{t('profileSecurity.currentPassword')}</label>
             <div className="password-field">
               <input
                 type={showCurrentPassword ? 'text' : 'password'}
                 data-testid="current-password-input"
+                id="current-password-input"
                 value={passwordForm.current}
                 onChange={(e) => setPasswordForm((c) => ({ ...c, current: e.target.value }))}
               />
-              <button type="button" className="visibility-toggle" onClick={() => setShowCurrentPassword((value) => !value)}>
+              <button type="button" className="visibility-toggle" aria-label={t(showCurrentPassword ? 'profileSecurity.hidePassword' : 'profileSecurity.showPassword')} onClick={() => setShowCurrentPassword((value) => !value)}>
                 <span className="material-symbols-outlined">{showCurrentPassword ? 'visibility_off' : 'visibility'}</span>
               </button>
             </div>
           </div>
           <div className="detail-item">
-            <label>{language === 'en' ? 'New password' : 'كلمة المرور الجديدة'}</label>
+            <label htmlFor="new-password-input">{t('profileSecurity.newPassword')}</label>
             <div className="password-field">
               <input
                 type={showNewPassword ? 'text' : 'password'}
                 data-testid="new-password-input"
+                id="new-password-input"
                 value={passwordForm.newPassword}
+                aria-describedby="password-strength"
                 onChange={(e) => setPasswordForm((c) => ({ ...c, newPassword: e.target.value }))}
               />
-              <button type="button" className="visibility-toggle" onClick={() => setShowNewPassword((value) => !value)}>
+              <button type="button" className="visibility-toggle" aria-label={t(showNewPassword ? 'profileSecurity.hidePassword' : 'profileSecurity.showPassword')} onClick={() => setShowNewPassword((value) => !value)}>
                 <span className="material-symbols-outlined">{showNewPassword ? 'visibility_off' : 'visibility'}</span>
               </button>
             </div>
-            {passwordForm.newPassword && (
-              <div className="mt-2 space-y-1">
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-slate-400">{language === 'en' ? 'Password strength:' : 'قوة كلمة المرور:'}</span>
-                  <span className="font-bold text-slate-700 dark:text-slate-200">{passwordStrengthLabel.text}</span>
-                </div>
-                <div className="h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
-                  <div className={`h-full ${passwordStrengthLabel.width} ${passwordStrengthLabel.color} transition-all duration-300`} />
-                </div>
+            <div className="password-strength" id="password-strength" aria-live="polite">
+              <div className="password-strength-copy">
+                <span>{t('profileSecurity.strength.label')}</span>
+                <span className="password-strength-value">{passwordForm.newPassword ? passwordStrengthLabel.text : t('profileSecurity.strength.enterPassword')}</span>
               </div>
-            )}
+              <div className="password-strength-track" aria-hidden="true">
+                <div
+                  className={`password-strength-fill ${passwordForm.newPassword ? passwordStrengthLabel.width : ''} ${passwordForm.newPassword ? passwordStrengthLabel.color : ''}`}
+                />
+              </div>
+            </div>
           </div>
           <div className="detail-item">
-            <label>{language === 'en' ? 'Confirm new password' : 'تأكيد كلمة المرور الجديدة'}</label>
+            <label htmlFor="confirm-password-input">{t('profileSecurity.confirmPassword')}</label>
             <div className="password-field">
               <input
-                type={showNewPassword ? 'text' : 'password'}
+                type={showConfirmPassword ? 'text' : 'password'}
                 data-testid="confirm-password-input"
+                id="confirm-password-input"
                 value={passwordForm.confirmNewPassword}
                 onChange={(e) => setPasswordForm((c) => ({ ...c, confirmNewPassword: e.target.value }))}
               />
+              <button type="button" className="visibility-toggle" aria-label={t(showConfirmPassword ? 'profileSecurity.hidePassword' : 'profileSecurity.showPassword')} onClick={() => setShowConfirmPassword((value) => !value)}>
+                <span className="material-symbols-outlined">{showConfirmPassword ? 'visibility_off' : 'visibility'}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -646,7 +658,15 @@ export default function ProfilePage({
         {passwordMessage && <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700" data-testid="password-change-success" role="status">{passwordMessage}</div>}
 
         <div className="mt-4">
-          <button className="primary-button" data-testid="change-password-button" onClick={handlePasswordChange} disabled={passwordLoading}>{passwordLoading ? '...' : (language === 'en' ? 'Change password' : 'تغيير كلمة المرور')}</button>
+          <button
+            type="button"
+            className="primary-button security-save-button"
+            data-testid="change-password-button"
+            onClick={handlePasswordChange}
+            disabled={!canChangePassword}
+          >
+            {passwordLoading ? t('profileSecurity.saving') : t('profileSecurity.save')}
+          </button>
         </div>
       </section>
 

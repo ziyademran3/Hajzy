@@ -75,6 +75,23 @@
     "togglePrivacy": "Toggle account privacy",
     "notificationDetails": "Notification details"
   },
+  "profileSecurity": {
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "saving": "Saving...",
+    "save": "Save",
+    "strength": {
+      "label": "Password strength",
+      "enterPassword": "Enter a password",
+      "weak": "Weak",
+      "fair": "Fair",
+      "good": "Good",
+      "strong": "Very strong"
+    }
+  },
   "welcome": "Hi {{name}}",
   "welcomeBack": "Welcome back",
   "upcomingStay": "Upcoming stay",

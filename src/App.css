@@ -5811,8 +5811,9 @@ body::-webkit-scrollbar,
   color: var(--muted);
 }
 
-.detail-item input,
-.detail-item div {
+.detail-item > input,
+.detail-item > .password-field input,
+.detail-item > div:not(.password-field) {
   background: rgba(0, 67, 63, 0.03);
   border: 1px solid rgba(0, 67, 63, 0.08);
   border-radius: 12px;
@@ -5825,6 +5826,11 @@ body::-webkit-scrollbar,
   outline: none;
 }
 
+.detail-item input:focus-visible {
+  border-color: var(--primary-strong);
+  box-shadow: 0 0 0 2px var(--primary-soft);
+}
+
 .password-field {
   position: relative;
   display: flex;
@@ -5833,12 +5839,12 @@ body::-webkit-scrollbar,
 
 .password-field input {
   width: 100%;
-  padding-left: 42px;
+  padding-inline-start: 42px;
 }
 
 .visibility-toggle {
   position: absolute;
-  left: 10px;
+  inset-inline-start: 10px;
   width: 28px;
   height: 28px;
   border: none;
@@ -5847,6 +5853,52 @@ body::-webkit-scrollbar,
   display: grid;
   place-items: center;
   cursor: pointer;
+}
+
+.password-strength {
+  display: grid;
+  gap: var(--space-1);
+  margin-block-start: var(--space-2);
+}
+
+.password-strength-copy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.password-strength-value {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.password-strength-track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--bg-card-alt);
+}
+
+.password-strength-fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 180ms ease, background-color 180ms ease;
+}
+
+.security-save-button {
+  min-width: 140px;
+  font-weight: 800;
+}
+
+.security-save-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  box-shadow: none;
+  transform: none;
 }
 
 .visibility-toggle .material-symbols-outlined {
@@ -8822,7 +8874,7 @@ body[data-theme='dark'] .app-shell {
 .app-shell[data-theme='dark'] .settings-card-item,
 .app-shell[data-theme='dark'] .reference-box,
 .app-shell[data-theme='dark'] .detail-item input,
-.app-shell[data-theme='dark'] .detail-item div,
+.app-shell[data-theme='dark'] .detail-item > div:not(.password-field),
 .app-shell[data-theme='dark'] .custom-file-button,
 .app-shell[data-theme='dark'] .custom-file-button.large {
   background: #1a222e;
@@ -8856,7 +8908,7 @@ body[data-theme='dark'] .app-shell {
 .app-shell[data-theme='dark'] .reference-box .material-symbols-outlined,
 .app-shell[data-theme='dark'] .detail-item,
 .app-shell[data-theme='dark'] .detail-item label,
-.app-shell[data-theme='dark'] .detail-item div,
+.app-shell[data-theme='dark'] .detail-item > div:not(.password-field),
 .app-shell[data-theme='dark'] .detail-item input {
   color: #e2e8f0;
 }

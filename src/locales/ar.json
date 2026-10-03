@@ -75,6 +75,23 @@
     "togglePrivacy": "تفعيل أو إيقاف خصوصية الحساب",
     "notificationDetails": "تفاصيل الإشعارات"
   },
+  "profileSecurity": {
+    "currentPassword": "كلمة المرور الحالية",
+    "newPassword": "كلمة المرور الجديدة",
+    "confirmPassword": "تأكيد كلمة المرور الجديدة",
+    "showPassword": "إظهار كلمة المرور",
+    "hidePassword": "إخفاء كلمة المرور",
+    "saving": "جارٍ الحفظ...",
+    "save": "حفظ",
+    "strength": {
+      "label": "قوة كلمة المرور",
+      "enterPassword": "أدخل كلمة مرور",
+      "weak": "ضعيفة",
+      "fair": "متوسطة",
+      "good": "جيدة",
+      "strong": "قوية جداً"
+    }
+  },
   "welcome": "أهلًا يا {{name}}",
   "welcomeBack": "أهلاً بيك",
   "upcomingStay": "إقامتك القادمة",

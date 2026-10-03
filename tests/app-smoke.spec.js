@@ -185,4 +185,48 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
     await page.getByRole('button', { name: 'تفاصيل الإشعارات' }).click();
     await expect(page.locator('.notifications-shell')).toBeVisible({ timeout: 10000 });
   });
+
+  test('Security password fields use one border, strength feedback, confirmation, and a guarded save button', async ({ page }) => {
+    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: 'حسابي' }).click();
+
+    const security = page.locator('.profile-security-section');
+    const currentPassword = security.getByTestId('current-password-input');
+    const newPassword = security.getByTestId('new-password-input');
+    const confirmPassword = security.getByTestId('confirm-password-input');
+    const saveButton = security.getByTestId('change-password-button');
+
+    await expect(currentPassword).toBeVisible();
+    await expect(newPassword).toBeVisible();
+    await expect(confirmPassword).toBeVisible();
+    await expect(saveButton).toBeDisabled();
+    await expect(security.locator('.password-strength')).toContainText('أدخل كلمة مرور');
+
+    const assertSingleFieldBorder = async () => {
+      const fieldStyles = await security.locator('.password-field').evaluateAll((fields) => fields.map((field) => ({
+        wrapperBorder: getComputedStyle(field).borderTopWidth,
+        inputBorder: getComputedStyle(field.querySelector('input')).borderTopWidth,
+      })));
+      expect(fieldStyles).toHaveLength(3);
+      for (const field of fieldStyles) {
+        expect(field.wrapperBorder).toBe('0px');
+        expect(field.inputBorder).toBe('1px');
+      }
+    };
+
+    await assertSingleFieldBorder();
+    await page.locator('.theme-toggle').click();
+    await expect(page.locator('.app-shell')).toHaveAttribute('data-theme', 'dark');
+    await assertSingleFieldBorder();
+    await page.locator('.theme-toggle').click();
+
+    await currentPassword.fill('CurrentPass1!');
+    await expect(saveButton).toBeDisabled();
+    await newPassword.fill('NewPassword9!');
+    await expect(security.locator('.password-strength')).toContainText('قوية جداً');
+    await expect(saveButton).toBeDisabled();
+    await confirmPassword.fill('NewPassword9!');
+    await expect(saveButton).toBeEnabled();
+    await expect(confirmPassword).toHaveValue('NewPassword9!');
+  });
 });
