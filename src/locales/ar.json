@@ -75,6 +75,17 @@
     "togglePrivacy": "تفعيل أو إيقاف خصوصية الحساب",
     "notificationDetails": "تفاصيل الإشعارات"
   },
+  "profileDetails": {
+    "edit": "تعديل",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "saving": "جارٍ الحفظ...",
+    "success": "تم حفظ بيانات الحساب بنجاح.",
+    "saveFailed": "تعذر حفظ بيانات الحساب. حاول مرة أخرى.",
+    "notSet": "لم يحدد",
+    "phonePlaceholder": "أدخل رقم الهاتف",
+    "emailLocked": "البريد الإلكتروني غير قابل للتعديل"
+  },
   "profileSecurity": {
     "currentPassword": "كلمة المرور الحالية",
     "newPassword": "كلمة المرور الجديدة",

@@ -75,6 +75,17 @@
     "togglePrivacy": "Toggle account privacy",
     "notificationDetails": "Notification details"
   },
+  "profileDetails": {
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "success": "Account details saved successfully.",
+    "saveFailed": "Could not save account details. Please try again.",
+    "notSet": "Not set",
+    "phonePlaceholder": "Enter phone number",
+    "emailLocked": "Email address cannot be changed"
+  },
   "profileSecurity": {
     "currentPassword": "Current password",
     "newPassword": "New password",

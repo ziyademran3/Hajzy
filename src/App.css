@@ -5775,7 +5775,50 @@ body::-webkit-scrollbar,
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 18px;
+  flex-shrink: 0;
+}
+
+.profile-details-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.profile-details-header h3 {
+  margin: 0;
+}
+
+.profile-edit-action,
+.profile-form-actions .primary-button,
+.profile-form-actions .secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  font-size: 0.85rem;
+}
+
+.profile-hero-email,
+.profile-email-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.profile-email-value {
+  justify-content: space-between;
+}
+
+.profile-hero-email .material-symbols-outlined,
+.profile-email-value .material-symbols-outlined {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 1rem;
 }
 
 .profile-details {

@@ -148,6 +148,45 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
     await expect(page.locator('#profile-settings')).toBeVisible({ timeout: 10000 });
   });
 
+  test('Account name and phone can be edited while email remains locked', async ({ page }) => {
+    await page.evaluate(() => {
+      localStorage.setItem('hajzy_user', JSON.stringify({
+        id: 'profile-edit-test',
+        name: 'الاسم القديم',
+        email: 'locked@example.com',
+        phone: '',
+      }));
+    });
+    await page.reload();
+    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: 'حسابي' }).click();
+
+    const accountDetails = page.locator('.profile-details').filter({ has: page.getByRole('heading', { name: 'تفاصيل الحساب' }) });
+    await expect(accountDetails.getByText('لم يحدد')).toBeVisible();
+    await expect(accountDetails.locator('input[name="email"]')).toHaveCount(0);
+    await expect(accountDetails.getByLabel('البريد الإلكتروني غير قابل للتعديل')).toBeVisible();
+
+    await accountDetails.getByRole('button', { name: 'تعديل' }).click();
+    const nameInput = accountDetails.locator('#profile-name-input');
+    const phoneInput = accountDetails.locator('#profile-phone-input');
+    await expect(nameInput).toBeVisible();
+    await expect(phoneInput).toHaveAttribute('placeholder', 'أدخل رقم الهاتف');
+    await expect(accountDetails.locator('input[name="email"]')).toHaveCount(0);
+    await nameInput.fill('الاسم الجديد');
+    await phoneInput.fill('+201012345678');
+    await accountDetails.getByRole('button', { name: 'حفظ' }).click();
+
+    await expect(accountDetails.getByRole('status')).toHaveText('تم حفظ بيانات الحساب بنجاح.');
+    await expect(accountDetails.getByText('الاسم الجديد')).toBeVisible();
+    await expect(accountDetails.getByText('+201012345678')).toBeVisible();
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('hajzy_user')).name)).toBe('الاسم الجديد');
+
+    await accountDetails.getByRole('button', { name: 'تعديل' }).click();
+    await accountDetails.locator('#profile-name-input').fill('تغيير غير محفوظ');
+    await accountDetails.getByRole('button', { name: 'إلغاء' }).click();
+    await expect(accountDetails.getByText('الاسم الجديد')).toBeVisible();
+  });
+
   test('Profile settings expose persistent notification and privacy switches with notification details', async ({ page }) => {
     await page.goto('/');
     await page.evaluate(() => {

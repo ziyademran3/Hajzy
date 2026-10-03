@@ -39,7 +39,6 @@ export default function ProfilePage({
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({
     name: initialUser?.name || initialUser?.fullName || '',
-    email: initialUser?.email || '',
     phone: initialUser?.phone || '',
   })
   const [loading, setLoading] = useState(false)
@@ -152,11 +151,7 @@ export default function ProfilePage({
     email: 'Email',
     name: 'Full name',
     phone: 'Phone number',
-    edit: 'Edit profile',
-    save: 'Save changes',
-    cancel: 'Cancel',
     joined: 'Member since',
-    success: 'Profile updated successfully.',
     logout: 'Log out',
     logoutConfirm: 'Are you sure you want to log out?',
   } : {
@@ -164,11 +159,7 @@ export default function ProfilePage({
     email: 'البريد الإلكتروني',
     name: 'الاسم الكامل',
     phone: 'رقم الهاتف',
-    edit: 'تعديل الملف',
-    save: 'حفظ التغييرات',
-    cancel: 'إلغاء',
     joined: 'عضو منذ',
-    success: 'تم تحديث الملف الشخصي بنجاح.',
     logout: 'تسجيل الخروج',
     logoutConfirm: 'هل أنت متأكد أنك تريد تسجيل الخروج؟',
   }
@@ -183,26 +174,39 @@ export default function ProfilePage({
   const handleSave = async () => {
     setLoading(true)
     setError('')
+    setMessage('')
     try {
       const data = {
         fullName: form.name,
         name: form.name,
-        email: form.email,
         phone: form.phone,
-      }
-      if (avatarPreview) {
-        data.avatar_url = avatarPreview
       }
       const updated = await updateProfile(data)
       if (updated) {
-        setMessage(text.success)
+        setForm({
+          name: updated.name || updated.fullName || form.name,
+          phone: updated.phone ?? form.phone,
+        })
+        setMessage(t('profileDetails.success'))
         setEditing(false)
+      } else {
+        setError(t('profileDetails.saveFailed'))
       }
     } catch (err) {
-      setError(err.message || 'Unable to update')
+      setError(err.message || t('profileDetails.saveFailed'))
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleEditCancel = () => {
+    setEditing(false)
+    setForm({
+      name: initialUser?.name || initialUser?.fullName || '',
+      phone: initialUser?.phone || '',
+    })
+    setError('')
+    setMessage('')
   }
 
   const handleAvatarFile = (file) => {
@@ -394,14 +398,9 @@ export default function ProfilePage({
                   <span className="material-symbols-outlined text-xs">verified</span>
                   <span>{language === 'en' ? 'Verified' : 'موثق'}</span>
                 </span>
-                {!editing && (
-                  <button type="button" className="text-slate-500 hover:text-emerald-600 transition" onClick={() => setEditing(true)} aria-label={text.edit}>
-                    <span className="material-symbols-outlined text-lg">edit</span>
-                  </button>
-                )}
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {text.email}: {initialUser?.email ? initialUser.email : <span className="empty-field">{emptyPlaceholderFor('email')}</span>}
+                {text.email}: <span className="profile-hero-email" dir="ltr">{initialUser?.email || <span className="empty-field">{emptyPlaceholderFor('email')}</span>}<span className="material-symbols-outlined" aria-label={t('profileDetails.emailLocked')}>lock</span></span>
               </p>
               {formattedJoinedDate && (
                 <p className="text-[11px] text-slate-400">
@@ -441,27 +440,69 @@ export default function ProfilePage({
       </div>
 
       <section className="profile-details mt-6">
-        <h3>{language === 'en' ? 'Account details' : 'تفاصيل الحساب'}</h3>
+        <div className="profile-details-header">
+          <h3>{language === 'en' ? 'Account details' : 'تفاصيل الحساب'}</h3>
+          {!editing ? (
+            <button
+              type="button"
+              className="secondary-button profile-edit-action"
+              onClick={() => {
+                setEditing(true)
+                setError('')
+                setMessage('')
+              }}
+            >
+              <span className="material-symbols-outlined" aria-hidden="true">edit</span>
+              <span>{t('profileDetails.edit')}</span>
+            </button>
+          ) : (
+            <div className="profile-form-actions">
+              <button className="secondary-button" type="button" onClick={handleEditCancel} disabled={loading}>
+                {t('profileDetails.cancel')}
+              </button>
+              <button className="primary-button" type="button" onClick={handleSave} disabled={loading}>
+                {loading ? t('profileDetails.saving') : t('profileDetails.save')}
+              </button>
+            </div>
+          )}
+        </div>
         <div className="details-grid">
           <div className="detail-item">
-            <label>{text.name}</label>
-            {!editing ? <div>{initialUser?.name || initialUser?.fullName || '-'}</div> : (
-              <input name="name" value={form.name} onChange={handleChange} />
+            <label htmlFor={editing ? 'profile-name-input' : undefined}>{text.name}</label>
+            {!editing ? (
+              <div>{initialUser?.name || initialUser?.fullName || '-'}</div>
+            ) : (
+              <input id="profile-name-input" name="name" autoComplete="name" value={form.name} onChange={handleChange} />
             )}
           </div>
           <div className="detail-item">
-            <label>{text.email}</label>
-            {!editing ? <div>{initialUser?.email || '-'}</div> : (
-              <input name="email" value={form.email} onChange={handleChange} />
-            )}
+            <label id="profile-email-label">{text.email}</label>
+            <div className="profile-email-value" id="profile-email-value" aria-labelledby="profile-email-label">
+              <span dir="ltr">{initialUser?.email || '-'}</span>
+              <span className="material-symbols-outlined" aria-label={t('profileDetails.emailLocked')} title={t('profileDetails.emailLocked')}>lock</span>
+            </div>
           </div>
           <div className="detail-item">
-            <label>{text.phone}</label>
-            {!editing ? <div>{initialUser?.phone || (language === 'en' ? 'Not set' : 'لم يحدد')}</div> : (
-              <input name="phone" value={form.phone} onChange={handleChange} placeholder="+20 10..." />
+            <label htmlFor={editing ? 'profile-phone-input' : undefined}>{text.phone}</label>
+            {!editing ? (
+              <div>{initialUser?.phone || <span className="empty-field">{t('profileDetails.notSet')}</span>}</div>
+            ) : (
+              <input
+                id="profile-phone-input"
+                name="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                value={form.phone}
+                onChange={handleChange}
+                placeholder={t('profileDetails.phonePlaceholder')}
+              />
             )}
           </div>
         </div>
+
+        {error && <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300" role="alert">{error}</div>}
+        {message && <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300" role="status">{message}</div>}
 
         <div className="avatar-section">
           <h4>{language === 'en' ? 'Avatar' : 'الصورة'}</h4>
@@ -519,22 +560,6 @@ export default function ProfilePage({
           </div>
         </div>
 
-        {error && <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700" role="alert">{error}</div>}
-        {message && <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700" role="status">{message}</div>}
-
-        {editing && (
-          <div className="profile-form-actions">
-            <button className="secondary-button" type="button" onClick={() => {
-              setEditing(false)
-              setForm({
-                name: initialUser?.name || initialUser?.fullName || '',
-                email: initialUser?.email || '',
-                phone: initialUser?.phone || '',
-              })
-            }}>{text.cancel}</button>
-            <button className="primary-button" type="button" onClick={handleSave} disabled={loading}>{loading ? '...' : text.save}</button>
-          </div>
-        )}
       </section>
 
       <section className="profile-details mt-6" id="profile-settings">
