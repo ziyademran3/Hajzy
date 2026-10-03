@@ -3381,7 +3381,15 @@ function App() {
                 className="collection-item"
                 onClick={() => navigate('details', property)}
               >
-                <img src={property.image} alt={getPropertyTitle(property)} onError={handleStayImageError} />
+                <div className="collection-item-image">
+                  <img
+                    src={property.image}
+                    alt={getPropertyTitle(property)}
+                    onError={handleStayImageError}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
                 <div>
                   <span>{getPropertyCity(property)}</span>
                   <strong>{getPropertyTitle(property)}</strong>

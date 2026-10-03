@@ -103,6 +103,38 @@ test.describe('Guest Flow & Auth Fix Verification', () => {
       .toHaveAttribute('src', /photo-1503177119275-0aa32b3a9368/);
   });
 
+  test('Featured stay card photos use loaded 4:3 cover images without inline gaps', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+
+    const featuredImages = page.locator('.collection-item-image');
+    await expect(featuredImages).toHaveCount(3);
+
+    for (let index = 0; index < await featuredImages.count(); index += 1) {
+      const frame = featuredImages.nth(index);
+      await frame.scrollIntoViewIfNeeded();
+      const image = frame.locator('img');
+      await expect.poll(() => image.evaluate((element) => element.complete && element.naturalWidth > 0)).toBe(true);
+
+      const measurements = await frame.evaluate((element) => {
+        const frameBox = element.getBoundingClientRect()
+        const image = element.querySelector('img')
+        const imageBox = image.getBoundingClientRect()
+        return {
+          frameRatio: frameBox.width / frameBox.height,
+          imageRatio: imageBox.width / imageBox.height,
+          imageDisplay: getComputedStyle(image).display,
+          imageFit: getComputedStyle(image).objectFit,
+        }
+      })
+
+      expect(measurements.frameRatio).toBeCloseTo(4 / 3, 2)
+      expect(measurements.imageRatio).toBeCloseTo(4 / 3, 2)
+      expect(measurements.imageDisplay).toBe('block')
+      expect(measurements.imageFit).toBe('cover')
+    }
+  });
+
   test('3) Open a property from listings via property link or card', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });

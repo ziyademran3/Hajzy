@@ -1680,9 +1680,11 @@ body::-webkit-scrollbar,
 
 .map-property-highlight img {
   width: 78px;
-  height: 78px;
+  height: auto;
+  aspect-ratio: 4 / 3;
   border-radius: 14px;
   object-fit: cover;
+  display: block;
   flex-shrink: 0;
 }
 
@@ -1724,7 +1726,7 @@ body::-webkit-scrollbar,
 .mini-city-card {
   position: relative;
   display: block;
-  min-height: 168px;
+  aspect-ratio: 4 / 3;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 22px;
   padding: 0;
@@ -1781,7 +1783,7 @@ body::-webkit-scrollbar,
   align-items: flex-start;
   justify-content: flex-end;
   gap: 6px;
-  min-height: 168px;
+  height: 100%;
   padding: 16px 14px;
 }
 
@@ -2286,16 +2288,26 @@ body::-webkit-scrollbar,
   border-color: rgba(0, 67, 63, 0.16);
 }
 
-.collection-item img {
+.collection-item-image {
+  position: relative;
   width: 100%;
-  height: 110px;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--bg-card-alt);
+}
+
+.collection-item-image img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   display: block;
   transition: transform 0.45s var(--ease-spring);
   will-change: transform;
 }
 
-.collection-item:hover img {
+.collection-item:hover .collection-item-image img {
   transform: scale(1.06);
 }
 
@@ -3174,8 +3186,10 @@ body::-webkit-scrollbar,
 
 .owner-listing-card img {
   width: 72px;
-  height: 72px;
+  height: auto;
+  aspect-ratio: 4 / 3;
   object-fit: cover;
+  display: block;
   border-radius: 12px;
 }
 
@@ -3507,8 +3521,10 @@ body::-webkit-scrollbar,
 
 .favorite-item img {
   width: 64px;
-  height: 64px;
+  height: auto;
+  aspect-ratio: 4 / 3;
   object-fit: cover;
+  display: block;
   border-radius: 12px;
   flex-shrink: 0;
 }
@@ -4462,8 +4478,10 @@ body::-webkit-scrollbar,
 
 .similar-stay-item img {
   width: 68px;
-  height: 68px;
+  height: auto;
+  aspect-ratio: 4 / 3;
   object-fit: cover;
+  display: block;
   border-radius: 12px;
 }
 
@@ -8005,13 +8023,11 @@ body[data-theme='dark'] .app-shell {
   }
 
   .bookings-shell .booking-image {
-    aspect-ratio: auto;
-    min-height: 100%;
+    aspect-ratio: 4 / 3;
   }
 
   .bookings-shell .booking-image img {
     height: 100%;
-    min-height: 100%;
   }
 
   .bookings-shell .status {
@@ -9869,6 +9885,4 @@ body[data-theme='dark'] .profile-item:hover,
   padding-top: 10px;
   border-top: 1px dashed rgba(148, 163, 184, 0.25);
 }
-
-
 
