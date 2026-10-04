@@ -27,6 +27,7 @@
     "searchCity": "Discover",
     "support": "Support",
     "noRecentActivity": "No recent activity",
+    "exploreStays": "Explore stays",
     "lastPayment": "Last payment: {{date}}",
     "noPaymentDate": "No payment date recorded",
     "confirmedSpend": "Confirmed payments",

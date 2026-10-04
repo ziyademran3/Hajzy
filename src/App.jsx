@@ -5285,21 +5285,41 @@ function App() {
   const renderBookingsPage = () => {
     const safeBookings = getSafeBookings(bookings)
 
+    const activeCount = safeBookings.filter((b) => {
+      const s = normalizeBookingStatus(b?.status)
+      const co = new Date(b?.checkOut || b?.checkIn || Date.now())
+      return s !== 'cancelled' && !Number.isNaN(co.getTime()) && co >= new Date()
+    }).length
+    const pastCount = safeBookings.filter((b) => {
+      const s = normalizeBookingStatus(b?.status)
+      const co = new Date(b?.checkOut || b?.checkIn || Date.now())
+      return s !== 'cancelled' && !Number.isNaN(co.getTime()) && co < new Date()
+    }).length
+    const cancelledCount = safeBookings.filter((b) => normalizeBookingStatus(b?.status) === 'cancelled').length
+    const bookingTabs = [
+      { id: 'upcoming', count: activeCount },
+      { id: 'past', count: pastCount },
+      { id: 'cancelled', count: cancelledCount },
+    ].filter((tab) => tab.count > 0)
+    const effectiveBookingFilter = bookingTabs.some((tab) => tab.id === bookingFilter)
+      ? bookingFilter
+      : (bookingTabs[0]?.id || bookingFilter)
+
     const visibleBookings = safeBookings.filter((booking) => {
       const normalizedStatus = normalizeBookingStatus(booking?.status)
       const checkOutValue = booking?.checkOut || booking?.checkIn || new Date().toISOString()
       const checkOutDate = new Date(checkOutValue)
       const now = new Date()
 
-      if (bookingFilter === 'upcoming') {
+      if (effectiveBookingFilter === 'upcoming') {
         return normalizedStatus !== 'cancelled' && !Number.isNaN(checkOutDate.getTime()) && checkOutDate >= now
       }
 
-      if (bookingFilter === 'past') {
+      if (effectiveBookingFilter === 'past') {
         return normalizedStatus !== 'cancelled' && !Number.isNaN(checkOutDate.getTime()) && checkOutDate < now
       }
 
-      if (bookingFilter === 'cancelled') {
+      if (effectiveBookingFilter === 'cancelled') {
         return normalizedStatus === 'cancelled'
       }
 
@@ -5313,88 +5333,88 @@ function App() {
       return arrivalA - arrivalB
     })
 
-    const activeCount = safeBookings.filter((b) => {
-      const s = normalizeBookingStatus(b?.status)
-      const co = new Date(b?.checkOut || b?.checkIn || Date.now())
-      return s !== 'cancelled' && !Number.isNaN(co.getTime()) && co >= new Date()
-    }).length
-    const pastCount = safeBookings.filter((b) => {
-      const s = normalizeBookingStatus(b?.status)
-      const co = new Date(b?.checkOut || b?.checkIn || Date.now())
-      return s !== 'cancelled' && !Number.isNaN(co.getTime()) && co < new Date()
-    }).length
-    const cancelledCount = safeBookings.filter((b) => normalizeBookingStatus(b?.status) === 'cancelled').length
-
     return (
       <div className="page-shell bookings-shell">
-        {/* Interactive Filter Cards */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-5" role="tablist" aria-label={language === 'en' ? 'Filter bookings' : 'تصفية الحجوزات'}>
+        {bookingTabs.length > 0 && (
+        <div
+          className="grid gap-2 sm:gap-3 mb-5"
+          style={{ gridTemplateColumns: `repeat(${bookingTabs.length}, minmax(0, 1fr))` }}
+          role="tablist"
+          aria-label={language === 'en' ? 'Filter bookings' : 'تصفية الحجوزات'}
+        >
+          {bookingTabs.some((tab) => tab.id === 'upcoming') && (
           <button
             type="button"
             role="tab"
-            aria-selected={bookingFilter === 'upcoming'}
+            aria-selected={effectiveBookingFilter === 'upcoming'}
             onClick={() => {
               haptics.trigger('light')
               setBookingFilter('upcoming')
             }}
             className={`rounded-2xl p-3 sm:p-4 text-center transition-all cursor-pointer ${
-              bookingFilter === 'upcoming'
+              effectiveBookingFilter === 'upcoming'
                 ? 'border-2 border-emerald-600 bg-emerald-50/80 dark:bg-emerald-950/50 dark:border-emerald-500 shadow-sm'
                 : 'border border-slate-200/90 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:bg-slate-800/60 opacity-80 hover:opacity-100'
             }`}
           >
-            <div className={`text-lg sm:text-2xl font-black ${bookingFilter === 'upcoming' ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-100'}`}>
+            <div className={`text-lg sm:text-2xl font-black ${effectiveBookingFilter === 'upcoming' ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-100'}`}>
               {activeCount}
             </div>
-            <div className={`text-xs sm:text-sm font-bold mt-0.5 ${bookingFilter === 'upcoming' ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-500 dark:text-slate-400'}`}>
+            <div className={`text-xs sm:text-sm font-bold mt-0.5 ${effectiveBookingFilter === 'upcoming' ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-500 dark:text-slate-400'}`}>
               {language === 'en' ? 'Upcoming' : 'القادمة'}
             </div>
           </button>
+          )}
 
+          {bookingTabs.some((tab) => tab.id === 'past') && (
           <button
             type="button"
             role="tab"
-            aria-selected={bookingFilter === 'past'}
+            aria-selected={effectiveBookingFilter === 'past'}
             onClick={() => {
               haptics.trigger('light')
               setBookingFilter('past')
             }}
             className={`rounded-2xl p-3 sm:p-4 text-center transition-all cursor-pointer ${
-              bookingFilter === 'past'
+              effectiveBookingFilter === 'past'
                 ? 'border-2 border-teal-600 bg-teal-50/80 dark:bg-teal-950/50 dark:border-teal-500 shadow-sm'
                 : 'border border-slate-200/90 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:bg-slate-800/60 opacity-80 hover:opacity-100'
             }`}
           >
-            <div className={`text-lg sm:text-2xl font-black ${bookingFilter === 'past' ? 'text-teal-700 dark:text-teal-400' : 'text-slate-800 dark:text-slate-100'}`}>
+            <div className={`text-lg sm:text-2xl font-black ${effectiveBookingFilter === 'past' ? 'text-teal-700 dark:text-teal-400' : 'text-slate-800 dark:text-slate-100'}`}>
               {pastCount}
             </div>
-            <div className={`text-xs sm:text-sm font-bold mt-0.5 ${bookingFilter === 'past' ? 'text-teal-700 dark:text-teal-300' : 'text-slate-500 dark:text-slate-400'}`}>
+            <div className={`text-xs sm:text-sm font-bold mt-0.5 ${effectiveBookingFilter === 'past' ? 'text-teal-700 dark:text-teal-300' : 'text-slate-500 dark:text-slate-400'}`}>
               {language === 'en' ? 'Past Stays' : 'السابقة'}
             </div>
           </button>
+          )}
 
+          {bookingTabs.some((tab) => tab.id === 'cancelled') && (
           <button
             type="button"
             role="tab"
-            aria-selected={bookingFilter === 'cancelled'}
+            aria-selected={effectiveBookingFilter === 'cancelled'}
             onClick={() => {
               haptics.trigger('light')
               setBookingFilter('cancelled')
             }}
             className={`rounded-2xl p-3 sm:p-4 text-center transition-all cursor-pointer ${
-              bookingFilter === 'cancelled'
+              effectiveBookingFilter === 'cancelled'
                 ? 'border-2 border-rose-500 bg-rose-50/80 dark:bg-rose-950/50 dark:border-rose-500 shadow-sm'
                 : 'border border-slate-200/90 bg-white hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:bg-slate-800/60 opacity-80 hover:opacity-100'
             }`}
           >
-            <div className={`text-lg sm:text-2xl font-black ${bookingFilter === 'cancelled' ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-100'}`}>
+            <div className={`text-lg sm:text-2xl font-black ${effectiveBookingFilter === 'cancelled' ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-100'}`}>
               {cancelledCount}
             </div>
-            <div className={`text-xs sm:text-sm font-bold mt-0.5 ${bookingFilter === 'cancelled' ? 'text-rose-600 dark:text-rose-300' : 'text-slate-500 dark:text-slate-400'}`}>
+            <div className={`text-xs sm:text-sm font-bold mt-0.5 ${effectiveBookingFilter === 'cancelled' ? 'text-rose-600 dark:text-rose-300' : 'text-slate-500 dark:text-slate-400'}`}>
               {language === 'en' ? 'Cancelled' : 'الملغاة'}
             </div>
           </button>
+          )}
         </div>
+        )}
 
         {isOffline && (
           <div className="offline-banner" role="status">

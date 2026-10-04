@@ -38,6 +38,86 @@ test.describe('Guest Flow & Auth Fix Verification', () => {
     await submitBtn.click();
   });
 
+  test('Booking activity and booking-list tabs only show categories with results', async ({ page }) => {
+    await page.evaluate(() => {
+      localStorage.setItem('hajzy_guest_mode', 'true');
+      localStorage.setItem('hajzy_bookings', JSON.stringify([
+        {
+          id: 'booking-upcoming-tab',
+          reference: '#HZ-TAB-UPCOMING',
+          propertyId: 'alex-vista',
+          checkIn: '2099-11-10',
+          checkOut: '2099-11-12',
+          status: 'confirmed',
+          total: 8400,
+        },
+        {
+          id: 'booking-past-tab',
+          reference: '#HZ-TAB-PAST',
+          propertyId: 'cairo-nile-hotel',
+          checkIn: '2000-11-10',
+          checkOut: '2000-11-12',
+          status: 'confirmed',
+          total: 8400,
+        },
+        {
+          id: 'booking-cancelled-tab',
+          reference: '#HZ-TAB-CANCELLED',
+          propertyId: 'cairo-lounge',
+          checkIn: '2099-12-10',
+          checkOut: '2099-12-12',
+          status: 'cancelled',
+          total: 8400,
+        },
+      ]));
+    });
+    await page.reload();
+    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: 'لوحة التحكم' }).click();
+    await expect(page.getByRole('button', { name: /قيد الانتظار \(0\)/ })).toHaveCount(0);
+
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: 'حجوزاتي' }).click();
+    const bookingTabs = page.getByRole('tablist', { name: 'تصفية الحجوزات' }).getByRole('tab');
+    await expect(bookingTabs).toHaveCount(3);
+    await expect(bookingTabs).toContainText(['القادمة', 'السابقة', 'الملغاة']);
+
+    await page.evaluate(() => {
+      localStorage.setItem('hajzy_bookings', JSON.stringify([{
+        id: 'booking-only-upcoming-tab',
+        reference: '#HZ-TAB-ONLY',
+        propertyId: 'alex-vista',
+        checkIn: '2099-11-10',
+        checkOut: '2099-11-12',
+        status: 'confirmed',
+        total: 8400,
+      }]));
+    });
+    await page.reload();
+    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: 'حجوزاتي' }).click();
+    const onlyUpcomingTab = page.getByRole('tablist', { name: 'تصفية الحجوزات' }).getByRole('tab');
+    await expect(onlyUpcomingTab).toHaveCount(1);
+    await expect(onlyUpcomingTab).toContainText('القادمة');
+  });
+
+  test('Empty activity and bookings show an explore-stays action without zero-count tabs', async ({ page }) => {
+    await page.evaluate(() => {
+      localStorage.setItem('hajzy_guest_mode', 'true');
+      localStorage.setItem('hajzy_bookings', JSON.stringify([]));
+    });
+    await page.reload();
+    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: 'لوحة التحكم' }).click();
+    await expect(page.getByRole('button', { name: 'استكشف الإقامات', exact: true })).toBeVisible();
+
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: 'حجوزاتي' }).click();
+    await expect(page.getByRole('tablist', { name: 'تصفية الحجوزات' })).toHaveCount(0);
+    const emptyBookings = page.locator('.empty-booking-state');
+    await expect(emptyBookings.getByRole('button', { name: 'تصفح الإقامات' })).toBeVisible();
+  });
+
   test('Booking overflow action is a labeled 40px circle beside invoice and details', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');

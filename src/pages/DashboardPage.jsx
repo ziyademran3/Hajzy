@@ -84,6 +84,15 @@ export default function DashboardPage({
     return safeBookings.filter((b) => normalizeBookingStatus(b.status) === 'pending')
   }, [safeBookings])
 
+  const availableActivityFilters = [
+    { id: 'all', count: safeBookings.length },
+    { id: 'confirmed', count: confirmedBookings.length },
+    { id: 'pending', count: pendingBookings.length },
+  ].filter((filter) => filter.count > 0)
+  const effectiveActivityFilter = availableActivityFilters.some((filter) => filter.id === activityFilter)
+    ? activityFilter
+    : (availableActivityFilters[0]?.id || 'all')
+
   // Accurate financial calculation using calculateBookingPricing
   const getBookingTotal = (booking) => {
     const property = properties.find((item) => String(item.id) === String(booking.propertyId))
@@ -145,10 +154,10 @@ export default function DashboardPage({
 
   // Filtered recent activity
   const filteredBookings = useMemo(() => {
-    if (activityFilter === 'confirmed') return confirmedBookings
-    if (activityFilter === 'pending') return pendingBookings
+    if (effectiveActivityFilter === 'confirmed') return confirmedBookings
+    if (effectiveActivityFilter === 'pending') return pendingBookings
     return safeBookings
-  }, [safeBookings, confirmedBookings, pendingBookings, activityFilter])
+  }, [safeBookings, confirmedBookings, pendingBookings, effectiveActivityFilter])
 
   // Curated properties recommendation (top 3)
   const curatedProperties = useMemo(() => {
@@ -558,30 +567,32 @@ export default function DashboardPage({
             </p>
           </div>
 
-          {/* Filter Pills */}
-          <div className="flex items-center gap-1.5 self-start rounded-2xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800">
-            <button
-              type="button"
-              onClick={() => setActivityFilter('all')}
-              className={`rounded-xl px-3 py-1 text-xs font-bold transition ${activityFilter === 'all' ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}
-            >
-              {isAr ? 'الكل' : 'All'} ({safeBookings.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActivityFilter('confirmed')}
-              className={`rounded-xl px-3 py-1 text-xs font-bold transition ${activityFilter === 'confirmed' ? 'bg-white text-emerald-700 shadow-sm dark:bg-slate-700 dark:text-emerald-300' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}
-            >
-              {isAr ? 'المؤكدة' : 'Confirmed'} ({confirmedBookings.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActivityFilter('pending')}
-              className={`rounded-xl px-3 py-1 text-xs font-bold transition ${activityFilter === 'pending' ? 'bg-white text-amber-700 shadow-sm dark:bg-slate-700 dark:text-amber-300' : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}
-            >
-              {isAr ? 'قيد الانتظار' : 'Pending'} ({pendingBookings.length})
-            </button>
-          </div>
+          {availableActivityFilters.length > 0 && (
+            <div className="flex items-center gap-1.5 self-start rounded-2xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800">
+              {availableActivityFilters.map((filter) => (
+                <button
+                  key={filter.id}
+                  type="button"
+                  onClick={() => setActivityFilter(filter.id)}
+                  className={`rounded-xl px-3 py-1 text-xs font-bold transition ${
+                    effectiveActivityFilter === filter.id
+                      ? filter.id === 'pending'
+                        ? 'bg-white text-amber-700 shadow-sm dark:bg-slate-700 dark:text-amber-300'
+                        : filter.id === 'confirmed'
+                          ? 'bg-white text-emerald-700 shadow-sm dark:bg-slate-700 dark:text-emerald-300'
+                          : 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white'
+                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  }`}
+                >
+                  {filter.id === 'all'
+                    ? (isAr ? 'الكل' : 'All')
+                    : filter.id === 'confirmed'
+                      ? (isAr ? 'المؤكدة' : 'Confirmed')
+                      : (isAr ? 'قيد الانتظار' : 'Pending')} ({filter.count})
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {filteredBookings.length > 0 ? (
@@ -781,6 +792,11 @@ export default function DashboardPage({
             <p className="mt-1 text-xs text-slate-400">
               {isAr ? 'جرب اختيار تصنيف آخر أو قم بحجز إقامة جديدة' : 'Try switching tabs or book a new destination'}
             </p>
+            {safeBookings.length === 0 && (
+              <button type="button" className="primary-button mt-4" onClick={() => onNavigate('home')}>
+                {t('dashboard.exploreStays')}
+              </button>
+            )}
           </div>
         )}
       </section>
