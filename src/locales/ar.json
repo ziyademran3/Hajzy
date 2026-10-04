@@ -72,12 +72,18 @@
     "notifications": "الإشعارات",
     "privacy": "خصوصية الحساب",
     "language": "اللغة",
+    "theme": "المظهر",
+    "english": "الإنجليزية",
+    "arabic": "العربية",
+    "lightMode": "الوضع النهاري",
+    "darkMode": "الوضع الليلي",
     "enabled": "الإشعارات مفعلة",
     "disabled": "الإشعارات متوقفة",
     "privateAccount": "حساب خاص",
     "publicAccount": "حساب عام",
     "toggleNotifications": "تشغيل أو إيقاف الإشعارات",
     "togglePrivacy": "تفعيل أو إيقاف خصوصية الحساب",
+    "toggleTheme": "تبديل الوضع الداكن",
     "notificationDetails": "تفاصيل الإشعارات"
   },
   "profileDetails": {

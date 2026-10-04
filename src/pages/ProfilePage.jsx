@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../hooks/useAuth'
 import { getSafeBookings, normalizeBookingStatus, calculateBookingPricing } from '../lib/dataService'
 import { getNotificationPreferences, saveNotificationPreferences } from '../lib/notificationService'
+import { useTheme } from '../components/ThemeProvider'
 
 const getPrivateAccountPreference = (userId, fallback = true) => {
   try {
@@ -29,10 +30,15 @@ export default function ProfilePage({
   onEdit: _onEdit = () => {},
   onUpdateProfile,
   onToggleLanguage = () => {},
+  theme = 'light',
+  onToggleTheme,
   onNavigate = () => {},
   onLogout,
 }) {
   const { t } = useTranslation()
+  const { theme: activeTheme, toggleTheme } = useTheme()
+  const currentTheme = activeTheme || theme
+  const changeTheme = onToggleTheme || toggleTheme
   const { updateProfile: fallbackUpdateProfile, changeUserPassword, logout } = useAuth()
   const updateProfile = onUpdateProfile || fallbackUpdateProfile
   const settingsUserId = String(initialUser?.id || initialUser?.email || 'guest')
@@ -321,7 +327,13 @@ export default function ProfilePage({
       id: 'language',
       icon: 'language',
       title: t('profileSettings.language'),
-      value: language === 'en' ? 'English' : 'العربية',
+      value: language === 'en' ? t('profileSettings.english') : t('profileSettings.arabic'),
+    },
+    {
+      id: 'theme',
+      icon: currentTheme === 'dark' ? 'dark_mode' : 'light_mode',
+      title: t('profileSettings.theme'),
+      value: t(currentTheme === 'dark' ? 'profileSettings.darkMode' : 'profileSettings.lightMode'),
     },
   ]
 
@@ -595,10 +607,10 @@ export default function ProfilePage({
                   <button
                     type="button"
                     role="switch"
-                    className="settings-switch"
-                    aria-checked={item.id === 'notifications' ? notificationsEnabled : isPrivateAccount}
-                    aria-label={t(item.id === 'notifications' ? 'profileSettings.toggleNotifications' : 'profileSettings.togglePrivacy')}
-                    onClick={item.id === 'notifications' ? handleNotificationsToggle : handlePrivacyToggle}
+                    className={`settings-switch ${item.id === 'theme' ? 'theme-toggle' : ''}`}
+                    aria-checked={item.id === 'notifications' ? notificationsEnabled : item.id === 'privacy' ? isPrivateAccount : currentTheme === 'dark'}
+                    aria-label={t(item.id === 'notifications' ? 'profileSettings.toggleNotifications' : item.id === 'privacy' ? 'profileSettings.togglePrivacy' : 'profileSettings.toggleTheme')}
+                    onClick={item.id === 'notifications' ? handleNotificationsToggle : item.id === 'privacy' ? handlePrivacyToggle : changeTheme}
                   >
                     <span className="settings-switch-thumb" aria-hidden="true" />
                   </button>

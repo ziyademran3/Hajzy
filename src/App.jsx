@@ -6039,6 +6039,8 @@ function App() {
             onEdit={() => navigate('profile-edit')}
             onUpdateProfile={updateProfile}
             onToggleLanguage={handleLanguageToggle}
+            theme={theme}
+            onToggleTheme={toggleTheme}
             onNavigate={navigate}
             onLogout={handleLogout}
           />
@@ -6079,6 +6081,8 @@ function App() {
           onEdit={() => navigate('profile-edit')}
           onUpdateProfile={updateProfile}
           onToggleLanguage={handleLanguageToggle}
+          theme={theme}
+          onToggleTheme={toggleTheme}
           onNavigate={navigate}
           onLogout={handleLogout}
         />
@@ -6139,6 +6143,8 @@ function App() {
         onEdit={() => navigate('profile-edit')}
         onUpdateProfile={updateProfile}
         onToggleLanguage={handleLanguageToggle}
+        theme={theme}
+        onToggleTheme={toggleTheme}
         onNavigate={navigate}
         onLogout={handleLogout}
       />
@@ -6678,28 +6684,7 @@ function App() {
             )}
           </h1>
 
-          <div className="topbar-actions flex items-center gap-1.5">
-            <button
-              type="button"
-              className="icon-button theme-toggle"
-              aria-label={theme === 'dark' ? 'الوضع النهاري' : 'الوضع الليلي'}
-              title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
-              onClick={toggleTheme}
-            >
-              <span className="material-symbols-outlined">{theme === 'dark' ? 'light_mode' : 'dark_mode'}</span>
-            </button>
-
-            <button
-              type="button"
-              className="icon-button language-toggle"
-              aria-label={language === 'en' ? 'Switch to Arabic' : 'Switch to English'}
-              title={language === 'en' ? 'العربية' : 'English'}
-              onClick={handleLanguageToggle}
-            >
-              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">language</span>
-              <span className="language-toggle-text">{language === 'en' ? 'العربية' : 'English'}</span>
-            </button>
-
+          <div className="topbar-actions">
             <button
               className="icon-button notification-button"
               aria-label={notificationLabel}

@@ -148,8 +148,10 @@ test.describe('Guest Flow & Auth Fix Verification', () => {
     };
 
     await assertReadable();
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: 'حسابي' }).click();
     await page.locator('.theme-toggle').click();
     await expect(page.locator('.app-shell')).toHaveAttribute('data-theme', 'dark');
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: 'حجوزاتي' }).click();
     await assertReadable();
   });
 

@@ -111,24 +111,19 @@ test.describe('Guest Phone Input Mobile Tests (Android/Chrome emulation)', () =>
     const pageErrors = [];
     page.on('pageerror', (err) => pageErrors.push(err.message));
 
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: 'حسابي' }).click();
+    const themeToggle = page.locator('#profile-settings .theme-toggle');
+    await expect(themeToggle).toBeVisible();
+    await themeToggle.click();
+    const langToggle = page.locator('#profile-settings .language-toggle');
+    await expect(langToggle).toBeVisible();
+    await langToggle.click();
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: /الرئيسية|Home/i }).click();
+
     // Open first property
     await page.locator('.property-card').first().click();
     const bookBtn = page.locator('button:has-text("احجز"), button:has-text("حجز"), button:has-text("Book")').first();
     await bookBtn.click();
-
-    // Toggle theme
-    const themeToggle = page.locator('.theme-toggle, [aria-label*="theme"], [aria-label*="مظهر"]').first();
-    if (await themeToggle.isVisible()) {
-      await themeToggle.click();
-      await page.waitForTimeout(200);
-    }
-
-    // Toggle language
-    const langToggle = page.locator('.language-toggle').first();
-    if (await langToggle.isVisible()) {
-      await langToggle.click();
-      await page.waitForTimeout(300);
-    }
 
     // Go to step 2
     const step2Btn = page.locator('.booking-progress-steps button').nth(1);

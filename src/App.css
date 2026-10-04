@@ -520,8 +520,8 @@ body::-webkit-scrollbar,
 
 .icon-button,
 .icon-spacer {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -7438,9 +7438,10 @@ input {
   margin: 0 auto;
   height: 72px;
   padding: 0 20px;
-  display: flex;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
 }
 
 .topbar h1 {
@@ -8265,6 +8266,32 @@ input {
   .topbar-inner {
     width: min(100%, 720px);
   }
+}
+
+.topbar-inner {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  gap: 12px;
+}
+
+.topbar-inner > .topbar-ghost,
+.topbar-inner > .icon-button {
+  width: 44px;
+  height: 44px;
+}
+
+.topbar-inner > .topbar-brand {
+  width: 100%;
+  justify-content: center;
+}
+
+.topbar-inner > .topbar-actions {
+  justify-content: center;
+}
+
+.topbar-inner .notification-button {
+  width: 44px;
+  height: 44px;
 }
 
 /* ==========================================================================

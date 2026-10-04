@@ -72,12 +72,18 @@
     "notifications": "Notifications",
     "privacy": "Account privacy",
     "language": "Language",
+    "theme": "Appearance",
+    "english": "English",
+    "arabic": "Arabic",
+    "lightMode": "Light mode",
+    "darkMode": "Dark mode",
     "enabled": "Notifications on",
     "disabled": "Notifications off",
     "privateAccount": "Private account",
     "publicAccount": "Public account",
     "toggleNotifications": "Toggle notifications",
     "togglePrivacy": "Toggle account privacy",
+    "toggleTheme": "Toggle dark mode",
     "notificationDetails": "Notification details"
   },
   "profileDetails": {

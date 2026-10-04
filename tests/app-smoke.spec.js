@@ -25,6 +25,11 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
 
     // Verify Topbar is present
     await expect(page.locator('.topbar')).toBeVisible();
+    await expect(page.locator('.topbar-actions > button')).toHaveCount(1);
+    await expect(page.locator('.topbar-actions > button')).toHaveAttribute(
+      'aria-label',
+      /الإشعارات|Notifications/
+    );
 
     // Verify search panel or compact search is visible
     const searchPanel = page.locator('.home-compact-search, .search-panel, .search-bar');
@@ -106,52 +111,52 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
 
   test('Language switch toggles RTL/LTR and updates labels', async ({ page }) => {
     await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: /حسابي|Profile/i }).click();
 
-    const langToggle = page.locator('.language-toggle').first();
-    if (await langToggle.isVisible()) {
-      await expect(langToggle.locator('.language-toggle-text')).toHaveText('English');
-      await expect(langToggle.locator('.material-symbols-outlined')).toHaveText('language');
-      await expect(langToggle).not.toContainText(/[🇪🇬🇬🇧]/);
-      const initialDir = await page.locator('html').getAttribute('dir');
-      await langToggle.click();
+    const langToggle = page.locator('#profile-settings .language-toggle');
+    await expect(langToggle).toBeVisible();
+    await expect(langToggle.locator('.language-toggle-text')).toHaveText('English');
+    await expect(langToggle.locator('.material-symbols-outlined')).toHaveText('language');
+    await expect(langToggle).not.toContainText(/[🇪🇬🇬🇧]/);
+    const initialDir = await page.locator('html').getAttribute('dir');
+    await langToggle.click();
 
-      const newDir = await page.locator('html').getAttribute('dir');
-      expect(newDir).not.toBe(initialDir);
-      await expect(page.locator('.language-toggle').first().locator('.language-toggle-text')).toHaveText('العربية');
-    }
+    const newDir = await page.locator('html').getAttribute('dir');
+    expect(newDir).not.toBe(initialDir);
+    await expect(page.locator('#profile-settings .language-toggle-text')).toHaveText('العربية');
   });
 
   test('Theme toggle toggles dark mode attribute', async ({ page }) => {
     await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: /حسابي|Profile/i }).click();
 
-    const themeToggle = page.locator('.theme-toggle, [aria-label*="theme"], [aria-label*="مظهر"], [aria-label*="المظهر"]').first();
-    if (await themeToggle.isVisible()) {
-      const appShell = page.locator('.app-shell');
-      const initialTheme = await appShell.getAttribute('data-theme');
+    const themeToggle = page.locator('#profile-settings .theme-toggle');
+    await expect(themeToggle).toBeVisible();
+    const appShell = page.locator('.app-shell');
+    const initialTheme = await appShell.getAttribute('data-theme');
 
-      await themeToggle.click();
-      const toggledTheme = await appShell.getAttribute('data-theme');
-      expect(toggledTheme).not.toBe(initialTheme);
+    await themeToggle.click();
+    const toggledTheme = await appShell.getAttribute('data-theme');
+    expect(toggledTheme).not.toBe(initialTheme);
 
-      const variantStyles = await page.locator('.app-shell').evaluate((shell) => {
-        const buttons = ['primary-button', 'secondary-button', 'ghost-button'].map((variant) => {
-          const button = document.createElement('button');
-          button.type = 'button';
-          button.className = variant;
-          shell.append(button);
-          const style = getComputedStyle(button);
-          const result = { height: style.height, radius: style.borderRadius };
-          button.remove();
-          return result;
-        });
-        return buttons;
+    const variantStyles = await page.locator('.app-shell').evaluate((shell) => {
+      const buttons = ['primary-button', 'secondary-button', 'ghost-button'].map((variant) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = variant;
+        shell.append(button);
+        const style = getComputedStyle(button);
+        const result = { height: style.height, radius: style.borderRadius };
+        button.remove();
+        return result;
       });
-      expect(variantStyles).toEqual([
-        { height: '48px', radius: '14px' },
-        { height: '48px', radius: '14px' },
-        { height: '48px', radius: '14px' },
-      ]);
-    }
+      return buttons;
+    });
+    expect(variantStyles).toEqual([
+      { height: '48px', radius: '14px' },
+      { height: '48px', radius: '14px' },
+      { height: '48px', radius: '14px' },
+    ]);
   });
 
   test('Login page renders properly with form fields and submit button', async ({ page }) => {
