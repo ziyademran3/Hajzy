@@ -1078,7 +1078,6 @@ body::-webkit-scrollbar,
 .app-shell[data-theme='dark'] .owner-card,
 .app-shell[data-theme='dark'] .owner-analytics-card,
 .app-shell[data-theme='dark'] .owner-overview-card,
-.app-shell[data-theme='dark'] .feature-card,
 .app-shell[data-theme='dark'] .value-card,
 .app-shell[data-theme='dark'] .profile-card,
 .app-shell[data-theme='dark'] .panel,
@@ -1094,7 +1093,6 @@ body::-webkit-scrollbar,
 
 .app-shell[data-theme='dark'] .stat-card,
 .app-shell[data-theme='dark'] .summary-card,
-.app-shell[data-theme='dark'] .feature-card,
 .app-shell[data-theme='dark'] .value-card,
 .app-shell[data-theme='dark'] .dashboard-panel,
 .app-shell[data-theme='dark'] .property-card,
@@ -1350,8 +1348,6 @@ body::-webkit-scrollbar,
 .app-shell[data-theme='dark'] .owner-card p,
 .app-shell[data-theme='dark'] .profile-item span,
 .app-shell[data-theme='dark'] .profile-subtitle,
-.app-shell[data-theme='dark'] .value-card small,
-.app-shell[data-theme='dark'] .feature-card p,
 .app-shell[data-theme='dark'] .mini-booking-item span,
 .app-shell[data-theme='dark'] .property-card p {
   color: var(--muted);
@@ -1921,46 +1917,6 @@ body::-webkit-scrollbar,
   grid-column: 1 / -1;
 }
 
-.home-feature-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin: 0;
-}
-
-.feature-card {
-  padding: 14px 12px 12px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(240, 246, 243, 0.96));
-  border: 1px solid rgba(0, 67, 63, 0.08);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.02);
-}
-
-.feature-card .material-symbols-outlined {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 12px;
-  background: rgba(0, 67, 63, 0.08);
-  color: var(--primary);
-  font-size: var(--type-16);
-}
-
-.feature-card h4 {
-  margin: 12px 0 8px;
-  font-size: var(--type-14);
-  color: var(--text);
-}
-
-.feature-card p {
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--type-12);
-  line-height: 1.6;
-}
-
 .search-bar {
   position: relative;
   height: 52px;
@@ -2436,19 +2392,27 @@ body::-webkit-scrollbar,
 }
 
 .value-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: 2px 0 8px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
 }
 
 .value-card {
   display: flex;
+  flex: 0 0 clamp(160px, 22%, 190px);
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 12px 10px;
-  border-radius: 16px;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
   background: linear-gradient(135deg, rgba(0, 67, 63, 0.06), rgba(255, 255, 255, 0.9));
   border: 1px solid rgba(0, 67, 63, 0.08);
+  scroll-snap-align: start;
+  text-align: center;
 }
 
 .value-card .material-symbols-outlined {
@@ -2462,20 +2426,14 @@ body::-webkit-scrollbar,
   font-size: var(--type-16);
 }
 
-.value-card strong,
-.value-card small {
+.value-card strong {
   display: block;
 }
 
 .value-card strong {
   color: var(--text);
   font-size: var(--type-12);
-}
-
-.value-card small {
-  color: var(--muted);
-  font-size: var(--type-12);
-  margin-top: 3px;
+  white-space: nowrap;
 }
 
 .home-compact-search {
@@ -8501,7 +8459,6 @@ body[data-theme='dark'] .app-shell {
 .app-shell[data-theme='dark'] .info-box,
 .app-shell[data-theme='dark'] .detail-summary-card,
 .app-shell[data-theme='dark'] .detail-highlight-card,
-.app-shell[data-theme='dark'] .feature-card,
 .app-shell[data-theme='dark'] .value-card,
 .app-shell[data-theme='dark'] .profile-metric-card,
 .app-shell[data-theme='dark'] .profile-item,

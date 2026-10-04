@@ -3027,10 +3027,11 @@ function App() {
     { id: 'شرم الشيخ', label: language === 'en' ? 'Sharm El-Sheikh' : 'شرم الشيخ' },
   ]
 
-  const homeHighlights = [
-    { icon: 'verified', title: language === 'en' ? 'Verified stays' : 'إقامة موثقة', text: language === 'en' ? 'Every home is checked before you book.' : 'كل العقار يتم التحقق منه قبل الحجز.' },
-    { icon: 'payments', title: language === 'en' ? 'Secure payment' : 'دفع آمن', text: language === 'en' ? 'Pay in minutes with protected checkout.' : 'ادفع بسهولة وبأمان عبر الدفع الآمن.' },
-    { icon: 'event_available', title: language === 'en' ? 'Flexible cancellation' : 'إلغاء مرن', text: language === 'en' ? 'Clear cancellation options before arrival.' : 'خيارات إلغاء واضحة ومريحة قبل الوصول.' },
+  const homeBenefits = [
+    { icon: 'verified', title: language === 'en' ? 'Verified stays' : 'إقامة موثقة' },
+    { icon: 'payments', title: language === 'en' ? 'Secure payment' : 'دفع آمن' },
+    { icon: 'event_available', title: language === 'en' ? 'Flexible cancellation' : 'إلغاء مرن' },
+    { icon: 'support_agent', title: language === 'en' ? '24/7 Concierge' : 'كونسيرج 24/7' },
   ]
 
   const renderHomePage = () => {
@@ -3578,45 +3579,13 @@ function App() {
         </div>
       )}
 
-      <div className="home-feature-grid">
-        {homeHighlights.map((item, index) => (
-          <div key={`${item.title}-${index}`} className="feature-card">
-            <span className="material-symbols-outlined">{item.icon}</span>
-            <h4>{item.title}</h4>
-            <p>{item.text}</p>
+      <div className="value-grid" data-testid="home-benefits" role="list">
+        {homeBenefits.map((item) => (
+          <div key={item.icon} className="value-card" role="listitem">
+            <span className="material-symbols-outlined" aria-hidden="true">{item.icon}</span>
+            <strong>{item.title}</strong>
           </div>
         ))}
-      </div>
-
-      <div className="value-grid">
-        <div className="value-card">
-          <span className="material-symbols-outlined">shield</span>
-          <div>
-            <strong>{language === 'en' ? 'Verified stays' : 'إقامة موثقة'}</strong>
-            <small>{language === 'en' ? 'Guest-safe booking' : 'حجز آمن للضيوف'}</small>
-          </div>
-        </div>
-        <div className="value-card">
-          <span className="material-symbols-outlined">payments</span>
-          <div>
-            <strong>{language === 'en' ? 'Safe payment' : 'دفع آمن'}</strong>
-            <small>{language === 'en' ? 'Protected checkout' : 'دفع محمي ومتعدد'}</small>
-          </div>
-        </div>
-        <div className="value-card">
-          <span className="material-symbols-outlined">support_agent</span>
-          <div>
-            <strong>{language === 'en' ? '24/7 Concierge' : 'كونسيرج 24/7'}</strong>
-            <small>{language === 'en' ? 'VIP guest support' : 'خدمة ضيوف فورية'}</small>
-          </div>
-        </div>
-        <div className="value-card">
-          <span className="material-symbols-outlined">event_available</span>
-          <div>
-            <strong>{language === 'en' ? 'Flexible cancel' : 'إلغاء مرن'}</strong>
-            <small>{language === 'en' ? 'Easy before arrival' : 'سهل قبل الوصول'}</small>
-          </div>
-        </div>
       </div>
     </div>
     )

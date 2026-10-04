@@ -76,6 +76,25 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
     expect(fatalErrors.length).toBe(0);
   });
 
+  test('Homepage benefits appear once in a horizontally scrollable icon-and-title strip', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const benefits = page.getByTestId('home-benefits');
+    const items = benefits.getByRole('listitem');
+
+    await expect(items).toHaveCount(4);
+    await expect(items).toContainText(['إقامة موثقة', 'دفع آمن', 'إلغاء مرن', 'كونسيرج 24/7']);
+    await expect(benefits.locator('p, small')).toHaveCount(0);
+    await expect(page.locator('.home-feature-grid, .feature-card')).toHaveCount(0);
+
+    const { clientWidth, scrollWidth, overflowX } = await benefits.evaluate((element) => ({
+      clientWidth: element.clientWidth,
+      scrollWidth: element.scrollWidth,
+      overflowX: getComputedStyle(element).overflowX,
+    }));
+    expect(overflowX).toBe('auto');
+    expect(scrollWidth).toBeGreaterThan(clientWidth);
+  });
+
   test('Total payments shows the date of the latest confirmed payment', async ({ page }) => {
     await page.evaluate(() => {
       localStorage.setItem('hajzy_bookings', JSON.stringify([
