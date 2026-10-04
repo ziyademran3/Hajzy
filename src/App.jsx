@@ -130,7 +130,7 @@ const handleStayImageError = (event) => {
 
 const pageTitlesByLanguage = {
   ar: {
-    dashboard: 'لوحة التحكم',
+    dashboard: 'رحلاتي',
     account: 'حسابي',
     home: 'Hajzy',
     city: 'إقامات المدينة',
@@ -144,7 +144,7 @@ const pageTitlesByLanguage = {
     'owner-settings': 'إعدادات المالك',
   },
   en: {
-    dashboard: 'Dashboard',
+    dashboard: 'My Trips',
     account: 'My Account',
     home: 'Hajzy',
     city: 'City Stays',
@@ -6179,8 +6179,10 @@ function App() {
     },
     {
       key: isOwner ? 'owner' : 'dashboard',
-      label: language === 'en' ? 'Dashboard' : 'لوحة التحكم',
-      icon: 'dashboard',
+      label: isOwner
+        ? (language === 'en' ? 'Dashboard' : 'لوحة تحكم المالك')
+        : (language === 'en' ? 'My Trips' : 'رحلاتي'),
+      icon: isOwner ? 'dashboard' : 'luggage',
     },
     {
       key: 'bookings',
@@ -6628,7 +6630,7 @@ function App() {
 
   const notificationLabel = language === 'en' ? 'Notifications' : 'الإشعارات'
   const topBarTitle =
-    activePage === 'home' || activePage === 'dashboard' || activePage === 'owner'
+    activePage === 'home' || activePage === 'owner'
       ? 'Hajzy'
       : isOwner
         ? pageTitlesByLanguage[language]?.[activePage] || pageTitlesByLanguage[language]?.owner || 'Hajzy'

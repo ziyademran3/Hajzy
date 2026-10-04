@@ -74,7 +74,7 @@ test.describe('Guest Flow & Auth Fix Verification', () => {
     await page.reload();
     await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
 
-    await page.locator('.bottom-nav .nav-item').filter({ hasText: 'لوحة التحكم' }).click();
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: 'رحلاتي' }).click();
     await expect(page.getByRole('button', { name: /قيد الانتظار \(0\)/ })).toHaveCount(0);
 
     await page.locator('.bottom-nav .nav-item').filter({ hasText: 'حجوزاتي' }).click();
@@ -109,7 +109,7 @@ test.describe('Guest Flow & Auth Fix Verification', () => {
     await page.reload();
     await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
 
-    await page.locator('.bottom-nav .nav-item').filter({ hasText: 'لوحة التحكم' }).click();
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: 'رحلاتي' }).click();
     await expect(page.getByRole('button', { name: 'استكشف الإقامات', exact: true })).toBeVisible();
 
     await page.locator('.bottom-nav .nav-item').filter({ hasText: 'حجوزاتي' }).click();

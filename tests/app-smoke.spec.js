@@ -113,16 +113,24 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
     });
     await page.reload();
     await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
-    await page.locator('.bottom-nav .nav-item').filter({ hasText: /لوحة التحكم|Dashboard/i }).click();
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: /رحلاتي|My Trips/i }).click();
 
     const paymentsCard = page.getByText('إجمالي المدفوعات', { exact: true }).locator('xpath=../..');
     await expect(paymentsCard.getByTestId('last-payment-date')).toHaveText('آخر دفعة: 2 أكتوبر');
     await expect(paymentsCard).not.toContainText('نشط');
   });
 
+  test('Guest trips tab shows the trips title and luggage icon', async ({ page }) => {
+    const tripsTab = page.locator('.bottom-nav .nav-item').filter({ hasText: 'رحلاتي' });
+    await expect(tripsTab).toBeVisible();
+    await expect(tripsTab.locator('.material-symbols-outlined')).toHaveText('luggage');
+    await tripsTab.click();
+    await expect(page.locator('.topbar h1')).toHaveText('رحلاتي');
+  });
+
   test('Active bookings card shows a touch-sized tickets link with an RTL-aware arrow', async ({ page }) => {
     await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
-    await page.locator('.bottom-nav .nav-item').filter({ hasText: /لوحة التحكم|Dashboard/i }).click();
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: /رحلاتي|My Trips/i }).click();
 
     const bookingsCard = page.getByText('الحجوزات النشطة', { exact: true }).locator('xpath=../..');
     const ticketsLink = bookingsCard.getByRole('button', { name: 'عرض تذاكر الحجز' });
@@ -152,7 +160,7 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
       }, { checkIn, checkOut });
       await page.reload();
       await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
-      await page.locator('.bottom-nav .nav-item').filter({ hasText: /لوحة التحكم|Dashboard/i }).click();
+      await page.locator('.bottom-nav .nav-item').filter({ hasText: /رحلاتي|My Trips/i }).click();
     };
 
     await loadStay('2026-10-05', '2026-10-07');
@@ -196,7 +204,7 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
     });
     await page.reload();
     await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
-    await page.locator('.bottom-nav .nav-item').filter({ hasText: /لوحة التحكم|Dashboard/i }).click();
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: /رحلاتي|My Trips/i }).click();
 
     const progress = page.getByRole('progressbar', { name: 'التقدم نحو المستوى التالي' });
     await expect(progress).toHaveAttribute('aria-valuenow', '6');
