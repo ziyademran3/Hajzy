@@ -84,7 +84,8 @@
     "toggleNotifications": "Toggle notifications",
     "togglePrivacy": "Toggle account privacy",
     "toggleTheme": "Toggle dark mode",
-    "notificationDetails": "Notification details"
+    "notificationDetails": "Notification details",
+    "openClub": "Open Hajzy Club and loyalty points"
   },
   "profileDetails": {
     "edit": "Edit",

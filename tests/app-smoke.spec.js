@@ -254,7 +254,6 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
     const verificationBadge = page.locator('.profile-verification-row');
     const editButtonBounds = await headerEditButton.boundingBox();
     const nameBounds = await profileName.boundingBox();
-    const badgeBounds = await verificationBadge.boundingBox();
     expect(editButtonBounds.width).toBeGreaterThanOrEqual(44);
     expect(editButtonBounds.height).toBeGreaterThanOrEqual(44);
     const horizontalGap = Math.max(
@@ -262,7 +261,7 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
       Math.max(nameBounds.x, editButtonBounds.x) - Math.min(nameBounds.x + nameBounds.width, editButtonBounds.x + editButtonBounds.width),
     );
     expect(horizontalGap).toBeLessThan(16);
-    expect(badgeBounds.y).toBeGreaterThanOrEqual(nameBounds.y + nameBounds.height);
+    await expect(verificationBadge).toHaveCount(0);
     await expect(accountDetails.getByText('لم يحدد')).toBeVisible();
     await expect(accountDetails.locator('input[name="email"]')).toHaveCount(0);
     await expect(accountDetails.getByLabel('البريد الإلكتروني غير قابل للتعديل')).toBeVisible();
@@ -286,6 +285,50 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
     await accountDetails.locator('#profile-name-input').fill('تغيير غير محفوظ');
     await accountDetails.getByRole('button', { name: 'إلغاء' }).click();
     await expect(accountDetails.getByText('الاسم الجديد')).toBeVisible();
+  });
+
+  test('Profile shows only loyalty points, opens Hajzy Club, and verifies badges only for confirmed accounts', async ({ page }) => {
+    await page.evaluate(() => {
+      localStorage.setItem('hajzy_user', JSON.stringify({
+        id: 'profile-verification-test',
+        name: 'عضو الاختبار',
+        email: 'member@example.com',
+        emailVerified: false,
+        identityVerified: false,
+      }));
+    });
+    await page.reload();
+    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: 'حسابي' }).click();
+
+    const profile = page.locator('.profile-shell');
+    await expect(profile.getByText('الحالة')).toHaveCount(0);
+    await expect(profile.getByText('الأمان')).toHaveCount(0);
+    await expect(profile.locator('.profile-verification-row')).toHaveCount(0);
+    await expect(profile.getByRole('button', { name: 'فتح نادي Hajzy ونقاط الولاء' })).toBeVisible();
+    await profile.getByRole('button', { name: 'فتح نادي Hajzy ونقاط الولاء' }).click();
+    await expect(page.getByText('نادي Hajzy')).toBeVisible();
+
+    await page.evaluate(() => {
+      const user = JSON.parse(localStorage.getItem('hajzy_user'));
+      user.emailVerified = true;
+      localStorage.setItem('hajzy_user', JSON.stringify(user));
+    });
+    await page.reload();
+    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: 'حسابي' }).click();
+    await expect(page.locator('.profile-verification-row')).toContainText('موثق');
+
+    await page.evaluate(() => {
+      const user = JSON.parse(localStorage.getItem('hajzy_user'));
+      user.emailVerified = false;
+      user.identityVerified = true;
+      localStorage.setItem('hajzy_user', JSON.stringify(user));
+    });
+    await page.reload();
+    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: 'حسابي' }).click();
+    await expect(page.locator('.profile-verification-row')).toContainText('موثق');
   });
 
   test('Profile settings expose persistent notification and privacy switches with notification details', async ({ page }) => {

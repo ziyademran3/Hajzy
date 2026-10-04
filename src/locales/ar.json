@@ -84,7 +84,8 @@
     "toggleNotifications": "تشغيل أو إيقاف الإشعارات",
     "togglePrivacy": "تفعيل أو إيقاف خصوصية الحساب",
     "toggleTheme": "تبديل الوضع الداكن",
-    "notificationDetails": "تفاصيل الإشعارات"
+    "notificationDetails": "تفاصيل الإشعارات",
+    "openClub": "فتح نادي Hajzy ونقاط الولاء"
   },
   "profileDetails": {
     "edit": "تعديل",

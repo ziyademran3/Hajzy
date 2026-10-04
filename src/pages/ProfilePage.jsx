@@ -41,6 +41,12 @@ export default function ProfilePage({
   const changeTheme = onToggleTheme || toggleTheme
   const { updateProfile: fallbackUpdateProfile, changeUserPassword, logout } = useAuth()
   const updateProfile = onUpdateProfile || fallbackUpdateProfile
+  const isVerified = [
+    initialUser?.emailVerified,
+    initialUser?.email_verified,
+    initialUser?.identityVerified,
+    initialUser?.identity_verified,
+  ].some((verified) => verified === true)
   const settingsUserId = String(initialUser?.id || initialUser?.email || 'guest')
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({
@@ -423,12 +429,12 @@ export default function ProfilePage({
                   </button>
                 )}
               </div>
-              <div className="profile-verification-row">
+              {isVerified && <div className="profile-verification-row">
                 <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 text-[10px] font-bold px-2 py-0.5">
                   <span className="material-symbols-outlined text-xs">verified</span>
                   <span>{language === 'en' ? 'Verified' : 'موثق'}</span>
                 </span>
-              </div>
+              </div>}
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {text.email}: <span className="profile-hero-email" dir="ltr">{initialUser?.email || <span className="empty-field">{emptyPlaceholderFor('email')}</span>}<span className="material-symbols-outlined" aria-label={t('profileDetails.emailLocked')}>lock</span></span>
               </p>
@@ -452,20 +458,22 @@ export default function ProfilePage({
           </div>
         </div>
 
-        {/* Account Quick Stats Strip */}
-        <div className="grid grid-cols-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30 divide-x divide-slate-100 dark:divide-slate-800 text-center py-3">
-          <div>
-            <div className="text-xs font-bold text-slate-400">{language === 'en' ? 'Status' : 'الحالة'}</div>
-            <div className="text-sm font-black text-emerald-600 dark:text-emerald-400 mt-0.5">{language === 'en' ? 'Active VIP' : 'عضو نشط'}</div>
-          </div>
-          <div>
-            <div className="text-xs font-bold text-slate-400">{language === 'en' ? 'Security' : 'الأمان'}</div>
-            <div className="text-sm font-black text-teal-600 dark:text-teal-400 mt-0.5">{language === 'en' ? 'Protected' : 'محمي'} 🛡️</div>
-          </div>
-          <div>
-            <div className="text-xs font-bold text-slate-400">{language === 'en' ? 'Club Points' : 'نقاط الولاء'}</div>
-            <div className="text-sm font-black text-amber-500 mt-0.5">{clubPoints} ⭐</div>
-          </div>
+        <div className="border-t border-slate-100 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-800/30">
+          <button
+            type="button"
+            className="profile-club-link"
+            aria-label={t('profileSettings.openClub')}
+            onClick={() => onNavigate('dashboard')}
+          >
+            <span className="profile-club-link-label">
+              <span className="material-symbols-outlined" aria-hidden="true">workspace_premium</span>
+              <span>{language === 'en' ? 'Club Points' : 'نقاط الولاء'}</span>
+            </span>
+            <span className="profile-club-link-value">{clubPoints} ⭐</span>
+            <span className="material-symbols-outlined profile-club-link-arrow" aria-hidden="true">
+              {language === 'en' ? 'arrow_forward' : 'arrow_back'}
+            </span>
+          </button>
         </div>
       </div>
 
