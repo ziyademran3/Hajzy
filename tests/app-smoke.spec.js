@@ -183,6 +183,40 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
     })).toContainText('بعد 7 أيام');
   });
 
+  test('Hajzy Club shows current and next tier with gold loyalty progress', async ({ page }) => {
+    await page.evaluate(() => {
+      localStorage.setItem('hajzy_bookings', JSON.stringify([{
+        id: 'loyalty-progress',
+        propertyId: 'alex-vista',
+        checkIn: '2026-11-10',
+        checkOut: '2026-11-12',
+        status: 'confirmed',
+        total: 6000,
+      }]));
+    });
+    await page.reload();
+    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: /لوحة التحكم|Dashboard/i }).click();
+
+    const progress = page.getByRole('progressbar', { name: 'التقدم نحو المستوى التالي' });
+    await expect(progress).toHaveAttribute('aria-valuenow', '6');
+    await expect(progress).toHaveAttribute('aria-valuemax', '20');
+    const progressRatio = await page.locator('.loyalty-progress-fill').evaluate((fill) => (
+      fill.getBoundingClientRect().width / fill.parentElement.getBoundingClientRect().width
+    ));
+    expect(progressRatio).toBeCloseTo(0.3, 1);
+    await expect(page.locator('.loyalty-tier-row')).toContainText('الحالي');
+    await expect(page.locator('.loyalty-tier-row')).toContainText('عضو جديد');
+    await expect(page.locator('.loyalty-tier-row')).toContainText('التالي');
+    await expect(page.locator('.loyalty-tier-row')).toContainText('فضي');
+    await expect(page.locator('main')).toContainText('6 من 20');
+
+    const progressColors = await page.locator('.loyalty-progress-track, .loyalty-progress-fill')
+      .evaluateAll((elements) => elements.map((element) => getComputedStyle(element).backgroundColor));
+    expect(progressColors[0]).toBe('rgba(255, 255, 255, 0.16)');
+    expect(progressColors[1]).toBe('rgb(212, 162, 76)');
+  });
+
   test('Typography uses Cairo, the six-size scale, and only the three supported weights', async ({ page }) => {
     await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
     const typography = await page.locator('#root').evaluate((root) => {

@@ -130,11 +130,13 @@ export default function DashboardPage({
   }, [confirmedSpend])
 
   const loyaltyTier = useMemo(() => {
-    if (loyaltyPoints >= 250) return { name: isAr ? 'بلاتينيوم' : 'Platinum', color: 'from-indigo-500 to-purple-600', badge: '💎 VIP', next: null, pointsToNext: 0 }
-    if (loyaltyPoints >= 80) return { name: isAr ? 'ذهبي' : 'Gold', color: 'from-amber-400 to-amber-600', badge: '🥇', next: isAr ? 'بلاتينيوم' : 'Platinum', pointsToNext: 250 - loyaltyPoints }
-    if (loyaltyPoints >= 20) return { name: isAr ? 'فضي' : 'Silver', color: 'from-slate-400 to-slate-500', badge: '🥈', next: isAr ? 'ذهبي' : 'Gold', pointsToNext: 80 - loyaltyPoints }
-    return { name: isAr ? 'عضو جديد' : 'New Member', color: 'from-emerald-500 to-teal-600', badge: '🌱', next: isAr ? 'فضي' : 'Silver', pointsToNext: 20 - loyaltyPoints }
+    if (loyaltyPoints >= 250) return { name: isAr ? 'بلاتينيوم' : 'Platinum', color: 'from-indigo-500 to-purple-600', badge: '💎 VIP', next: null, nextPoints: 250 }
+    if (loyaltyPoints >= 80) return { name: isAr ? 'ذهبي' : 'Gold', color: 'from-amber-400 to-amber-600', badge: '🥇', next: isAr ? 'بلاتينيوم' : 'Platinum', nextPoints: 250 }
+    if (loyaltyPoints >= 20) return { name: isAr ? 'فضي' : 'Silver', color: 'from-slate-400 to-slate-500', badge: '🥈', next: isAr ? 'ذهبي' : 'Gold', nextPoints: 80 }
+    return { name: isAr ? 'عضو جديد' : 'New Member', color: 'from-emerald-500 to-teal-600', badge: '🌱', next: isAr ? 'فضي' : 'Silver', nextPoints: 20 }
   }, [loyaltyPoints, isAr])
+  const loyaltyProgress = Math.min(loyaltyPoints, loyaltyTier.nextPoints)
+  const loyaltyProgressPercent = (loyaltyProgress / loyaltyTier.nextPoints) * 100
 
   // Next upcoming stay (prioritize active confirmed upcoming stay)
   const upcomingStay = upcomingBookings[0] || confirmedBookings[0] || safeBookings[0]
@@ -382,16 +384,36 @@ export default function DashboardPage({
             <span className="text-2xl sm:text-3xl font-black text-amber-300">{formatNumber(loyaltyPoints)}</span>
             <span className="text-[11px] text-slate-300 font-bold">{isAr ? pluralize(loyaltyPoints, 'point', 'ar').replace(/^[\d,٫٬\s]+/, '') : 'pts'}</span>
           </div>
-          <div className="mt-2 flex items-center justify-between text-[11px] text-slate-300">
-            <span className="font-semibold text-white">{loyaltyTier.name} {loyaltyTier.badge}</span>
-          </div>
-          {loyaltyTier.next && (
-            <div className="mt-2 text-[10px] text-slate-400">
-              {isAr
-                ? `${pluralize(loyaltyTier.pointsToNext, 'point', 'ar')} للوصول لمستوى ${loyaltyTier.next}`
-                : `${formatNumber(loyaltyTier.pointsToNext)} pts to reach ${loyaltyTier.next}`}
+          <div className="loyalty-tier-row mt-2">
+            <div>
+              <span className="block text-[9px] text-slate-400">{t('dashboard.currentTier')}</span>
+              <strong className="block text-[11px] font-semibold text-white">{loyaltyTier.name}</strong>
             </div>
-          )}
+            <div className="text-end">
+              <span className="block text-[9px] text-slate-400">{t('dashboard.nextTier')}</span>
+              <strong className="block text-[11px] font-semibold text-amber-200">
+                {loyaltyTier.next || t('dashboard.maxLoyaltyTier')}
+              </strong>
+            </div>
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <div
+              className="loyalty-progress-track"
+              role="progressbar"
+              aria-label={t('dashboard.loyaltyProgress')}
+              aria-valuemin={0}
+              aria-valuemax={loyaltyTier.nextPoints}
+              aria-valuenow={loyaltyProgress}
+            >
+              <span className="loyalty-progress-fill" style={{ width: `${loyaltyProgressPercent}%` }} />
+            </div>
+            <span className="shrink-0 text-[10px] font-semibold text-amber-200">
+              {t('dashboard.loyaltyProgressCount', {
+                current: formatNumber(loyaltyProgress),
+                target: formatNumber(loyaltyTier.nextPoints),
+              })}
+            </span>
+          </div>
           <div className="mt-2 text-[9px] text-slate-500">
             {isAr ? 'اكسب نقطة لكل 1000 ج.م تحجز بيها' : 'Earn 1 pt per 1,000 EGP spent'}
           </div>
