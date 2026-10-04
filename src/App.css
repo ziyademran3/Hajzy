@@ -1803,6 +1803,25 @@ body::-webkit-scrollbar,
   background: linear-gradient(to top, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.35) 55%, transparent 100%);
 }
 
+.mini-city-card .city-card-badge {
+  position: absolute;
+  z-index: 3;
+  inset-block-start: var(--space-3);
+  inset-inline-start: var(--space-3);
+  display: inline-flex;
+  align-items: center;
+  max-width: calc(100% - var(--space-6));
+  padding: var(--space-1) var(--space-2);
+  border-radius: 999px;
+  background: rgba(15, 118, 110, 0.92);
+  color: #ffffff;
+  font-size: 0.6875rem;
+  font-weight: 900;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-shadow: none;
+}
+
 .mini-city-card .city-card-copy {
   position: relative;
   z-index: 2;

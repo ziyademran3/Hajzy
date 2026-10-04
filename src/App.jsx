@@ -3355,15 +3355,11 @@ function App() {
               }}
             >
               <img src={item.image} alt={item.city} onError={handleStayImageError} loading="lazy" />
+              {item.badge && (
+                <span className="city-card-badge">{item.badge}</span>
+              )}
               <div className="city-card-copy">
-                <div className="flex items-center justify-between gap-1">
-                  <span>{item.city}</span>
-                  {item.badge && (
-                    <span className="rounded-full bg-emerald-600/90 text-white text-[9px] font-black px-2 py-0.5">
-                      {item.badge}
-                    </span>
-                  )}
-                </div>
+                <span>{item.city}</span>
                 <small>{item.label} • {pluralize(item.staysCount, 'stay', language)}</small>
                 <strong>{item.price}</strong>
               </div>
