@@ -90,7 +90,10 @@
     "togglePrivacy": "Toggle account privacy",
     "toggleTheme": "Toggle dark mode",
     "notificationDetails": "Notification details",
-    "openClub": "Open Hajzy Club and loyalty points"
+    "openClub": "Open Hajzy Club and loyalty points",
+    "inviteFriend": "Invite a friend",
+    "inviteFriendDescription": "Share the app link with your friends",
+    "inviteCopied": "App link copied"
   },
   "profileDetails": {
     "edit": "Edit",

@@ -445,17 +445,6 @@ export default function ProfilePage({
               )}
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleShareApp}
-              className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 transition"
-            >
-              <span className="material-symbols-outlined text-sm">share</span>
-              <span>{copiedShare ? (language === 'en' ? 'Copied!' : 'تم النسخ!') : (language === 'en' ? 'Share App' : 'مشاركة التطبيق')}</span>
-            </button>
-          </div>
         </div>
 
         <div className="border-t border-slate-100 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-800/30">
@@ -639,6 +628,23 @@ export default function ProfilePage({
               )}
             </div>
           ))}
+          <button
+            type="button"
+            className="settings-card-item settings-card-invite"
+            aria-label={t('profileSettings.inviteFriend')}
+            onClick={handleShareApp}
+          >
+            <span className="settings-card-head">
+              <span className="material-symbols-outlined" aria-hidden="true">person_add</span>
+              <span>
+                <strong>{copiedShare ? t('profileSettings.inviteCopied') : t('profileSettings.inviteFriend')}</strong>
+                <small>{t('profileSettings.inviteFriendDescription')}</small>
+              </span>
+            </span>
+            <span className="material-symbols-outlined settings-card-invite-arrow" aria-hidden="true">
+              {language === 'en' ? 'chevron_right' : 'chevron_left'}
+            </span>
+          </button>
         </div>
       </section>
 

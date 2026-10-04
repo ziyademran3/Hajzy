@@ -375,6 +375,34 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
     await expect(page.locator('.profile-verification-row')).toContainText('موثق');
   });
 
+  test('Profile invite action is a compact settings row that opens app sharing', async ({ page }) => {
+    await page.goto('/');
+    await page.evaluate(() => {
+      localStorage.clear();
+      localStorage.setItem('hajzy_guest_mode', 'true');
+    });
+    await page.goto('/');
+    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: 'حسابي' }).click();
+
+    const inviteButton = page.getByRole('button', { name: 'ادعُ صديقًا', exact: true });
+    await expect(inviteButton).toBeVisible();
+    await expect(inviteButton.locator('small')).toHaveText('شارك رابط التطبيق مع أصدقائك');
+    await expect(inviteButton.locator('.settings-card-invite-arrow')).toHaveText('chevron_left');
+    await expect(page.locator('.profile-shell > div:first-child').getByRole('button', {
+      name: /مشاركة التطبيق|Share App/,
+    })).toHaveCount(0);
+    await page.evaluate(() => {
+      window.__shareCalls = [];
+      Object.defineProperty(navigator, 'share', {
+        configurable: true,
+        value: async (data) => window.__shareCalls.push(data),
+      });
+    });
+    await inviteButton.click();
+    await expect.poll(() => page.evaluate(() => window.__shareCalls.length)).toBe(1);
+  });
+
   test('Profile settings expose persistent notification and privacy switches with notification details', async ({ page }) => {
     await page.goto('/');
     await page.evaluate(() => {

@@ -90,7 +90,10 @@
     "togglePrivacy": "تفعيل أو إيقاف خصوصية الحساب",
     "toggleTheme": "تبديل الوضع الداكن",
     "notificationDetails": "تفاصيل الإشعارات",
-    "openClub": "فتح نادي Hajzy ونقاط الولاء"
+    "openClub": "فتح نادي Hajzy ونقاط الولاء",
+    "inviteFriend": "ادعُ صديقًا",
+    "inviteFriendDescription": "شارك رابط التطبيق مع أصدقائك",
+    "inviteCopied": "تم نسخ رابط التطبيق"
   },
   "profileDetails": {
     "edit": "تعديل",

@@ -6143,6 +6143,31 @@ body::-webkit-scrollbar,
   background: rgba(0, 67, 63, 0.03);
 }
 
+.settings-card-invite {
+  width: 100%;
+  min-height: 64px;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: background-color 180ms ease, border-color 180ms ease;
+}
+
+.settings-card-invite:hover {
+  border-color: var(--line);
+  background: var(--primary-soft);
+}
+
+.settings-card-invite:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 2px;
+}
+
+.settings-card-invite-arrow {
+  flex: none;
+  color: var(--muted);
+}
+
 .settings-card-head {
   display: flex;
   align-items: center;
