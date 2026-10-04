@@ -712,6 +712,7 @@ export const normalizeBooking = (booking) => {
     total: Number(booking.total || 0),
     currency: booking.currency || 'EGP',
     status: booking.status || 'confirmed',
+    paidAt: booking.paidAt || booking.paid_at || null,
     reference: booking.reference || '#REF-00000',
     paymentMethod: booking.paymentMethod || 'card',
     userId: booking.userId || null,
@@ -828,7 +829,14 @@ export const fetchBookings = async () => {
   if (supabase) {
     const { data, error } = await supabase.from('bookings').select('*').order('created_at', { ascending: false })
     if (!error && data?.length) {
-      const remoteBookings = data.map(normalizeBooking)
+      const localById = new Map(storedBookings.map((booking) => [String(booking.id), booking]))
+      const remoteBookings = data.map((booking) => {
+        const localBooking = localById.get(String(booking.id))
+        return normalizeBooking({
+          ...booking,
+          paidAt: booking.paidAt || booking.paid_at || localBooking?.paidAt || localBooking?.paid_at,
+        })
+      })
       const remoteIds = new Set(remoteBookings.map((booking) => String(booking.id)))
       // Keep locally saved pending payments visible if a Supabase policy or
       // transient network error prevented their remote insert.
@@ -855,9 +863,10 @@ export const addBooking = async (booking) => {
   writeStorage('hajzy_bookings', updatedBookings)
 
   if (supabase) {
-    const { data, error } = await supabase.from('bookings').insert([normalizedBooking]).select()
+    const { paidAt: _paidAt, ...remoteBooking } = normalizedBooking
+    const { data, error } = await supabase.from('bookings').insert([remoteBooking]).select()
     if (!error && data && data[0]) {
-      return normalizeBooking(data[0])
+      return normalizeBooking({ ...data[0], paidAt: normalizedBooking.paidAt })
     }
   }
 
@@ -1041,21 +1050,23 @@ export const addChatMessage = async (message) => {
 }
 
 export const updateBooking = async (booking) => {
-  const normalizedBooking = normalizeBooking(booking)
+  const savedBookings = readStorage('hajzy_bookings', [])
+  const previousBooking = savedBookings.find((item) => String(item.id) === String(booking.id))
+  const normalizedBooking = normalizeBooking({ ...previousBooking, ...booking })
 
   if (supabase) {
+    const { paidAt: _paidAt, ...remoteBooking } = normalizedBooking
     const { data, error } = await supabase
       .from('bookings')
-      .update(normalizedBooking)
+      .update(remoteBooking)
       .eq('id', normalizedBooking.id)
       .select()
 
     if (!error && data && data[0]) {
-      return normalizeBooking(data[0])
+      return normalizeBooking({ ...data[0], paidAt: normalizedBooking.paidAt })
     }
   }
 
-  const savedBookings = readStorage('hajzy_bookings', [])
   const updatedBookings = savedBookings.map((item) =>
     item.id === normalizedBooking.id ? normalizedBooking : item,
   )

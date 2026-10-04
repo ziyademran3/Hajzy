@@ -76,6 +76,50 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
     expect(fatalErrors.length).toBe(0);
   });
 
+  test('Total payments shows the date of the latest confirmed payment', async ({ page }) => {
+    await page.evaluate(() => {
+      localStorage.setItem('hajzy_bookings', JSON.stringify([
+        {
+          id: 'payment-older',
+          propertyId: 'alex-vista',
+          reference: '#HZ-PAY-101',
+          checkIn: '2026-11-10',
+          checkOut: '2026-11-12',
+          status: 'confirmed',
+          total: 8400,
+          paidAt: '2026-10-01T12:00:00.000Z',
+        },
+        {
+          id: 'payment-latest',
+          propertyId: 'cairo-nile-hotel',
+          reference: '#HZ-PAY-102',
+          checkIn: '2026-11-12',
+          checkOut: '2026-11-14',
+          status: 'confirmed',
+          total: 9600,
+          paidAt: '2026-10-02T12:00:00.000Z',
+        },
+        {
+          id: 'pending-payment-later',
+          propertyId: 'cairo-lounge',
+          reference: '#HZ-PAY-103',
+          checkIn: '2026-11-14',
+          checkOut: '2026-11-16',
+          status: 'pending_payment',
+          total: 7200,
+          paidAt: '2026-10-03T12:00:00.000Z',
+        },
+      ]));
+    });
+    await page.reload();
+    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: /لوحة التحكم|Dashboard/i }).click();
+
+    const paymentsCard = page.getByText('إجمالي المدفوعات', { exact: true }).locator('xpath=../..');
+    await expect(paymentsCard.getByTestId('last-payment-date')).toHaveText('آخر دفعة: 2 أكتوبر');
+    await expect(paymentsCard).not.toContainText('نشط');
+  });
+
   test('Typography uses Cairo, the six-size scale, and only the three supported weights', async ({ page }) => {
     await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
     const typography = await page.locator('#root').evaluate((root) => {

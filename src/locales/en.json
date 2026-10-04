@@ -27,6 +27,8 @@
     "searchCity": "Discover",
     "support": "Support",
     "noRecentActivity": "No recent activity",
+    "lastPayment": "Last payment: {{date}}",
+    "noPaymentDate": "No payment date recorded",
     "confirmedSpend": "Confirmed payments",
     "pendingSpend": "Pending review",
     "totalBookingsAmount": "Total bookings",

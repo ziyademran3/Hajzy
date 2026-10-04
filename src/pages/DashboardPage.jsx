@@ -64,6 +64,13 @@ export default function DashboardPage({
     return safeBookings.filter((b) => normalizeBookingStatus(b.status) === 'confirmed')
   }, [safeBookings])
 
+  const lastPaymentDate = useMemo(() => {
+    return confirmedBookings
+      .map((booking) => booking.paidAt)
+      .filter((paidAt) => paidAt && !Number.isNaN(new Date(paidAt).getTime()))
+      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] || null
+  }, [confirmedBookings])
+
   const upcomingBookings = useMemo(() => {
     const now = new Date()
     return safeBookings.filter((b) => {
@@ -291,7 +298,7 @@ export default function DashboardPage({
               {formatCurrency(confirmedSpend, 'EGP', language)}
             </span>
           </div>
-          {pendingSpend > 0 ? (
+          {pendingSpend > 0 && (
             <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px]">
               <span className="font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md">
                 {isAr ? 'مؤكد' : 'Confirmed'}: {formatCurrency(confirmedSpend, 'EGP', language)}
@@ -303,15 +310,15 @@ export default function DashboardPage({
                 ({isAr ? 'المجموع' : 'Total'}: {formatCurrency(totalAllBookingsSpend, 'EGP', language)})
               </span>
             </div>
-          ) : (
-            <div className="mt-2 flex items-end gap-1 h-3" title={isAr ? 'نشاط الإنفاق' : 'Spend activity'}>
-              <div className="w-1.5 h-1.5 rounded-full bg-teal-200 dark:bg-teal-900" />
-              <div className="w-1.5 h-2.5 rounded-full bg-teal-300 dark:bg-teal-800" />
-              <div className="w-1.5 h-2 rounded-full bg-teal-400 dark:bg-teal-700" />
-              <div className="w-1.5 h-3 rounded-full bg-teal-500" />
-              <span className="text-[10px] text-slate-400 font-mono ms-1">{confirmedBookings.length ? (isAr ? 'نشط' : 'active') : '0'}</span>
-            </div>
           )}
+          <p data-testid="last-payment-date" className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
+            {lastPaymentDate
+              ? t('dashboard.lastPayment', { date: new Intl.DateTimeFormat(
+                  isAr ? 'ar-EG-u-nu-latn' : 'en-US-u-nu-latn',
+                  { day: 'numeric', month: 'long', numberingSystem: 'latn' },
+                ).format(new Date(lastPaymentDate)) })
+              : t('dashboard.noPaymentDate')}
+          </p>
         </div>
 
         {/* Saved Favorites */}

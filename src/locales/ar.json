@@ -27,6 +27,8 @@
     "searchCity": "بحث عن مدينة",
     "support": "الدعم",
     "noRecentActivity": "لا يوجد نشاط حديث",
+    "lastPayment": "آخر دفعة: {{date}}",
+    "noPaymentDate": "لا يوجد تاريخ دفعة مسجل",
     "confirmedSpend": "المدفوعات المؤكدة",
     "pendingSpend": "قيد المراجعة",
     "totalBookingsAmount": "إجمالي الحجوزات",
