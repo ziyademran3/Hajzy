@@ -181,65 +181,17 @@ export default function DashboardPage({
     format: (amount) => formatCurrency(amount, 'EGP', language),
   }), [language])
 
-  // Quick Action Buttons
-  const quickActions = [
-    {
-      key: 'explore',
-      icon: 'travel_explore',
-      label: isAr ? 'استكشف الإقامات' : 'Explore Stays',
-      desc: isAr ? 'فيلات وشاليهات فاخرة' : 'Browse luxury homes',
-      color: 'from-emerald-500 to-teal-600',
-      action: () => onNavigate('home'),
-    },
-    {
-      key: 'bookings',
-      icon: 'calendar_month',
-      label: isAr ? 'حجوزاتي وتذاكري' : 'My Bookings',
-      desc: isAr
-        ? `${formatNumber(upcomingBookings.length || confirmedBookings.length)} ${(upcomingBookings.length || confirmedBookings.length) === 1 ? 'حجز مسجل' : 'حجوزات مسجلة'}`
-        : `${formatNumber(upcomingBookings.length || confirmedBookings.length)} booked stays`,
-      color: 'from-teal-600 to-cyan-600',
-      action: () => onNavigate('bookings'),
-    },
-    {
-      key: 'support',
-      icon: 'support_agent',
-      label: isAr ? 'كونسيرج 24/7' : '24/7 Concierge',
-      desc: isAr ? 'خدمة الضيوف الفورية' : 'Direct VIP assistance',
-      color: 'from-cyan-600 to-blue-600',
-      action: () => {
-        if (typeof onSupportRequest === 'function') {
-          onSupportRequest()
-          return
-        }
-        if (typeof onNavigate === 'function') {
-          onNavigate('chat')
-          return
-        }
-        window.location.href = 'mailto:support@hajzy.com?subject=Concierge%20Support'
-      },
-    },
-    {
-      key: 'profile',
-      icon: 'manage_accounts',
-      label: isAr ? 'الملف الشخصي' : 'Profile & Security',
-      desc: isAr ? 'المحفظة والأمان' : 'Account & wallet',
-      color: 'from-slate-700 to-slate-800',
-      action: () => onNavigate('profile'),
-    },
-    ...(user?.role === 'owner'
-      ? [
-          {
-            key: 'owner',
-            icon: 'add_home_work',
-            label: isAr ? 'لوحة المالك' : 'Owner Dashboard',
-            desc: isAr ? 'إدارة العقارات' : 'Manage stays',
-            color: 'from-amber-500 to-orange-600',
-            action: () => onNavigate('owner'),
-          },
-        ]
-      : []),
-  ]
+  const handleSupportRequest = () => {
+    if (typeof onSupportRequest === 'function') {
+      onSupportRequest()
+      return
+    }
+    if (typeof onNavigate === 'function') {
+      onNavigate('chat')
+      return
+    }
+    window.location.href = 'mailto:support@hajzy.com?subject=Concierge%20Support'
+  }
 
   return (
     <div className={`mx-auto max-w-6xl space-y-7 px-4 py-6 sm:px-6 lg:px-8 transition-colors duration-200 ${isAr ? 'rtl' : 'ltr'}`} dir={isAr ? 'rtl' : 'ltr'}>
@@ -576,35 +528,24 @@ export default function DashboardPage({
         </div>
       </section>
 
-      {/* 4. QUICK ACTIONS GRID */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-black text-slate-900 dark:text-white">
-            {isAr ? 'الإجراءات والخدمات السريعة' : 'Quick Actions'}
-          </h2>
-          <span className="text-xs text-slate-400">{isAr ? 'خدمات الضيف الذكية' : 'Guest shortcuts'}</span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-          {quickActions.map(({ key, icon, label, desc, color, action }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={action}
-              className="group flex flex-col items-start rounded-3xl border border-slate-200/80 bg-white p-5 text-start shadow-[0_8px_30px_rgba(15,23,42,0.04)] transition hover:-translate-y-1 hover:border-emerald-300 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900/90"
-            >
-              <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${color} text-white shadow-md transition group-hover:scale-110`}>
-                <span className="material-symbols-outlined text-2xl">{icon}</span>
-              </div>
-              <strong className="mt-4 block text-sm font-bold text-slate-900 group-hover:text-emerald-600 transition dark:text-white dark:group-hover:text-emerald-400">
-                {label}
-              </strong>
-              <small className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
-                {desc}
-              </small>
-            </button>
-          ))}
-        </div>
+      <section>
+        <button
+          type="button"
+          className="dashboard-concierge-button"
+          onClick={handleSupportRequest}
+          aria-label={isAr ? 'كونسيرج 24/7' : '24/7 Concierge'}
+        >
+          <span className="dashboard-concierge-icon material-symbols-outlined" aria-hidden="true">
+            support_agent
+          </span>
+          <span className="dashboard-concierge-copy">
+            <strong>{isAr ? 'كونسيرج 24/7' : '24/7 Concierge'}</strong>
+            <small>{isAr ? 'خدمة الضيوف الفورية' : 'Direct VIP assistance'}</small>
+          </span>
+          <span className="material-symbols-outlined dashboard-concierge-arrow" aria-hidden="true">
+            {isAr ? 'arrow_back' : 'arrow_forward'}
+          </span>
+        </button>
       </section>
 
       {/* 5. RECENT ACTIVITY STREAM */}

@@ -147,6 +147,22 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
     await expect(page.locator('.topbar h1')).toHaveText('رحلاتي');
   });
 
+  test('Guest dashboard replaces duplicate quick actions with one prominent concierge button', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: 'رحلاتي' }).click();
+
+    await expect(page.getByText('الإجراءات والخدمات السريعة', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'استكشف الإقامات', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'حجوزاتي وتذاكري', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'الملف الشخصي', exact: true })).toHaveCount(0);
+
+    const concierge = page.getByRole('button', { name: 'كونسيرج 24/7', exact: true });
+    await expect(concierge).toBeVisible();
+    await expect(concierge).toContainText('خدمة الضيوف الفورية');
+    await expect(concierge.locator('.material-symbols-outlined')).toHaveText(['support_agent', 'arrow_back']);
+    await expect(concierge).toHaveCSS('min-height', '80px');
+  });
+
   test('Active bookings card shows a touch-sized tickets link with an RTL-aware arrow', async ({ page }) => {
     await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
     await page.locator('.bottom-nav .nav-item').filter({ hasText: /رحلاتي|My Trips/i }).click();
