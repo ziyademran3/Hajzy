@@ -239,7 +239,7 @@ export default function ForgotPasswordPage({ language = 'ar', onToggleLanguage, 
                 </div>
                 <a
                   href={resetLink}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#00433f] to-[#0b5f59] py-3 text-sm font-bold text-white shadow-md hover:brightness-110 active:scale-[0.98] transition"
+                  className="primary-button w-full"
                 >
                   <span className="material-symbols-outlined text-base">lock_reset</span>
                   <span>{language === 'en' ? 'Reset Password Now' : 'إعادة تعيين كلمة المرور الآن'}</span>
@@ -250,7 +250,7 @@ export default function ForgotPasswordPage({ language = 'ar', onToggleLanguage, 
             <button
               type="submit"
               disabled={loading || cooldown > 0}
-              className="flex w-full min-h-[50px] items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#00433f] via-[#0b5f59] to-[#00433f] px-4 py-3.5 text-sm sm:text-base font-extrabold text-white shadow-[0_12px_28px_rgba(0,67,63,0.25)] transition-all hover:shadow-[0_16px_34px_rgba(0,67,63,0.35)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              className="primary-button w-full"
             >
               {loading ? (
                 <>
@@ -276,7 +276,7 @@ export default function ForgotPasswordPage({ language = 'ar', onToggleLanguage, 
             <button
               type="button"
               onClick={onBackToLogin}
-              className="font-bold text-emerald-700 dark:text-emerald-400 hover:underline transition"
+              className="ghost-button"
             >
               {text.back}
             </button>
@@ -286,7 +286,7 @@ export default function ForgotPasswordPage({ language = 'ar', onToggleLanguage, 
                 <button
                   type="button"
                   onClick={onSwitchToSignup}
-                  className="font-bold text-emerald-700 dark:text-emerald-400 hover:underline transition"
+                  className="ghost-button"
                 >
                   {text.signup}
                 </button>

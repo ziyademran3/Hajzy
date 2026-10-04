@@ -2647,7 +2647,7 @@ function App() {
                     </button>
                     <button
                       type="button"
-                      className="danger-button small-button text-xs py-1 px-2.5 inline-flex items-center gap-1"
+                      className="secondary-button small-button"
                       onClick={() => setPropertyForm((prev) => ({ ...prev, image: '' }))}
                     >
                       <span className="material-symbols-outlined text-xs">delete</span>
@@ -2777,7 +2777,7 @@ function App() {
                   </button>
                   <button
                     type="button"
-                    className="danger-button small-button"
+                    className="secondary-button small-button"
                     onClick={() => handleOwnerDeleteProperty(property.id)}
                   >
                     {language === 'en' ? 'Delete' : 'حذف'}
@@ -2892,7 +2892,7 @@ function App() {
                       </button>
                       <button
                         type="button"
-                        className="danger-button small-button"
+                        className="secondary-button small-button"
                         onClick={() => handleOwnerRejectBooking(booking.id)}
                       >
                         <span className="material-symbols-outlined text-xs">close</span>
@@ -2910,7 +2910,7 @@ function App() {
                       </button>
                       <button
                         type="button"
-                        className="danger-button small-button"
+                        className="secondary-button small-button"
                         onClick={() => handleCancelBooking(booking.id)}
                       >
                         {language === 'en' ? 'Cancel' : 'إلغاء'}
@@ -5636,7 +5636,7 @@ function App() {
 
                       <div className="booking-actions relative flex items-center gap-2">
                         <button
-                          className="primary-button small-button booking-cta"
+                          className="secondary-button small-button booking-cta"
                           onClick={() => navigate('details', property ?? selectedProperty)}
                         >
                           {language === 'en' ? 'Details' : 'التفاصيل'}
@@ -5815,7 +5815,7 @@ function App() {
           <button className="primary-button" onClick={() => navigate('owner')}>
             {language === 'en' ? 'Back to Dashboard' : 'العودة للوحة التحكم'}
           </button>
-          <button className="secondary-button dark:!bg-rose-950/40 dark:!border-rose-900/50 dark:!text-rose-400 hover:dark:!bg-rose-900/50" onClick={handleLogout}>
+          <button className="secondary-button" onClick={handleLogout}>
             {language === 'en' ? 'Log Out' : 'تسجيل الخروج'}
           </button>
         </div>
@@ -6601,14 +6601,14 @@ function App() {
           <div className="flex items-center justify-end gap-3 p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/90 shrink-0">
             <button
               type="button"
-              className="secondary-button !py-2.5 !px-5 text-sm"
+              className="secondary-button"
               onClick={() => setSelectedInvoiceBooking(null)}
             >
               {language === 'en' ? 'Close' : 'إغلاق'}
             </button>
             <button
               type="button"
-              className="primary-button !py-2.5 !px-5 text-sm flex items-center gap-2 shadow-lg shadow-emerald-600/20"
+              className="primary-button"
               onClick={() => window.print()}
             >
               <span className="material-symbols-outlined text-base">print</span>

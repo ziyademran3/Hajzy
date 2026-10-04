@@ -51,7 +51,7 @@ export default function HeroCard() {
         </div>
 
         <div className="flex items-center justify-between gap-3 px-1">
-          <button className="inline-flex flex-1 items-center justify-center rounded-full bg-[#08a3a0] px-4 py-3 text-base font-extrabold text-white shadow-[0_8px_18px_rgba(8,163,160,0.25)]">
+          <button type="button" className="primary-button flex-1">
             اكتشف العقارات
           </button>
 

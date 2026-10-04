@@ -61,8 +61,8 @@ export default function HomePage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button className="hidden md:inline px-3 py-1 rounded-md border border-transparent bg-hajzy-primary text-white">{t('buttons.offers')}</button>
-            <button className="px-3 py-2 rounded-md border border-white text-white bg-transparent dark:border-hajzy-border dark:text-hajzy-text">{t('cities.alexandria')}</button>
+            <button type="button" className="primary-button home-offers-button">{t('buttons.offers')}</button>
+            <button type="button" className="secondary-button">{t('cities.alexandria')}</button>
           </div>
         </header>
 

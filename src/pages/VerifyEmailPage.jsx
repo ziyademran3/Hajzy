@@ -73,7 +73,7 @@ export default function VerifyEmailPage({ language = 'ar', onBackToLogin }) {
           <button
             type="button"
             onClick={onBackToLogin}
-            className="mt-8 flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-emerald-700 via-teal-600 to-emerald-500 px-4 py-3.5 text-base font-bold text-white shadow-[0_18px_30px_rgba(13,148,136,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_34px_rgba(13,148,136,0.28)]"
+            className="primary-button w-full mt-8"
           >
             {text.submit}
           </button>

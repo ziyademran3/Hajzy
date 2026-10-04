@@ -56,7 +56,7 @@ export default function SearchCard() {
         </div>
 
         <div className="flex items-end md:items-center">
-          <button onClick={onSearch} className="w-full md:w-auto bg-hajzy-primary text-white px-5 py-3 rounded-lg font-semibold">بحث</button>
+          <button type="button" onClick={onSearch} className="primary-button w-full md:w-auto">بحث</button>
         </div>
       </div>
     </Card>

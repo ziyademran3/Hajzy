@@ -49,8 +49,8 @@ export default function NotificationPage() {
       <div className="flex items-center justify-between mb-6">
         <div></div>
         <div className="flex items-center gap-3">
-          <button onClick={markAllRead} className="px-3 py-2 rounded-md bg-gray-100 dark:bg-gray-800 text-sm">تحديد الكل كمقروء</button>
-          <button onClick={() => { if (window.confirm('هل تريد مسح جميع الإشعارات؟')) setNotifications([]) }} className="px-3 py-2 rounded-md bg-red-50 text-red-600 text-sm">مسح الكل</button>
+          <button type="button" onClick={markAllRead} className="secondary-button">تحديد الكل كمقروء</button>
+          <button type="button" onClick={() => { if (window.confirm('هل تريد مسح جميع الإشعارات؟')) setNotifications([]) }} className="secondary-button">مسح الكل</button>
         </div>
       </div>
 

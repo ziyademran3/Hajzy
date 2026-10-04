@@ -666,7 +666,7 @@ export default function SignupPage({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex w-full min-h-[50px] items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#00433f] via-[#0b5f59] to-[#00433f] px-4 py-3.5 text-sm sm:text-base font-extrabold text-white shadow-[0_12px_28px_rgba(0,67,63,0.25)] transition-all hover:shadow-[0_16px_34px_rgba(0,67,63,0.35)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 mt-2"
+                  className="primary-button w-full mt-2"
                 >
                   {loading ? (
                     <>
@@ -688,7 +688,7 @@ export default function SignupPage({
                 <button
                   type="button"
                   onClick={onSwitchToLogin}
-                  className="font-bold text-emerald-700 dark:text-emerald-400 hover:underline transition"
+                  className="ghost-button"
                 >
                   {text.login}
                 </button>

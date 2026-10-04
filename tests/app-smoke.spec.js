@@ -35,6 +35,8 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
     await expect(cards.first()).toBeVisible({ timeout: 15000 });
     const count = await cards.count();
     expect(count).toBeGreaterThan(0);
+    await expect(cards.first().locator('button[data-testid="book-now-button"]'))
+      .toHaveText(/^(احجز الآن|Book now)$/);
 
     const featureIcons = cards.first().locator('.property-meta-row .material-symbols-outlined');
     await expect(featureIcons).toHaveText(['people', 'wifi', 'local_parking']);
@@ -88,6 +90,25 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
       await themeToggle.click();
       const toggledTheme = await appShell.getAttribute('data-theme');
       expect(toggledTheme).not.toBe(initialTheme);
+
+      const variantStyles = await page.locator('.app-shell').evaluate((shell) => {
+        const buttons = ['primary-button', 'secondary-button', 'ghost-button'].map((variant) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = variant;
+          shell.append(button);
+          const style = getComputedStyle(button);
+          const result = { height: style.height, radius: style.borderRadius };
+          button.remove();
+          return result;
+        });
+        return buttons;
+      });
+      expect(variantStyles).toEqual([
+        { height: '48px', radius: '14px' },
+        { height: '48px', radius: '14px' },
+        { height: '48px', radius: '14px' },
+      ]);
     }
   });
 

@@ -109,14 +109,14 @@ export default function CityPage({
           <div className="flex gap-3 justify-center">
             <button
               type="button"
-              className="secondary-button px-5 py-2.5 rounded-xl font-bold text-xs"
+              className="secondary-button"
               onClick={() => setHasError(false)}
             >
               {isEn ? 'Retry' : 'إعادة المحاولة'}
             </button>
             <button
               type="button"
-              className="primary-button px-5 py-2.5 rounded-xl font-bold text-xs"
+              className="primary-button"
               onClick={onBack}
             >
               {isEn ? 'Back to Home' : 'العودة للرئيسية'}
@@ -314,7 +314,7 @@ export default function CityPage({
             {(searchArea || typeFilter !== 'all') && (
               <button
                 type="button"
-                className="secondary-button px-5 py-2.5 rounded-2xl text-xs font-bold cursor-pointer"
+                className="secondary-button"
                 onClick={() => {
                   setSearchArea('')
                   setTypeFilter('all')
@@ -325,7 +325,7 @@ export default function CityPage({
             )}
             <button
               type="button"
-              className="primary-button px-6 py-2.5 rounded-2xl text-xs font-bold shadow-md cursor-pointer inline-flex items-center gap-1.5"
+              className="primary-button"
               onClick={onBack}
             >
               <span className="material-symbols-outlined text-sm">home</span>
@@ -468,7 +468,7 @@ export default function CityPage({
                     {/* View Details Button */}
                     <button
                       type="button"
-                      className="secondary-button small-button px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                      className="secondary-button small-button"
                       data-testid="property-details-button"
                       onClick={(e) => {
                         e.stopPropagation()
@@ -482,7 +482,7 @@ export default function CityPage({
                     {/* Book Now Button (leads to Confirm Booking / Checkout) */}
                     <button
                       type="button"
-                      className="primary-button small-button px-4 py-2 rounded-xl text-xs font-black shadow-sm bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white transition active:scale-95 cursor-pointer"
+                      className="primary-button small-button"
                       data-testid="book-now-button"
                       onClick={(e) => {
                         e.stopPropagation()

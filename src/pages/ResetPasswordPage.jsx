@@ -157,7 +157,7 @@ export default function ResetPasswordPage({ language = 'ar', onToggleLanguage, o
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-300 px-4 py-3.5 text-base font-bold text-slate-950 shadow-[0_18px_30px_rgba(16,185,129,0.3)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_34px_rgba(16,185,129,0.28)] disabled:cursor-not-allowed disabled:opacity-70"
+              className="primary-button w-full"
             >
               {loading ? (
                 <span className="flex items-center gap-2">
@@ -171,7 +171,7 @@ export default function ResetPasswordPage({ language = 'ar', onToggleLanguage, o
           </form>
 
           <div className="mt-8 text-center">
-            <button type="button" onClick={onBackToLogin} className="font-semibold text-emerald-600 dark:text-emerald-400 transition hover:text-emerald-700 dark:hover:text-emerald-300">
+            <button type="button" onClick={onBackToLogin} className="ghost-button">
               {text.back}
             </button>
           </div>

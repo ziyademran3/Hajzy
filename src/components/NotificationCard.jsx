@@ -149,10 +149,10 @@ export default function NotificationCard({ notification, onDelete, onToggleRead 
           </div>
 
           <div className="mt-2 flex items-center gap-3">
-            <button onClick={desktopToggle} className="hidden md:inline-flex items-center gap-2 text-xs px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800" aria-label="toggle-read">
+            <button type="button" onClick={desktopToggle} className="secondary-button notification-desktop-action" aria-label="toggle-read">
               {read ? 'غير مقروء' : 'مقروء'}
             </button>
-            <button onClick={desktopDelete} className="hidden md:inline-flex items-center gap-2 text-xs px-2 py-1 rounded-md bg-red-50 text-red-600" aria-label="delete">
+            <button type="button" onClick={desktopDelete} className="secondary-button notification-desktop-action" aria-label="delete">
               حذف
             </button>
           </div>

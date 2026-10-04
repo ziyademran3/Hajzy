@@ -254,7 +254,7 @@ export default function SplitPaymentModal({
             <button
               type="button"
               onClick={handleWhatsAppShare}
-              className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] px-4 text-xs sm:text-sm font-black text-white shadow-sm transition active:scale-95 cursor-pointer"
+              className="secondary-button"
             >
               <span className="material-symbols-outlined text-[20px]">share</span>
               <span>{isArabic ? 'إرسال عبر واتساب' : 'Share on WhatsApp'}</span>
@@ -263,11 +263,7 @@ export default function SplitPaymentModal({
             <button
               type="button"
               onClick={handleCopy}
-              className={`flex h-12 items-center justify-center gap-2 rounded-2xl border px-4 text-xs sm:text-sm font-bold transition active:scale-95 cursor-pointer ${
-                copied
-                  ? 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
-                  : 'border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10'
-              }`}
+              className="secondary-button"
             >
               <span className="material-symbols-outlined text-[20px]">
                 {copied ? 'check_circle' : 'content_copy'}
@@ -280,7 +276,7 @@ export default function SplitPaymentModal({
           <div className="pt-3 border-t border-slate-100 dark:border-white/10 flex flex-col-reverse sm:flex-row items-center gap-2.5">
             <button
               type="button"
-              className="w-full sm:flex-1 h-11 rounded-2xl bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10 text-xs sm:text-sm font-bold transition active:scale-95 disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
+              className="secondary-button w-full sm:flex-1"
               onClick={handleSimulatePayment}
               disabled={paidCount >= splitCount}
             >
@@ -290,7 +286,7 @@ export default function SplitPaymentModal({
             </button>
             <button
               type="button"
-              className="w-full sm:flex-1 h-11 rounded-2xl bg-gradient-to-r from-[#00433f] to-[#0b5f59] hover:brightness-110 text-white text-xs sm:text-sm font-black shadow-md transition active:scale-95 cursor-pointer"
+              className="primary-button w-full sm:flex-1"
               onClick={onClose}
             >
               {isArabic ? 'حفظ ومتابعة' : 'Done & Close'}

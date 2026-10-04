@@ -237,7 +237,7 @@ export default function DashboardPage({
           <button
             type="button"
             onClick={() => onNavigate('home')}
-            className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition"
+            className="primary-button"
           >
             <span className="material-symbols-outlined text-base">travel_explore</span>
             <span>{isAr ? 'استكشف الإقامات' : 'Explore Stays'}</span>
@@ -453,7 +453,7 @@ export default function DashboardPage({
                   <button
                     type="button"
                     onClick={() => onNavigate('bookings')}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700"
+                    className="primary-button"
                   >
                     <span className="material-symbols-outlined text-base">receipt_long</span>
                     <span>{isAr ? 'عرض الحجز والتذكرة' : 'View Booking Details'}</span>
@@ -461,9 +461,9 @@ export default function DashboardPage({
                   <button
                     type="button"
                     onClick={() => onNavigate('chat')}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                    className="secondary-button"
                   >
-                    <span className="material-symbols-outlined text-base text-emerald-600 dark:text-emerald-400">chat</span>
+                    <span className="material-symbols-outlined text-base">chat</span>
                     <span>{isAr ? 'التواصل مع المضيف' : 'Contact Host'}</span>
                   </button>
                   {upcomingProperty && (
@@ -495,7 +495,7 @@ export default function DashboardPage({
               <button
                 type="button"
                 onClick={() => onNavigate('home')}
-                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:from-emerald-500 hover:to-teal-500"
+                className="primary-button mt-5"
               >
                 <span className="material-symbols-outlined text-base">search</span>
                 <span>{isAr ? 'تصفح الإقامات الآن' : 'Browse Stays Now'}</span>
@@ -790,7 +790,7 @@ export default function DashboardPage({
             <button
               type="button"
               onClick={() => onNavigate('home')}
-              className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
+              className="ghost-button"
             >
               <span>{isAr ? 'عرض كل العقارات' : 'View all'}</span>
               <span className="material-symbols-outlined text-sm">{isAr ? 'arrow_back' : 'arrow_forward'}</span>
@@ -837,10 +837,10 @@ export default function DashboardPage({
                       <span className="text-[11px] text-slate-400"> / {isAr ? 'ليلة' : 'night'}</span>
                     </div>
 
-                    <span className="inline-flex items-center gap-1 rounded-xl bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-700 group-hover:bg-emerald-600 group-hover:text-white transition dark:bg-slate-800 dark:text-slate-300">
-                      <span>{isAr ? 'حجز' : 'Book'}</span>
+                    <button type="button" className="primary-button small-button">
+                      <span>{isAr ? 'احجز الآن' : 'Book now'}</span>
                       <span className="material-symbols-outlined text-xs">{isAr ? 'arrow_back' : 'arrow_forward'}</span>
-                    </span>
+                    </button>
                   </div>
                 </div>
               </div>
