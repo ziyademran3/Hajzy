@@ -41,7 +41,7 @@ export default function MapView({
           color: #ffffff;
           padding: 6px 12px;
           border-radius: 9999px;
-          font-weight: 800;
+          font-weight: 700;
           font-size: 12px;
           box-shadow: 0 8px 20px rgba(0,67,63,0.35);
           border: 2px solid rgba(255,255,255,0.9);
@@ -61,7 +61,7 @@ export default function MapView({
     const marker = L.marker([coordinates.lat, coordinates.lng], { icon: customIcon }).addTo(map)
     if (markerLabel) {
       marker.bindPopup(
-        `<div style="font-family: inherit; font-size: 13px; font-weight: 700; color: #0f172a; padding: 2px;">
+        `<div style="font-family: inherit; font-size: var(--type-14); font-weight: 700; color: #0f172a; padding: 2px;">
           ${markerLabel}
         </div>`
       )

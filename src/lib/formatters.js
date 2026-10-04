@@ -1,33 +1,25 @@
-/**
- * Centralized locale & numeral system configuration.
- * Uses 'latn' (Western Arabic numerals: 0, 1, 2, 3...) by default
- * for visual consistency with currency (ج.م), charts, percentages, and inputs.
- * Can be switched dynamically between 'latn' and 'arab'.
- */
-export const NUMERAL_SYSTEM_CONFIG = {
-  numeralSystem: 'latn', // 'latn' | 'arab'
-}
+const getNumericLocale = (language = 'ar') => (
+  language === 'en' ? 'en-US-u-nu-latn' : 'ar-EG-u-nu-latn'
+)
 
-export const setNumeralSystem = (system) => {
-  if (system === 'latn' || system === 'arab') {
-    NUMERAL_SYSTEM_CONFIG.numeralSystem = system
-  }
-}
-
-export const getNumeralSystem = () => NUMERAL_SYSTEM_CONFIG.numeralSystem
+export const normalizeNumerals = (value) => String(value).replace(/[٠-٩۰-۹]/g, (digit) => {
+  const code = digit.charCodeAt(0)
+  return String(code >= 0x06f0 ? code - 0x06f0 : code - 0x0660)
+})
 
 export const formatNumber = (num, options = {}) => {
   if (num === null || num === undefined || isNaN(Number(num))) return '0'
-  const numeralSystem = options.numeralSystem || NUMERAL_SYSTEM_CONFIG.numeralSystem
-  const locale = `ar-EG-u-nu-${numeralSystem}`
+  const intlOptions = { ...options }
+  delete intlOptions.numeralSystem
   try {
-    return new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat(getNumericLocale(), {
       maximumFractionDigits: options.maximumFractionDigits ?? 0,
       minimumFractionDigits: options.minimumFractionDigits ?? 0,
-      ...options,
+      ...intlOptions,
+      numberingSystem: 'latn',
     }).format(num)
   } catch {
-    return Number(num).toLocaleString('en-US')
+    return Number(num).toLocaleString('en-US-u-nu-latn')
   }
 }
 
@@ -38,10 +30,12 @@ export const formatCurrency = (amount, currency = 'EGP', currentLanguage = 'ar',
     return isArabic ? `0 ${sym}` : `${sym} 0`
   }
   const isArabic = currentLanguage === 'ar'
-  const numeralSystem = options.numeralSystem || NUMERAL_SYSTEM_CONFIG.numeralSystem
-  const locale = isArabic ? `ar-EG-u-nu-${numeralSystem}` : 'en-US'
-  const value = new Intl.NumberFormat(locale, {
+  const intlOptions = { ...options }
+  delete intlOptions.numeralSystem
+  const value = new Intl.NumberFormat(getNumericLocale(currentLanguage), {
     maximumFractionDigits: options.maximumFractionDigits ?? 0,
+    ...intlOptions,
+    numberingSystem: 'latn',
   }).format(amount)
   const symbol = currency === 'EGP' ? (isArabic ? 'ج.م' : 'EGP') : currency
 
@@ -152,18 +146,35 @@ export const formatDate = (dateString, currentLanguage = 'ar', options = {}) => 
 
   if (!d) return '—'
 
-  const numeralSystem = options.numeralSystem || NUMERAL_SYSTEM_CONFIG.numeralSystem
-  const locale = currentLanguage === 'ar' ? `ar-EG-u-nu-${numeralSystem}` : 'en-US'
+  const locale = getNumericLocale(currentLanguage)
+  const intlOptions = { ...options }
+  delete intlOptions.numeralSystem
   try {
     return new Intl.DateTimeFormat(locale, {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
-      ...options,
+      ...intlOptions,
+      numberingSystem: 'latn',
     }).format(d)
   } catch {
     return '—'
   }
+}
+
+export const formatTime = (date, currentLanguage, options = {}) => {
+  if (date === null || date === undefined || date === '') return ''
+  const value = date instanceof Date ? date : new Date(date)
+  if (isNaN(value.getTime())) return ''
+  const language = currentLanguage || (
+    typeof document !== 'undefined' && document.documentElement.lang === 'en' ? 'en' : 'ar'
+  )
+  return new Intl.DateTimeFormat(getNumericLocale(language), {
+    hour: '2-digit',
+    minute: '2-digit',
+    ...options,
+    numberingSystem: 'latn',
+  }).format(value)
 }
 
 /**

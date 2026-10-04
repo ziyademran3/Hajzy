@@ -71,6 +71,39 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
     expect(fatalErrors.length).toBe(0);
   });
 
+  test('Typography uses Cairo, the six-size scale, and only the three supported weights', async ({ page }) => {
+    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+    const typography = await page.locator('#root').evaluate((root) => {
+      const style = getComputedStyle(root);
+      const probes = ['font-normal text-xs', 'font-semibold text-sm', 'font-bold text-3xl']
+        .map((className) => {
+          const probe = document.createElement('span');
+          probe.className = className;
+          root.appendChild(probe);
+          const computed = getComputedStyle(probe);
+          const result = { weight: computed.fontWeight, size: computed.fontSize };
+          probe.remove();
+          return result;
+        });
+      const heading = root.querySelector('h1, h2, h3, h4, h5, h6');
+      return {
+        family: style.fontFamily,
+        sizes: ['12', '14', '16', '20', '24', '32'].map((size) => (
+          style.getPropertyValue(`--type-${size}`).trim()
+        )),
+        weights: probes.map(({ weight }) => weight),
+        utilitySizes: probes.map(({ size }) => size),
+        headingWeight: heading ? getComputedStyle(heading).fontWeight : null,
+      };
+    });
+
+    expect(typography.family).toContain('Cairo');
+    expect(typography.sizes).toEqual(['12px', '14px', '16px', '20px', '24px', '32px']);
+    expect(typography.utilitySizes).toEqual(['12px', '14px', '32px']);
+    expect(typography.weights).toEqual(['400', '600', '700']);
+    expect(typography.headingWeight).toBe('700');
+  });
+
   test('Language switch toggles RTL/LTR and updates labels', async ({ page }) => {
     await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
 

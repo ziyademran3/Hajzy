@@ -35,6 +35,7 @@ import {
   formatCurrency,
   formatNumber,
   formatDate,
+  formatTime,
   parseISODate,
   formatISODate,
   formatDisplayDMY,
@@ -904,12 +905,12 @@ function App() {
 
       const nextMessages = await fetchChatMessages(selectedProperty.id)
       setChatMessages(nextMessages.length ? nextMessages : [
-        { id: 'welcome-message', propertyId: selectedProperty.id, sender: 'owner', text: 'مرحباً! كيف يمكننا مساعدتك؟', createdAt: new Date().toISOString(), time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) },
+        { id: 'welcome-message', propertyId: selectedProperty.id, sender: 'owner', text: 'مرحباً! كيف يمكننا مساعدتك؟', createdAt: new Date().toISOString(), time: formatTime(new Date(), language) },
       ])
     }
 
     loadChatMessages()
-  }, [selectedProperty?.id])
+  }, [selectedProperty?.id, language])
 
   const effectiveUser = user || {
     id: 'guest-demo',
@@ -1488,7 +1489,7 @@ function App() {
       sender: 'user',
       text: trimmedMessage,
       createdAt: new Date().toISOString(),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      time: formatTime(new Date(), language),
     }
 
     const savedMessage = await addChatMessage(newMessage)
@@ -1506,7 +1507,7 @@ function App() {
           sender: 'owner',
           text: replyText,
           createdAt: new Date().toISOString(),
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          time: formatTime(new Date(), language),
         },
       ])
     }, 450)
@@ -2962,7 +2963,7 @@ function App() {
       slug: 'alexandria',
       city: language === 'en' ? 'Alexandria' : 'الإسكندرية',
       label: language === 'en' ? 'Sea breeze' : 'نسيم البحر',
-      price: language === 'en' ? `From ${alexStats.minPrice.toLocaleString()} EGP` : `من ${alexStats.minPrice.toLocaleString()} ج.م`,
+      price: language === 'en' ? `From ${formatNumber(alexStats.minPrice)} EGP` : `من ${formatNumber(alexStats.minPrice)} ج.م`,
       image: CITY_PHOTOS['الإسكندرية'],
       staysCount: alexStats.count,
       badge: language === 'en' ? 'Trending' : 'الأكثر طلباً',
@@ -2972,7 +2973,7 @@ function App() {
       slug: 'cairo',
       city: language === 'en' ? 'Cairo' : 'القاهرة',
       label: language === 'en' ? 'Nile & city' : 'النيل والمدينة',
-      price: language === 'en' ? `From ${cairoStats.minPrice.toLocaleString()} EGP` : `من ${cairoStats.minPrice.toLocaleString()} ج.م`,
+      price: language === 'en' ? `From ${formatNumber(cairoStats.minPrice)} EGP` : `من ${formatNumber(cairoStats.minPrice)} ج.م`,
       image: CITY_PHOTOS['القاهرة'],
       staysCount: cairoStats.count,
       badge: language === 'en' ? 'Popular' : 'شائع',
@@ -2982,7 +2983,7 @@ function App() {
       slug: 'giza',
       city: language === 'en' ? 'Giza' : 'الجيزة',
       label: language === 'en' ? 'Pyramids view' : 'إطلالة الأهرامات',
-      price: language === 'en' ? `From ${gizaStats.minPrice.toLocaleString()} EGP` : `من ${gizaStats.minPrice.toLocaleString()} ج.م`,
+      price: language === 'en' ? `From ${formatNumber(gizaStats.minPrice)} EGP` : `من ${formatNumber(gizaStats.minPrice)} ج.م`,
       image: CITY_PHOTOS['الجيزة'],
       staysCount: gizaStats.count,
     },
@@ -2991,7 +2992,7 @@ function App() {
       slug: 'hurghada',
       city: language === 'en' ? 'Hurghada' : 'الغردقة',
       label: language === 'en' ? 'Red Sea luxury' : 'فخامة البحر الأحمر',
-      price: language === 'en' ? `From ${hurghadaStats.minPrice.toLocaleString()} EGP` : `من ${hurghadaStats.minPrice.toLocaleString()} ج.م`,
+      price: language === 'en' ? `From ${formatNumber(hurghadaStats.minPrice)} EGP` : `من ${formatNumber(hurghadaStats.minPrice)} ج.م`,
       image: CITY_PHOTOS['الغردقة'],
       staysCount: hurghadaStats.count,
       badge: language === 'en' ? 'Beach' : 'شاطئ',
@@ -3001,7 +3002,7 @@ function App() {
       slug: 'sharm-el-sheikh',
       city: language === 'en' ? 'Sharm El-Sheikh' : 'شرم الشيخ',
       label: language === 'en' ? 'Bay & reefs' : 'الخلجان والشعاب',
-      price: language === 'en' ? `From ${sharmStats.minPrice.toLocaleString()} EGP` : `من ${sharmStats.minPrice.toLocaleString()} ج.م`,
+      price: language === 'en' ? `From ${formatNumber(sharmStats.minPrice)} EGP` : `من ${formatNumber(sharmStats.minPrice)} ج.م`,
       image: CITY_PHOTOS['شرم الشيخ'],
       staysCount: sharmStats.count,
     },
@@ -4351,7 +4352,7 @@ function App() {
       language === 'en'
         ? ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri']
         : ['سبت', 'أحد', 'إثن', 'ثلاث', 'أرب', 'خم', 'جم']
-    const monthFormatter = new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'ar-EG', { month: 'long', year: 'numeric' })
+    const monthFormatter = new Intl.DateTimeFormat(language === 'en' ? 'en-US-u-nu-latn' : 'ar-EG-u-nu-latn', { month: 'long', year: 'numeric', numberingSystem: 'latn' })
     const minRequiredNights = Number(selectedProperty?.minNights || selectedProperty?.min_nights || 1)
     const isPastMonthDisabled =
       calendarMonth.getFullYear() <= today.getFullYear() &&
@@ -4365,10 +4366,10 @@ function App() {
               <span className="material-symbols-outlined" style={{ fontSize: '3rem', color: '#f59e0b', marginBottom: '12px' }}>
                 warning
               </span>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '8px' }}>
+              <h2 style={{ fontSize: 'var(--type-20)', fontWeight: 700, marginBottom: '8px' }}>
                 {language === 'en' ? 'An error occurred, please try again' : 'حدث خطأ، حاول مرة أخرى'}
               </h2>
-              <p style={{ color: 'var(--muted)', fontSize: '0.85rem', marginBottom: '20px' }}>
+              <p style={{ color: 'var(--muted)', fontSize: 'var(--type-14)', marginBottom: '20px' }}>
                 {error?.message || (language === 'en' ? 'Please reload or retry.' : 'يرجى المحاولة مجدداً أو إعادة تحميل الصفحة.')}
               </p>
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>

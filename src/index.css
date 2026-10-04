@@ -3,15 +3,70 @@
 @config '../tailwind.config.js';
 
 :root {
-  font-family: 'Cairo', 'Poppins', 'Inter', 'Segoe UI', sans-serif;
+  --font-family-arabic: 'Cairo', sans-serif;
+  --font-weight-body: 400;
+  --font-weight-subheading: 600;
+  --font-weight-heading: 700;
+  --type-12: 12px;
+  --type-14: 14px;
+  --type-16: 16px;
+  --type-20: 20px;
+  --type-24: 24px;
+  --type-32: 32px;
+  font-family: var(--font-family-arabic);
   line-height: 1.5;
-  font-weight: 400;
+  font-weight: var(--font-weight-body);
   color: #0f172a;
   background: #fbf9f5;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  font-family: var(--font-family-arabic);
+  font-size: var(--type-16);
+}
+
+#root :where(*) {
+  font-weight: var(--font-weight-body) !important;
+}
+
+#root :where(.font-semibold) {
+  font-weight: var(--font-weight-subheading) !important;
+}
+
+#root :where(.font-bold, .font-extrabold, .font-black, strong, b, h1, h2, h3, h4, h5, h6) {
+  font-weight: var(--font-weight-heading) !important;
+}
+
+#root :where(.font-light, .font-normal, .font-medium) {
+  font-weight: var(--font-weight-body) !important;
+}
+
+#root :where([class~="text-[9px]"], [class~="text-[10px]"], [class~="text-[11px]"], [class~="text-[12px]"]):not(.material-symbols-outlined) {
+  font-size: var(--type-12) !important;
+}
+
+#root :where([class~="text-[13px]"], [class~="text-[14px]"]):not(.material-symbols-outlined) {
+  font-size: var(--type-14) !important;
+}
+
+#root :where([class~="text-[15px]"], [class~="text-[16px]"]):not(.material-symbols-outlined) {
+  font-size: var(--type-16) !important;
+}
+
+#root :where([class~="text-[17px]"], [class~="text-[18px]"], [class~="text-[19px]"], [class~="text-[20px]"]):not(.material-symbols-outlined) {
+  font-size: var(--type-20) !important;
+}
+
+#root :where([class~="text-[22px]"], [class~="text-[24px]"], [class~="text-[26px]"]):not(.material-symbols-outlined) {
+  font-size: var(--type-24) !important;
+}
+
+#root :where([class~="text-[32px]"], [class~="text-[33px]"]):not(.material-symbols-outlined) {
+  font-size: var(--type-32) !important;
 }
 
 /* Impeccable Craft Floor: Themed Browser Surfaces */
@@ -245,5 +300,4 @@ button,
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   line-height: 1;
 }
-
 

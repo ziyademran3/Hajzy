@@ -1,4 +1,5 @@
 import React from 'react'
+import { formatDate } from '../lib/formatters'
 
 export default function ReviewCard({ review }) {
   return (
@@ -11,7 +12,7 @@ export default function ReviewCard({ review }) {
           <strong>{review.authorName || 'ضيف'}</strong>
           <div className="review-rating">{Array.from({ length: review.rating || 5 }).map((_, i) => <span key={i} className="material-symbols-outlined">star</span>)}</div>
         </div>
-        <small className="muted">{review.date ? new Date(review.date).toLocaleDateString() : ''}</small>
+        <small className="muted">{review.date ? formatDate(review.date, document.documentElement.lang) : ''}</small>
         <p>{review.text}</p>
       </div>
     </article>

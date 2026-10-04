@@ -2,6 +2,10 @@ import { test, expect, devices } from '@playwright/test';
 import {
   parseISODate,
   formatDate,
+  formatNumber,
+  formatCurrency,
+  formatTime,
+  normalizeNumerals,
   formatISODate,
   buildISODateString,
   nightsBetween,
@@ -59,6 +63,19 @@ test.describe('Date Helper Functions Unit Tests', () => {
     expect(formattedEn).toContain('2026');
     expect(formattedEn).toContain('Sep');
   });
+
+  test('formatted numbers, currency, dates, and times always use Latin digits', () => {
+    const nonLatinDigits = /[٠-٩۰-۹]/
+
+    expect(formatNumber(1234567, { numeralSystem: 'arab' })).toMatch(/[0-9]/)
+    expect(formatNumber(1234567, { numeralSystem: 'arab' })).not.toMatch(nonLatinDigits)
+    expect(formatCurrency(1234567, 'EGP', 'ar', { numeralSystem: 'arab' })).not.toMatch(nonLatinDigits)
+    expect(formatCurrency(1234567, 'EGP', 'en')).not.toMatch(nonLatinDigits)
+    expect(formatDate('2026-09-22', 'ar', { numeralSystem: 'arab' })).not.toMatch(nonLatinDigits)
+    expect(formatTime(new Date(2026, 8, 22, 14, 5), 'ar')).not.toMatch(nonLatinDigits)
+    expect(formatTime(null, 'ar')).toBe('')
+    expect(normalizeNumerals('رقم ١٢٣٤۵')).toBe('رقم 12345')
+  })
 });
 
 test.use({

@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { formatNumber } from '../lib/formatters'
 
 export default function SplitPaymentModal({
   isOpen,
@@ -24,8 +25,8 @@ export default function SplitPaymentModal({
   const shareLink = `https://hajzy.com/pay/split?ref=SPLIT-${Math.floor(100000 + Math.random() * 900000)}&share=${perPersonAmount}`
 
   const shareMessage = isArabic
-    ? `مرحباً! هذا رابط دفع حصتك في حجز "${propertyName}" عبر منصة حجزي بقيمة ${perPersonAmount.toLocaleString()} ${currency}: ${shareLink}`
-    : `Hi! Here is your share link for booking "${propertyName}" on Hajzy (${perPersonAmount.toLocaleString()} ${currency}): ${shareLink}`
+    ? `مرحباً! هذا رابط دفع حصتك في حجز "${propertyName}" عبر منصة حجزي بقيمة ${formatNumber(perPersonAmount)} ${currency}: ${shareLink}`
+    : `Hi! Here is your share link for booking "${propertyName}" on Hajzy (${formatNumber(perPersonAmount)} ${currency}): ${shareLink}`
 
   const handleCopy = () => {
     navigator.clipboard?.writeText(shareMessage)
@@ -130,7 +131,7 @@ export default function SplitPaymentModal({
                 {isArabic ? 'إجمالي مبلغ الحجز' : 'Total Stay Amount'}
               </span>
               <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white tabular-nums">
-                {totalAmount.toLocaleString()} {currency}
+                {formatNumber(totalAmount)} {currency}
               </span>
             </div>
 
@@ -188,7 +189,7 @@ export default function SplitPaymentModal({
               </div>
               <div className="text-end">
                 <span className="text-base sm:text-xl font-black text-emerald-700 dark:text-emerald-300 tabular-nums">
-                  {perPersonAmount.toLocaleString()} {currency}
+                  {formatNumber(perPersonAmount)} {currency}
                 </span>
               </div>
             </div>
@@ -211,10 +212,10 @@ export default function SplitPaymentModal({
             </div>
             <div className="flex justify-between items-center text-[11px] pt-0.5 text-slate-500 dark:text-slate-400 font-semibold tabular-nums">
               <span className="text-emerald-700 dark:text-emerald-400">
-                {isArabic ? `المحصّل: ${paidAmount.toLocaleString()} ${currency}` : `Collected: ${paidAmount.toLocaleString()} ${currency}`}
+                {isArabic ? `المحصّل: ${formatNumber(paidAmount)} ${currency}` : `Collected: ${formatNumber(paidAmount)} ${currency}`}
               </span>
               <span>
-                {isArabic ? `المتبقي: ${remainingAmount.toLocaleString()} ${currency}` : `Remaining: ${remainingAmount.toLocaleString()} ${currency}`}
+                {isArabic ? `المتبقي: ${formatNumber(remainingAmount)} ${currency}` : `Remaining: ${formatNumber(remainingAmount)} ${currency}`}
               </span>
             </div>
           </div>

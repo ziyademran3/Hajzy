@@ -188,7 +188,7 @@ function emailLayout({ title, subtitle, contentHtml, isRtl = true }) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(title)}</title>
 </head>
-<body style="margin:0;padding:0;background-color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0f172a;line-height:1.6;">
+<body style="margin:0;padding:0;background-color:#f1f5f9;font-family:'Cairo',sans-serif;color:#0f172a;line-height:1.6;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f1f5f9;padding:40px 16px;">
     <tr>
       <td align="center">
@@ -201,12 +201,12 @@ function emailLayout({ title, subtitle, contentHtml, isRtl = true }) {
               <table role="presentation" cellspacing="0" cellpadding="0">
                 <tr>
                   <td align="center">
-                    <div style="display:inline-block;width:52px;height:52px;line-height:52px;border-radius:16px;background:rgba(255,255,255,0.18);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.3);color:#fef08a;font-size:26px;font-weight:900;text-align:center;margin-bottom:12px;">H</div>
+                    <div style="display:inline-block;width:52px;height:52px;line-height:52px;border-radius:16px;background:rgba(255,255,255,0.18);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.3);color:#fef08a;font-size:26px;font-weight:700;text-align:center;margin-bottom:12px;">H</div>
                   </td>
                 </tr>
               </table>
-              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;">Hajzy | حـجـزي</h1>
-              ${subtitle ? `<p style="margin:8px 0 0;color:#a7f3d0;font-size:13px;font-weight:500;">${escapeHtml(subtitle)}</p>` : ''}
+              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">Hajzy | حـجـزي</h1>
+              ${subtitle ? `<p style="margin:8px 0 0;color:#a7f3d0;font-size:13px;font-weight:400;">${escapeHtml(subtitle)}</p>` : ''}
             </td>
           </tr>
 
@@ -387,7 +387,7 @@ export function getOwnerBookingNotificationTemplate({
           ${bookingId ? `
           <tr>
             <td style="color:#64748b;">رقم الحجز:</td>
-            <td style="color:#0f172a;font-family:monospace;">#${escapeHtml(String(bookingId))}</td>
+            <td style="color:#0f172a;font-family:'Cairo',sans-serif;">#${escapeHtml(String(bookingId))}</td>
           </tr>` : ''}
         </table>
       </div>

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { formatTime } from './formatters'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -872,7 +873,7 @@ export const normalizeChatMessage = (message) => {
     sender: message.sender || 'user',
     text: message.text || '',
     createdAt,
-    time: message.time || new Date(createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    time: message.time || formatTime(createdAt),
   }
 }
 

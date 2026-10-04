@@ -1,5 +1,7 @@
 // Real user notification management service for Hajzy
 
+import { formatNumber } from './formatters'
+
 const STORAGE_PREFIX = 'hajzy_notifications_'
 const LEGACY_MOCK_IDS = new Set(['welcome-note', 'price-drop-note', 'reminder-note'])
 
@@ -26,23 +28,23 @@ export const formatRelativeTime = (isoString, lang = 'ar') => {
   const diffMinutes = Math.floor(diffSeconds / 60)
   if (diffMinutes < 60) {
     if (lang === 'en') {
-      return `${diffMinutes}m ago`
+      return `${formatNumber(diffMinutes)}m ago`
     }
     if (diffMinutes === 1) return 'منذ دقيقة'
     if (diffMinutes === 2) return 'منذ دقيقتين'
-    if (diffMinutes >= 3 && diffMinutes <= 10) return `منذ ${diffMinutes} دقائق`
-    return `منذ ${diffMinutes} دقيقة`
+    if (diffMinutes >= 3 && diffMinutes <= 10) return `منذ ${formatNumber(diffMinutes)} دقائق`
+    return `منذ ${formatNumber(diffMinutes)} دقيقة`
   }
 
   const diffHours = Math.floor(diffMinutes / 60)
   if (diffHours < 24) {
     if (lang === 'en') {
-      return `${diffHours}h ago`
+      return `${formatNumber(diffHours)}h ago`
     }
     if (diffHours === 1) return 'منذ ساعة'
     if (diffHours === 2) return 'منذ ساعتين'
-    if (diffHours >= 3 && diffHours <= 10) return `منذ ${diffHours} ساعات`
-    return `منذ ${diffHours} ساعة`
+    if (diffHours >= 3 && diffHours <= 10) return `منذ ${formatNumber(diffHours)} ساعات`
+    return `منذ ${formatNumber(diffHours)} ساعة`
   }
 
   const diffDays = Math.floor(diffHours / 24)
@@ -53,12 +55,13 @@ export const formatRelativeTime = (isoString, lang = 'ar') => {
     return lang === 'en' ? '2 days ago' : 'منذ يومين'
   }
   if (diffDays <= 7) {
-    return lang === 'en' ? `${diffDays} days ago` : `منذ ${diffDays} أيام`
+    return lang === 'en' ? `${formatNumber(diffDays)} days ago` : `منذ ${formatNumber(diffDays)} أيام`
   }
 
-  return date.toLocaleDateString(lang === 'en' ? 'en-US' : 'ar-EG', {
+  return date.toLocaleDateString(lang === 'en' ? 'en-US-u-nu-latn' : 'ar-EG-u-nu-latn', {
     month: 'short',
     day: 'numeric',
+    numberingSystem: 'latn',
   })
 }
 

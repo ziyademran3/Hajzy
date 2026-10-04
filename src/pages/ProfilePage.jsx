@@ -130,10 +130,11 @@ export default function ProfilePage({
     if (isNaN(date.getTime())) return null
 
     try {
-      const locale = language === 'en' ? 'en-US' : 'ar-EG-u-nu-latn'
+      const locale = language === 'en' ? 'en-US-u-nu-latn' : 'ar-EG-u-nu-latn'
       const monthYear = new Intl.DateTimeFormat(locale, {
         month: 'long',
         year: 'numeric',
+        numberingSystem: 'latn',
       }).format(date)
 
       return t('memberSince', {

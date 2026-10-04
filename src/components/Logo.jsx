@@ -85,9 +85,9 @@ export default function Logo({
       {showText && (
         <span
           style={{
-            fontFamily: "'Cairo', 'Poppins', 'Inter', sans-serif",
-            fontWeight: 800,
-            fontSize: '1.25rem',
+            fontFamily: 'var(--font-family-arabic)',
+            fontWeight: 700,
+            fontSize: 'var(--type-20)',
             letterSpacing: '-0.02em',
             color: 'inherit',
           }}
@@ -98,4 +98,3 @@ export default function Logo({
     </span>
   )
 }
-

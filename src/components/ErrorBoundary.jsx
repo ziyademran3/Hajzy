@@ -87,7 +87,7 @@ export class ErrorBoundary extends React.Component {
 
           <h3
             style={{
-              fontSize: '1.25rem',
+              fontSize: 'var(--type-20)',
               fontWeight: 700,
               color: 'var(--text-primary, #0f172a)',
               marginBottom: '8px',
@@ -98,7 +98,7 @@ export class ErrorBoundary extends React.Component {
 
           <p
             style={{
-              fontSize: '0.9rem',
+              fontSize: 'var(--type-14)',
               color: 'var(--text-secondary, #64748b)',
               marginBottom: '20px',
               lineHeight: 1.5,

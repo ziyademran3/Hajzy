@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react'
 import { AiOutlineCheck, AiOutlineClose, AiOutlineBell } from 'react-icons/ai'
+import { formatNumber } from '../lib/formatters'
 
 // notification: { id, type, title, body, time, read, thumbnail }
 // types: 'confirm' | 'alert' | 'offer' | 'message'
@@ -13,25 +14,26 @@ export default function NotificationCard({ notification, onDelete, onToggleRead 
       const mins = Math.floor(diff / (1000 * 60))
       const hours = Math.floor(diff / (1000 * 60 * 60))
       const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-      const locale = document.documentElement.lang === 'en' ? 'en-US' : 'ar-EG'
+      const isEnglish = document.documentElement.lang === 'en'
+      const locale = isEnglish ? 'en-US-u-nu-latn' : 'ar-EG-u-nu-latn'
 
-      if (mins < 1) return document.documentElement.lang === 'en' ? 'Now' : 'الآن'
-      if (mins < 60) return document.documentElement.lang === 'en' ? `${mins}m ago` : `منذ ${mins} دقيقة`
-      if (hours < 24) return document.documentElement.lang === 'en' ? `${hours}h ago` : `منذ ${hours} ${hours === 1 ? 'ساعة' : 'ساعات'}`
+      if (mins < 1) return isEnglish ? 'Now' : 'الآن'
+      if (mins < 60) return isEnglish ? `${formatNumber(mins)}m ago` : `منذ ${formatNumber(mins)} دقيقة`
+      if (hours < 24) return isEnglish ? `${formatNumber(hours)}h ago` : `منذ ${formatNumber(hours)} ${hours === 1 ? 'ساعة' : 'ساعات'}`
 
       // yesterday -> show 'أمس 3:00 م' in Arabic or 'Yesterday 3:00 PM' in English
       const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
       const startOfYesterday = new Date(startOfToday.getTime() - 24 * 60 * 60 * 1000)
       if (d >= startOfYesterday && d < startOfToday) {
         const timeStr = d.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' })
-        return document.documentElement.lang === 'en' ? `Yesterday ${timeStr}` : `أمس ${timeStr}`
+        return isEnglish ? `Yesterday ${timeStr}` : `أمس ${timeStr}`
       }
 
       // within one week -> show weekday or 'منذ X يوم'
-      if (days < 7) return document.documentElement.lang === 'en' ? `${days}d ago` : `منذ ${days} يوم`
+      if (days < 7) return isEnglish ? `${formatNumber(days)}d ago` : `منذ ${formatNumber(days)} يوم`
 
       // fallback to short date
-      return d.toLocaleDateString(locale, { day: 'numeric', month: 'short' })
+      return d.toLocaleDateString(locale, { day: 'numeric', month: 'short', numberingSystem: 'latn' })
     } catch {
       return fallback || ''
     }

@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { formatNumber } from '../lib/formatters'
 
 /**
  * Native-quality share hook.
@@ -12,7 +13,7 @@ export function useNativeShare() {
   const shareProperty = useCallback(async ({ title, titleEn, city, price, currency, url, language = 'ar' }) => {
     const isArabic = language === 'ar'
     const displayTitle = isArabic ? title : (titleEn || title)
-    const displayPrice = price ? `${Number(price).toLocaleString()} ${currency || 'EGP'}` : ''
+    const displayPrice = price ? `${formatNumber(price)} ${currency || 'EGP'}` : ''
 
     const shareText = isArabic
       ? `🏡 شوف الإقامة دي على حجزي!\n\n"${displayTitle}" في ${city || 'مصر'}\n${displayPrice ? `💰 ${displayPrice} / الليلة` : ''}\n\n🔗 ${url || 'https://hajzy.com'}`
@@ -49,7 +50,7 @@ export function useNativeShare() {
   const shareBooking = useCallback(async ({ reference, propertyTitle, propertyTitleEn, checkIn, checkOut, total, currency, language = 'ar' }) => {
     const isArabic = language === 'ar'
     const displayTitle = isArabic ? propertyTitle : (propertyTitleEn || propertyTitle)
-    const displayTotal = total ? `${Number(total).toLocaleString()} ${currency || 'EGP'}` : ''
+    const displayTotal = total ? `${formatNumber(total)} ${currency || 'EGP'}` : ''
 
     const shareText = isArabic
       ? `✅ تم تأكيد حجزي على حجزي!\n\n🏡 ${displayTitle}\n📅 ${checkIn} ← ${checkOut}\n${displayTotal ? `💰 ${displayTotal}` : ''}\n📋 رقم المرجع: ${reference || '—'}\n\nحمّل تطبيق حجزي: https://hajzy.com`

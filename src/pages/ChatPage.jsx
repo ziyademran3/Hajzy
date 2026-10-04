@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { fetchChatMessages, addChatMessage } from '../lib/dataService'
 import MessageBubble from '../components/MessageBubble'
+import { formatTime } from '../lib/formatters'
 
 export default function ChatPage({ property, user, language = 'ar', onBack = () => {} }) {
   const [messages, setMessages] = useState([])
@@ -78,7 +79,7 @@ export default function ChatPage({ property, user, language = 'ar', onBack = () 
       text: guestMessageText,
       image: attachedImage,
       createdAt: new Date().toISOString(),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      time: formatTime(new Date(), language),
     }
 
     setMessages((cur) => [...cur, newMsg])
@@ -121,7 +122,7 @@ export default function ChatPage({ property, user, language = 'ar', onBack = () 
             senderName: isArabic ? 'أحمد (المضيف)' : 'Ahmed (Host)',
             text: replyText,
             createdAt: new Date().toISOString(),
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            time: formatTime(new Date(), language),
           }
 
           setMessages((cur) => [...cur, hostReply])
@@ -179,7 +180,7 @@ export default function ChatPage({ property, user, language = 'ar', onBack = () 
         ) : (
           messages.map((msg) => (
             <div key={msg.id} className="message-wrapper">
-              <MessageBubble message={msg} isOwn={String(msg.senderId) === String(user?.id)} />
+              <MessageBubble message={msg} isOwn={String(msg.senderId) === String(user?.id)} language={language} />
               {msg.image && (
                 <div className={`attached-image-bubble ${String(msg.senderId) === String(user?.id) ? 'own' : 'other'}`}>
                   <img src={msg.image} alt="Attachment" className="max-w-[220px] rounded-xl border border-slate-200 shadow-sm" />

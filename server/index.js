@@ -716,7 +716,7 @@ app.post('/api/auth/register', async (req, res) => {
       to: normalizedEmail,
       subject: 'Verify your Hajzy account',
       html: `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #0f172a;">
+        <div style="font-family: 'Cairo', sans-serif; line-height: 1.6; color: #0f172a;">
           <h2>Hello ${fullName.trim()},</h2>
           <p>Thanks for creating your account.</p>
           <p>Click the link below to verify your email:</p>
@@ -932,7 +932,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Hajzy Password Reset</title>
         </head>
-        <body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
+        <body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: 'Cairo', sans-serif; color: #1e293b;">
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f1f5f9; padding: 40px 15px;">
             <tr>
               <td align="center">
@@ -941,17 +941,17 @@ app.post('/api/auth/forgot-password', async (req, res) => {
                   <tr>
                     <td align="center" style="background: linear-gradient(135deg, #064e3b 0%, #0d9488 100%); padding: 36px 20px; text-align: center;">
                       <div style="display: inline-block; width: 56px; height: 56px; background-color: #ffffff; border-radius: 16px; margin-bottom: 12px; line-height: 56px; text-align: center; box-shadow: 0 6px 16px rgba(0,0,0,0.12);">
-                        <span style="font-size: 28px; font-weight: 900; color: #0d9488; font-family: sans-serif;">H</span>
+                        <span style="font-size: 28px; font-weight: 700; color: #0d9488; font-family: 'Cairo', sans-serif;">H</span>
                       </div>
-                      <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">Hajzy | حجزي</h1>
-                      <p style="margin: 6px 0 0; color: #a7f3d0; font-size: 13px; font-weight: 500;">بوابتك لأفضل الإقامات الفاخرة</p>
+                      <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">Hajzy | حجزي</h1>
+                      <p style="margin: 6px 0 0; color: #a7f3d0; font-size: 13px; font-weight: 400;">بوابتك لأفضل الإقامات الفاخرة</p>
                     </td>
                   </tr>
 
                   <!-- Body Content -->
                   <tr>
                     <td style="padding: 36px 30px; text-align: right; direction: rtl;">
-                      <h2 style="margin: 0 0 14px; font-size: 20px; font-weight: 800; color: #0f172a;">طلب إعادة تعيين كلمة المرور</h2>
+                      <h2 style="margin: 0 0 14px; font-size: 20px; font-weight: 700; color: #0f172a;">طلب إعادة تعيين كلمة المرور</h2>
                       <p style="margin: 0 0 20px; font-size: 15px; line-height: 1.7; color: #475569;">
                         مرحباً بك، لقد تلقينا طلباً لإعادة تعيين كلمة المرور الخاصة بحسابك في <strong>Hajzy</strong>. اضغط على الزر أدناه لاختيار كلمة مرور جديدة:
                       </p>
@@ -972,7 +972,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
                       <p style="margin: 0 0 10px; font-size: 12px; color: #94a3b8; line-height: 1.5;">
                         إذا كنت تواجه مشكلة في الضغط على الزر، يمكنك نسخ الرابط التالي ولصقه في المتصفح:
                       </p>
-                      <p style="margin: 0; font-size: 11px; word-break: break-all; direction: ltr; text-align: left; background-color: #f1f5f9; padding: 10px; border-radius: 8px; color: #0d9488; font-family: monospace;">
+                      <p style="margin: 0; font-size: 11px; word-break: break-all; direction: ltr; text-align: left; background-color: #f1f5f9; padding: 10px; border-radius: 8px; color: #0d9488; font-family: 'Cairo', sans-serif;">
                         ${resetLink}
                       </p>
 
@@ -987,7 +987,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
                   <!-- Footer -->
                   <tr>
                     <td align="center" style="background-color: #f8fafc; padding: 20px; border-top: 1px solid #f1f5f9; text-align: center;">
-                      <p style="margin: 0; font-size: 12px; color: #94a3b8; font-weight: 500;">
+                      <p style="margin: 0; font-size: 12px; color: #94a3b8; font-weight: 400;">
                         © 2026 Hajzy Inc. جميع الحقوق محفوظة.
                       </p>
                     </td>

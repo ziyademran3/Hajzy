@@ -4,7 +4,7 @@
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #f4f7f4 0%, #eef7f6 100%);
-  font-family: 'Inter', 'Segoe UI', sans-serif;
+  font-family: var(--font-family-arabic);
   padding: 24px;
 }
 
@@ -57,7 +57,7 @@
   color: #fff;
   border-radius: 999px;
   padding: 8px 14px;
-  font-size: 0.8rem;
+  font-size: var(--type-12);
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.2s ease, background 0.2s ease;
@@ -83,19 +83,19 @@
   place-items: center;
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.12);
-  font-size: 2rem;
+  font-size: var(--type-32);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
 }
 
 .brand-name {
-  font-size: 1.6rem;
-  font-weight: 800;
+  font-size: var(--type-24);
+  font-weight: 700;;
   letter-spacing: -0.04em;
 }
 
 .auth-visual h1 {
   margin: 0 0 10px;
-  font-size: clamp(2.3rem, 5vw, 3.6rem);
+  font-size: var(--type-32);
   line-height: 1.05;
   letter-spacing: -0.06em;
 }
@@ -104,7 +104,7 @@
   margin: 0;
   max-width: 420px;
   color: rgba(255, 255, 255, 0.82);
-  font-size: 1rem;
+  font-size: var(--type-16);
   line-height: 1.7;
 }
 
@@ -134,7 +134,7 @@
   height: 22px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.14);
-  font-size: 0.9rem;
+  font-size: var(--type-14);
 }
 
 /* Right form panel */
@@ -153,7 +153,7 @@
 .eyebrow {
   display: inline-block;
   margin-bottom: 8px;
-  font-size: 0.75rem;
+  font-size: var(--type-12);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -162,7 +162,7 @@
 
 .panel-header h2 {
   margin: 0;
-  font-size: clamp(2rem, 3vw, 2.6rem);
+  font-size: var(--type-32);
   line-height: 1.1;
   letter-spacing: -0.05em;
   color: #0f172a;
@@ -188,7 +188,7 @@
 .form-group label {
   color: #1f2937;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: var(--type-16);
 }
 
 .input-wrapper {
@@ -216,7 +216,7 @@
 
 .input-wrapper .material-symbols-outlined {
   color: #0f766e;
-  font-size: 1.2rem;
+  font-size: var(--type-20);
   opacity: 0.9;
 }
 
@@ -226,7 +226,7 @@
   outline: none;
   background: transparent;
   color: #0f172a;
-  font-size: 1rem;
+  font-size: var(--type-16);
   padding: 16px 0;
 }
 
@@ -237,7 +237,7 @@
 .field-error,
 .form-error {
   color: #b91c1c;
-  font-size: 0.8rem;
+  font-size: var(--type-12);
   font-weight: 600;
   line-height: 1.5;
 }
@@ -255,7 +255,7 @@
   align-items: center;
   gap: 10px;
   color: #374151;
-  font-size: 0.9rem;
+  font-size: var(--type-14);
   cursor: pointer;
 }
 
@@ -286,7 +286,7 @@
   border-radius: 16px;
   background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
   color: #fff;
-  font-size: 1rem;
+  font-size: var(--type-16);
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
@@ -319,7 +319,7 @@
   border: 1px solid #dbe7e4;
   background: #fff;
   color: #1f2937;
-  font-size: 0.96rem;
+  font-size: var(--type-16);
   font-weight: 700;
   display: inline-flex;
   align-items: center;
@@ -344,21 +344,21 @@
   height: 22px;
   border-radius: 50%;
   background: #f3f4f6;
-  font-weight: 800;
+  font-weight: 700;;
 }
 
 .signup-prompt {
   margin: 24px 0 0;
   text-align: center;
   color: #475569;
-  font-size: 0.95rem;
+  font-size: var(--type-16);
 }
 
 .switch-link {
   background: transparent;
   border: none;
   color: #0f766e;
-  font-weight: 800;
+  font-weight: 700;;
   cursor: pointer;
   padding: 0;
 }
@@ -395,6 +395,6 @@
   }
 
   .social-button {
-    font-size: 0.9rem;
+    font-size: var(--type-14);
   }
 }

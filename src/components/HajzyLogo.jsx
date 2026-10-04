@@ -30,7 +30,7 @@ export const HORIZONTAL_SVG = `
       <path d="M36 44a12 12 0 0 1 24 0v18h-8v-18a4 4 0 0 0-8 0v18h-8V44z" fill="${CREAM}" />
     </g>
   </g>
-  <g transform="translate(132,48)" font-family="Cairo, Poppins, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial" text-anchor="start">
+  <g transform="translate(132,48)" font-family="Cairo, sans-serif" text-anchor="start">
     <text x="0" y="0" font-size="28" fill="${TEAL}">حجزي</text>
     <text x="0" y="26" font-size="14" fill="${TEAL}">HAJZY</text>
   </g>
@@ -46,7 +46,7 @@ export const VERTICAL_SVG = `
       <path d="M36 44a12 12 0 0 1 24 0v18h-8v-18a4 4 0 0 0-8 0v18h-8V44z" fill="${CREAM}" />
     </g>
   </g>
-  <g transform="translate(0,150)" font-family="Cairo, Poppins, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial" text-anchor="middle">
+  <g transform="translate(0,150)" font-family="Cairo, sans-serif" text-anchor="middle">
     <text x="100" y="0" font-size="28" fill="${TEAL}" text-anchor="middle">حجزي</text>
     <text x="100" y="28" font-size="14" fill="${TEAL}" text-anchor="middle">HAJZY</text>
   </g>
