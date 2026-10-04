@@ -60,7 +60,9 @@
     "sharm": "شرم الشيخ"
   },
   "badges": {
-    "mostRequested": "الأكثر طلباً"
+    "mostRequested": "الأكثر طلباً",
+    "propertyHighlights": "مميزات الإقامة",
+    "discountPercent": "خصم {{percent}}%"
   },
   "bookingProgress": {
     "label": "مراحل الحجز",

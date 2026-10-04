@@ -5,6 +5,7 @@ import HeartIcon from '../components/HeartIcon'
 import PropertyLocation from '../components/PropertyLocation'
 import PropertyPrice from '../components/PropertyPrice'
 import PropertyRating from '../components/PropertyRating'
+import PropertyBadges from '../components/PropertyBadges'
 
 export default function CityPage({
   citySlug,
@@ -396,15 +397,9 @@ export default function CityPage({
               {/* Card Body */}
               <div className="card-body p-4 flex-1 flex flex-col justify-between">
                 <div>
-                  <div className="card-topline flex items-center justify-between gap-2 mb-2">
-                    <span className="property-badge text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full">
-                      {isEn ? 'Verified Stay' : 'إقامة موثقة'}
-                    </span>
-                    <span className="property-availability text-[10px] text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      {isEn ? 'Available now' : 'متاح الآن'}
-                    </span>
-                  </div>
+                  <PropertyBadges
+                    property={property}
+                  />
 
                   <div className="title-block mb-3">
                     <h3 className="text-base font-black text-slate-900 dark:text-white line-clamp-1 group-hover:text-emerald-600 transition-colors">

@@ -37,6 +37,8 @@ html[dir='ltr'] .nav-label {
   --primary-strong: #0f766e;
   --primary-soft: #dff8f4;
   --accent-gold: #d4a24c;
+  --badge-deal-bg: rgba(212, 162, 76, 0.16);
+  --badge-deal-text: #634f00;
   --property-price-color: #00433f;
   --text: #101b1a;
   --muted: #3f4947;
@@ -2649,24 +2651,20 @@ body::-webkit-scrollbar,
   margin-bottom: 12px;
 }
 
-.property-badge,
-.property-availability {
+.card-topline.property-badge-list {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.property-deal-badge {
   display: inline-flex;
   align-items: center;
   padding: 7px 10px;
   border-radius: 999px;
   font-size: var(--type-12);
   font-weight: 700;
-}
-
-.property-badge {
-  background: rgba(0, 67, 63, 0.08);
-  color: var(--primary);
-}
-
-.property-availability {
-  background: rgba(16, 185, 129, 0.1);
-  color: #047857;
+  background: var(--badge-deal-bg);
+  color: var(--badge-deal-text);
 }
 
 .property-meta-row {
@@ -8350,6 +8348,8 @@ body[data-theme='dark'] .app-shell {
   --primary: #14b8a6;
   --primary-strong: #0d9488;
   --primary-soft: rgba(20, 184, 166, 0.15);
+  --badge-deal-bg: rgba(212, 162, 76, 0.2);
+  --badge-deal-text: #fcd34d;
   --text: #f1f5f9;
   --muted: #94a3b8;
   --line: rgba(255, 255, 255, 0.08);

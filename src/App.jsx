@@ -30,6 +30,7 @@ import HostCalendar from './components/HostCalendar'
 import PropertyLocation from './components/PropertyLocation'
 import PropertyPrice from './components/PropertyPrice'
 import PropertyRating from './components/PropertyRating'
+import PropertyBadges from './components/PropertyBadges'
 import { useTheme } from './components/ThemeProvider'
 import {
   formatCurrency,
@@ -3526,10 +3527,9 @@ function App() {
               </div>
 
               <div className="card-body">
-                <div className="card-topline">
-                  <span className="property-badge">{language === 'en' ? 'Luxury stay' : 'إقامة فاخرة'}</span>
-                  <span className="property-availability">{language === 'en' ? 'Available now' : 'متاح الآن'}</span>
-                </div>
+                <PropertyBadges
+                  property={property}
+                />
 
                 <div className="title-block">
                   <h3>

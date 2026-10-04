@@ -118,6 +118,35 @@ test.describe('Guest Flow & Auth Fix Verification', () => {
     await expect(emptyBookings.getByRole('button', { name: 'تصفح الإقامات' })).toBeVisible();
   });
 
+  test('Property cards hide availability and stock claims without public inventory data', async ({ page }) => {
+    await page.evaluate(() => {
+      localStorage.setItem('hajzy_guest_mode', 'true');
+      localStorage.setItem('hajzy_bookings', JSON.stringify([{
+        id: 'booking-property-badge',
+        propertyId: 'alex-vista',
+        checkIn: '2099-11-10',
+        checkOut: '2099-11-12',
+        status: 'confirmed',
+      }]));
+    });
+    await page.reload();
+    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+
+    const alexandriaCard = page.locator('.property-card[data-property-id="alex-vista"]');
+    await expect(alexandriaCard.locator('.property-badge')).toHaveCount(0);
+    await expect(alexandriaCard.locator('.property-availability')).toHaveCount(0);
+    await expect(alexandriaCard.locator('.property-deal-badge')).toHaveText('خصم 20%');
+
+    await page.locator('#check-in').fill('2099-11-10');
+    await page.locator('#check-out').fill('2099-11-12');
+    await page.getByTestId('search-submit').click();
+
+    await expect(alexandriaCard.locator('.property-availability')).toHaveCount(0);
+    await expect(alexandriaCard.locator('.property-scarcity-badge')).toHaveCount(0);
+    await expect(page.locator('.property-card .property-availability')).toHaveCount(0);
+    await expect(page.locator('.property-card .property-scarcity-badge')).toHaveCount(0);
+  });
+
   test('Booking overflow action is a labeled 40px circle beside invoice and details', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');

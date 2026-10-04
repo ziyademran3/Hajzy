@@ -60,7 +60,9 @@
     "sharm": "Sharm El-Sheikh"
   },
   "badges": {
-    "mostRequested": "Most requested"
+    "mostRequested": "Most requested",
+    "propertyHighlights": "Stay highlights",
+    "discountPercent": "{{percent}}% off"
   },
   "bookingProgress": {
     "label": "Booking progress",
