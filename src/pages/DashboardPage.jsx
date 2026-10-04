@@ -169,6 +169,12 @@ export default function DashboardPage({
     return formatDate(val, language, { day: 'numeric', month: 'short' })
   }
 
+  const safeFormatYear = (val) => {
+    if (!val) return ''
+    const year = formatDate(val, language, { year: 'numeric' })
+    return year === '—' ? '' : year
+  }
+
   const currencyFormatter = useMemo(() => ({
     format: (amount) => formatCurrency(amount, 'EGP', language),
   }), [language])
@@ -408,8 +414,10 @@ export default function DashboardPage({
                   <span className="material-symbols-outlined text-sm">schedule</span>
                   <span>
                     {countdownDays === 0
-                      ? (isAr ? 'موعد الوصول اليوم!' : 'Check-in today!')
-                      : (isAr ? `متبقي ${countdownDays} ${countdownDays === 1 ? 'يوم' : countdownDays === 2 ? 'يومان' : 'أيام'}` : `${countdownDays} days to go`)}
+                      ? (isAr ? 'اليوم' : 'Today')
+                      : countdownDays === 1
+                        ? (isAr ? 'بكرة' : 'Tomorrow')
+                        : (isAr ? `بعد ${formatNumber(countdownDays)} أيام` : `In ${formatNumber(countdownDays)} days`)}
                   </span>
                 </span>
               )}
@@ -455,23 +463,37 @@ export default function DashboardPage({
                   <span>{upcomingProperty?.location || upcomingStay?.location || (isAr ? 'موقع مميز' : 'Prime Location')}</span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-3.5 text-xs dark:border-slate-800 dark:bg-slate-800/50">
-                  <div>
+                <div className="grid min-w-0 grid-cols-3 gap-2 rounded-2xl border border-slate-100 bg-slate-50 p-3.5 text-xs dark:border-slate-800 dark:bg-slate-800/50 sm:gap-3">
+                  <div className="min-w-0">
                     <div className="text-slate-400">{isAr ? 'تاريخ الوصول' : 'Check-in'}</div>
-                    <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">
-                      {upcomingStay?.checkIn ? safeFormatDate(upcomingStay.checkIn) : (isAr ? 'مرن' : 'Flexible')}
+                    <div className="dashboard-stay-date mt-0.5 font-bold text-slate-800 dark:text-slate-200">
+                      {upcomingStay?.checkIn ? (
+                        <>
+                          <span className="block">{safeFormatDate(upcomingStay.checkIn)}</span>
+                          <span className="block text-[10px] font-normal leading-tight text-slate-500 dark:text-slate-400">
+                            {safeFormatYear(upcomingStay.checkIn)}
+                          </span>
+                        </>
+                      ) : (isAr ? 'مرن' : 'Flexible')}
                     </div>
                   </div>
-                  <div className="border-r border-l border-slate-200 dark:border-slate-700 px-3">
+                  <div className="min-w-0 border-r border-l border-slate-200 px-2 dark:border-slate-700 sm:px-3">
                     <div className="text-slate-400">{isAr ? 'تاريخ المغادرة' : 'Check-out'}</div>
-                    <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">
-                      {upcomingStay?.checkOut ? safeFormatDate(upcomingStay.checkOut) : (isAr ? 'مرن' : 'Flexible')}
+                    <div className="dashboard-stay-date mt-0.5 font-bold text-slate-800 dark:text-slate-200">
+                      {upcomingStay?.checkOut ? (
+                        <>
+                          <span className="block">{safeFormatDate(upcomingStay.checkOut)}</span>
+                          <span className="block text-[10px] font-normal leading-tight text-slate-500 dark:text-slate-400">
+                            {safeFormatYear(upcomingStay.checkOut)}
+                          </span>
+                        </>
+                      ) : (isAr ? 'مرن' : 'Flexible')}
                     </div>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <div className="text-slate-400">{isAr ? 'الضيوف' : 'Guests'}</div>
-                    <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">
-                      {upcomingStay?.guests || 2} {isAr ? 'أشخاص' : 'guests'}
+                    <div className="dashboard-stay-date mt-0.5 whitespace-nowrap font-bold text-slate-800 dark:text-slate-200">
+                      {upcomingStay?.guests ?? 2} {isAr ? 'أشخاص' : 'guests'}
                     </div>
                   </div>
                 </div>

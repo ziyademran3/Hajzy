@@ -136,6 +136,53 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
       .toHaveClass(/active/);
   });
 
+  test('Upcoming stay shows balanced date columns, separate years, guest count, and concise countdown', async ({ page }) => {
+    await page.clock.install({ time: new Date('2026-10-04T12:00:00') });
+    const loadStay = async (checkIn, checkOut) => {
+      await page.evaluate(({ checkIn: stayCheckIn, checkOut: stayCheckOut }) => {
+        localStorage.setItem('hajzy_bookings', JSON.stringify([{
+          id: 'upcoming-layout',
+          propertyId: 'alex-vista',
+          checkIn: stayCheckIn,
+          checkOut: stayCheckOut,
+          guests: 2,
+          status: 'confirmed',
+          total: 5000,
+        }]));
+      }, { checkIn, checkOut });
+      await page.reload();
+      await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+      await page.locator('.bottom-nav .nav-item').filter({ hasText: /لوحة التحكم|Dashboard/i }).click();
+    };
+
+    await loadStay('2026-10-05', '2026-10-07');
+    const staySection = page.locator('section').filter({
+      has: page.getByRole('heading', { name: 'إقامتك القادمة المميزة' }),
+    });
+    const dateColumns = staySection.locator('.dashboard-stay-date');
+    await expect(staySection).toContainText('بكرة');
+    await expect(dateColumns.nth(0)).toContainText('5 أكتوبر');
+    await expect(dateColumns.nth(0)).toContainText('2026');
+    await expect(dateColumns.nth(1)).toContainText('7 أكتوبر');
+    await expect(dateColumns.nth(1)).toContainText('2026');
+    await expect(dateColumns.nth(2)).toHaveText('2 أشخاص');
+
+    const columnWidths = await dateColumns.evaluateAll((dates) => dates.map((date) => (
+      date.parentElement.getBoundingClientRect().width
+    )));
+    expect(Math.max(...columnWidths) - Math.min(...columnWidths)).toBeLessThanOrEqual(1);
+
+    await loadStay('2026-10-04', '2026-10-06');
+    await expect(page.locator('section').filter({
+      has: page.getByRole('heading', { name: 'إقامتك القادمة المميزة' }),
+    })).toContainText('اليوم');
+
+    await loadStay('2026-10-11', '2026-10-13');
+    await expect(page.locator('section').filter({
+      has: page.getByRole('heading', { name: 'إقامتك القادمة المميزة' }),
+    })).toContainText('بعد 7 أيام');
+  });
+
   test('Typography uses Cairo, the six-size scale, and only the three supported weights', async ({ page }) => {
     await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
     const typography = await page.locator('#root').evaluate((root) => {
