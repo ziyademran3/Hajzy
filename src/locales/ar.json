@@ -6,6 +6,11 @@
     "unnamedStay": "إقامة محجوزة",
     "locationUnspecified": "الموقع غير محدد"
   },
+  "propertyMetrics": {
+    "perNight": " / ليلة",
+    "reviewCount": "({{count}} تقييم)",
+    "ratingSummary": "التقييم {{rating}} من 5، {{reviews}} تقييم"
+  },
   "theme": {
     "light": "وضع نهاري",
     "dark": "وضع ليلي"

@@ -27,6 +27,9 @@ import PropertyGalleryModal from './components/PropertyGalleryModal'
 import AiConciergeModal from './components/AiConciergeModal'
 import NeighborhoodExplorer from './components/NeighborhoodExplorer'
 import HostCalendar from './components/HostCalendar'
+import PropertyLocation from './components/PropertyLocation'
+import PropertyPrice from './components/PropertyPrice'
+import PropertyRating from './components/PropertyRating'
 import { useTheme } from './components/ThemeProvider'
 import {
   formatCurrency,
@@ -3393,7 +3396,7 @@ function App() {
                 <div>
                   <span>{getPropertyCity(property)}</span>
                   <strong>{getPropertyTitle(property)}</strong>
-                  <small>{formatCurrency(property.priceValue, property.currency, language)} / {language === 'en' ? 'night' : 'ليلة'}</small>
+                  <PropertyPrice amount={property.priceValue} currency={property.currency} language={language} />
                 </div>
               </button>
             ))}
@@ -3454,7 +3457,7 @@ function App() {
                 <div className="map-property-copy">
                   <span>{getPropertyCity(selectedMapProperty)}</span>
                   <strong>{getPropertyTitle(selectedMapProperty)}</strong>
-                  <small>{formatCurrency(selectedMapProperty.priceValue, selectedMapProperty.currency, language)} / {language === 'en' ? 'night' : 'ليلة'}</small>
+                  <PropertyPrice amount={selectedMapProperty.priceValue} currency={selectedMapProperty.currency} language={language} />
                 </div>
                 <button type="button" className="primary-button small-button" onClick={() => navigate('details', selectedMapProperty)}>
                   {language === 'en' ? 'View details' : 'عرض التفاصيل'}
@@ -3517,11 +3520,12 @@ function App() {
                 >
                   <HeartIcon filled={isFavorite(property.id)} size={20} />
                 </button>
-                <div className="rating-badge">
-                  <span className="material-symbols-outlined">star</span>
-                  <span>{property.rating}</span>
-                  <small>({property.reviews})</small>
-                </div>
+                <PropertyRating
+                  rating={property.rating}
+                  reviews={property.reviews}
+                  language={language}
+                  placement="overlay-bottom-start"
+                />
               </div>
 
               <div className="card-body">
@@ -3544,10 +3548,7 @@ function App() {
                       {getPropertyTitle(property)}
                     </a>
                   </h3>
-                  <p>
-                    <span className="material-symbols-outlined">location_on</span>
-                    {getPropertyLocation(property)}
-                  </p>
+                  <p><PropertyLocation>{getPropertyLocation(property)}</PropertyLocation></p>
                 </div>
 
                 <div className="property-meta-row">
@@ -3563,10 +3564,7 @@ function App() {
                 </div>
 
                 <div className="price-row">
-                  <div className="price-box">
-                    <strong>{formatCurrency(property.priceValue, property.currency, language)}</strong>
-                    <span>{language === 'en' ? ' / night' : ' / ليلة'}</span>
-                  </div>
+                  <PropertyPrice amount={property.priceValue} currency={property.currency} language={language} />
 
                   <button
                     type="button"
@@ -3754,10 +3752,7 @@ function App() {
                 {getPropertyLocation(selectedProperty)}
               </p>
             </div>
-            <div className="rating-chip">
-              <span className="material-symbols-outlined">star</span>
-              <span>{selectedProperty.rating}</span>
-            </div>
+            <PropertyRating rating={selectedProperty.rating} reviews={selectedProperty.reviews} language={language} />
           </div>
 
           <div className="tag-row">
@@ -3769,7 +3764,7 @@ function App() {
           <div className="price-action">
             <div>
               <small>{language === 'en' ? 'Price per night' : 'السعر لكل ليلة'}</small>
-              <strong>{formatCurrency(selectedProperty.priceValue, selectedProperty.currency, language)}</strong>
+              <PropertyPrice amount={selectedProperty.priceValue} currency={selectedProperty.currency} language={language} />
             </div>
             <button
               type="button"
@@ -3838,8 +3833,8 @@ function App() {
                   <img src={property.image} alt={getPropertyTitle(property)} onError={handleStayImageError} />
                   <div>
                     <strong>{getPropertyTitle(property)}</strong>
-                    <span>{getPropertyLocation(property)}</span>
-                    <small>{formatCurrency(property.priceValue, property.currency, language)} / {language === 'en' ? 'night' : 'ليلة'}</small>
+                    <PropertyLocation>{getPropertyLocation(property)}</PropertyLocation>
+                    <PropertyPrice amount={property.priceValue} currency={property.currency} language={language} />
                   </div>
                 </button>
               ))}
@@ -3860,7 +3855,7 @@ function App() {
           <div className="detail-review-card">
             <div className="detail-card-head">
               <h3>{language === 'en' ? 'Guest reviews' : 'تقييمات الضيوف'}</h3>
-              <span className="rating-chip small"><span className="material-symbols-outlined">star</span>{selectedProperty.rating}</span>
+              <PropertyRating rating={selectedProperty.rating} reviews={selectedProperty.reviews} language={language} />
             </div>
             <div className="review-score-box">
               <strong>{selectedProperty.rating}</strong>
@@ -3909,7 +3904,7 @@ function App() {
         <section className="content-section review-list-section">
           <div className="detail-card-head">
             <h3>{language === 'en' ? 'Guest reviews' : 'تقييمات النزلاء'}</h3>
-            <span className="rating-chip small"><span className="material-symbols-outlined">star</span>{selectedProperty.rating}</span>
+            <PropertyRating rating={selectedProperty.rating} reviews={selectedProperty.reviews} language={language} />
           </div>
           <div className="guest-review-list">
             {guestReviews.map((review) => (
@@ -4028,8 +4023,7 @@ function App() {
         <div className="detail-sticky-bar">
           <div>
             <small>{language === 'en' ? 'From' : 'من'}</small>
-            <strong>{formatCurrency(selectedProperty.priceValue, selectedProperty.currency)}</strong>
-            <span>{language === 'en' ? '/ night' : ' / ليلة'}</span>
+            <PropertyPrice amount={selectedProperty.priceValue} currency={selectedProperty.currency} language={language} />
           </div>
           <button type="button" className="primary-button" onClick={() => navigate('checkout')}>
             {language === 'en' ? 'Book now' : 'احجز الآن'}
@@ -4426,12 +4420,9 @@ function App() {
               <div className="details-header compact">
                 <div>
                   <h2>{getPropertyTitle(selectedProperty)}</h2>
-                  <p>{getPropertyLocation(selectedProperty)}</p>
+                  <p><PropertyLocation>{getPropertyLocation(selectedProperty)}</PropertyLocation></p>
                 </div>
-                <div className="rating-chip">
-                  <span className="material-symbols-outlined">star</span>
-                  <span>{selectedProperty.rating}</span>
-                </div>
+                <PropertyRating rating={selectedProperty.rating} reviews={selectedProperty.reviews} language={language} />
               </div>
 
               {bookingStep === 1 && (
@@ -5071,10 +5062,7 @@ function App() {
                       <span className="summary-kicker">{language === 'en' ? 'Trip details' : 'تفاصيل الرحلة'}</span>
                       <h3>{getPropertyTitle(selectedProperty)}</h3>
                     </div>
-                    <div className="summary-rating">
-                      <span className="material-symbols-outlined">star</span>
-                      <span>{selectedProperty.rating}</span>
-                    </div>
+                    <PropertyRating rating={selectedProperty.rating} reviews={selectedProperty.reviews} language={language} />
                   </div>
 
                   <div className="booking-meta-grid">
@@ -5555,10 +5543,11 @@ function App() {
                         <div className="booking-reservation-reference">{bookingReference}</div>
                         <p>{getPropertyLocation(property) || booking.location || (language === 'en' ? 'Location not available' : 'موقع غير متوفر')}</p>
                       </div>
-                      <div className="rating-chip small">
-                        <span className="material-symbols-outlined">star</span>
-                        <span>{property?.rating ?? 4.8}</span>
-                      </div>
+                      <PropertyRating
+                        rating={property?.rating ?? 4.8}
+                        reviews={property?.reviews}
+                        language={language}
+                      />
                     </div>
 
                     {/* Visual Status Progress Tracker */}
@@ -5967,18 +5956,12 @@ function App() {
                   <div className="property-header">
                     <div>
                       <h4>{getPropertyTitle(property)}</h4>
-                      <p>{getPropertyLocation(property)}</p>
+                      <p><PropertyLocation>{getPropertyLocation(property)}</PropertyLocation></p>
                     </div>
-                    <div className="rating-chip">
-                      <span className="material-symbols-outlined">star</span>
-                      <span>{property.rating}</span>
-                    </div>
+                    <PropertyRating rating={property.rating} reviews={property.reviews} language={language} />
                   </div>
                   <div className="property-footer">
-                    <div className="property-price">
-                      <strong>{formatCurrency(property.priceValue, property.currency, language)}</strong>
-                      <span>/ {language === 'en' ? 'night' : 'ليلة'}</span>
-                    </div>
+                    <PropertyPrice amount={property.priceValue} currency={property.currency} language={language} />
                     <button
                       type="button"
                       className="primary-button small-button"

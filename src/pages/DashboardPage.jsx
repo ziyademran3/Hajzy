@@ -8,6 +8,9 @@ import {
   calculateBookingPricing,
 } from '../lib/dataService'
 import { formatCurrency, formatNumber, formatDate, pluralize } from '../lib/formatters'
+import PropertyLocation from '../components/PropertyLocation'
+import PropertyPrice from '../components/PropertyPrice'
+import PropertyRating from '../components/PropertyRating'
 
 export default function DashboardPage({
   user,
@@ -411,9 +414,9 @@ export default function DashboardPage({
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                <div className="absolute bottom-3 right-3 left-3 text-xs font-bold text-white">
-                  📍 {upcomingProperty?.city || upcomingStay?.location || 'Egypt'}
-                </div>
+                <PropertyLocation className="property-location-display--overlay text-xs font-bold">
+                  {upcomingProperty?.city || upcomingStay?.location || 'Egypt'}
+                </PropertyLocation>
               </div>
 
               <div className="md:col-span-7 space-y-4">
@@ -816,12 +819,15 @@ export default function DashboardPage({
                     }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                  <div className="absolute top-3 right-3 rounded-full bg-slate-900/75 px-2.5 py-1 text-xs font-bold text-white backdrop-blur-md">
-                    ⭐ {property.rating || '4.95'}
-                  </div>
-                  <div className="absolute bottom-3 left-3 right-3 text-xs font-semibold text-white">
-                    📍 {property.city || property.location || 'Egypt'}
-                  </div>
+                  <PropertyRating
+                    rating={property.rating || 4.95}
+                    reviews={property.reviews}
+                    language={language}
+                    placement="overlay-top-end"
+                  />
+                  <PropertyLocation className="property-location-display--overlay text-xs font-semibold">
+                    {property.city || property.location || 'Egypt'}
+                  </PropertyLocation>
                 </div>
 
                 <div className="p-4 space-y-2">
@@ -831,13 +837,17 @@ export default function DashboardPage({
 
                   <div className="flex items-center justify-between pt-1">
                     <div>
-                      <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
-                        {formatCurrency(property.priceValue || 2500, 'EGP', language)}
-                      </span>
-                      <span className="text-[11px] text-slate-400"> / {isAr ? 'ليلة' : 'night'}</span>
+                      <PropertyPrice amount={property.priceValue || 2500} currency={property.currency || 'EGP'} language={language} />
                     </div>
 
-                    <button type="button" className="primary-button small-button">
+                    <button
+                      type="button"
+                      className="primary-button small-button"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        onNavigate('details', property)
+                      }}
+                    >
                       <span>{isAr ? 'احجز الآن' : 'Book now'}</span>
                       <span className="material-symbols-outlined text-xs">{isAr ? 'arrow_back' : 'arrow_forward'}</span>
                     </button>

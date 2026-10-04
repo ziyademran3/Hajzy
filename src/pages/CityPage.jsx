@@ -2,6 +2,9 @@ import React, { useState, useMemo } from 'react'
 import { CITY_DEFINITIONS, getCitySlug, FALLBACK_STAY_PHOTO } from '../lib/dataService'
 import { pluralize } from '../lib/formatters'
 import HeartIcon from '../components/HeartIcon'
+import PropertyLocation from '../components/PropertyLocation'
+import PropertyPrice from '../components/PropertyPrice'
+import PropertyRating from '../components/PropertyRating'
 
 export default function CityPage({
   citySlug,
@@ -13,7 +16,6 @@ export default function CityPage({
   onBookProperty,
   isFavorite,
   toggleFavorite,
-  formatCurrency,
   handleStayImageError,
 }) {
   const isEn = language === 'en'
@@ -378,13 +380,12 @@ export default function CityPage({
                 </button>
 
                 {/* Rating Badge */}
-                <div className="rating-badge absolute bottom-3 rtl:right-3 ltr:left-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-full px-2.5 py-1 text-xs font-black shadow-sm flex items-center gap-1 text-slate-800 dark:text-white">
-                  <span className="material-symbols-outlined text-amber-500 text-sm">star</span>
-                  <span>{property.rating}</span>
-                  {property.reviews > 0 && (
-                    <small className="text-[10px] text-slate-400 font-normal">({property.reviews})</small>
-                  )}
-                </div>
+                <PropertyRating
+                  rating={property.rating}
+                  reviews={property.reviews}
+                  language={language}
+                  placement="overlay-bottom-start"
+                />
 
                 {/* City Tag */}
                 <div className="absolute top-3 rtl:right-3 ltr:left-3 bg-black/60 backdrop-blur-md text-white rounded-full px-2.5 py-0.5 text-[10px] font-bold">
@@ -420,9 +421,8 @@ export default function CityPage({
                         {getTitle(property)}
                       </a>
                     </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
-                      <span className="material-symbols-outlined text-sm text-slate-400">location_on</span>
-                      <span className="line-clamp-1">{getLocation(property)}</span>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      <PropertyLocation>{getLocation(property)}</PropertyLocation>
                     </p>
                   </div>
 
@@ -455,14 +455,7 @@ export default function CityPage({
 
                 {/* Price and Actions */}
                 <div className="price-row flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <div className="price-box">
-                    <strong className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
-                      {formatCurrency(property.priceValue, property.currency, language)}
-                    </strong>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                      {isEn ? ' / night' : ' / ليلة'}
-                    </span>
-                  </div>
+                  <PropertyPrice amount={property.priceValue} currency={property.currency} language={language} />
 
                   <div className="flex items-center gap-1.5">
                     {/* View Details Button */}

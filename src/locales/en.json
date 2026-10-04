@@ -6,6 +6,11 @@
     "unnamedStay": "Reserved stay",
     "locationUnspecified": "Location unspecified"
   },
+  "propertyMetrics": {
+    "perNight": " / night",
+    "reviewCount": "({{count}} reviews)",
+    "ratingSummary": "Rating {{rating}} out of 5, {{reviews}} reviews"
+  },
   "theme": {
     "light": "Light",
     "dark": "Dark"

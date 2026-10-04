@@ -36,6 +36,8 @@ html[dir='ltr'] .nav-label {
   --primary: #00433f;
   --primary-strong: #0f766e;
   --primary-soft: #dff8f4;
+  --accent-gold: #d4a24c;
+  --property-price-color: #00433f;
   --text: #101b1a;
   --muted: #3f4947;
   --line: rgba(15, 118, 110, 0.12);
@@ -112,6 +114,7 @@ html[dir='ltr'] .nav-label {
   --split-dialog-bg: #11161f;
   --primary: #f3f4f6;
   --primary-strong: #d4d4d8;
+  --property-price-color: #5eead4;
   --button-secondary-border: rgba(255, 255, 255, 0.28);
   --button-secondary-foreground: #f8fafc;
   --button-secondary-hover: rgba(255, 255, 255, 0.08);
@@ -10042,6 +10045,96 @@ body[data-theme='dark'] .profile-item:hover,
 .image-wrap img[src=""]::before,
 .image-wrap:not(:has(img[complete]))::before {
   opacity: 1;
+}
+
+.property-rating-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.property-rating-badge .material-symbols-outlined {
+  color: var(--accent-gold);
+  font-size: 0.9rem;
+}
+
+.property-rating-badge small {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 500;
+}
+
+.property-rating-badge--overlay-bottom-start,
+.property-rating-badge--overlay-top-end {
+  position: absolute;
+  z-index: 2;
+}
+
+.property-rating-badge--overlay-bottom-start {
+  inset-inline-start: 12px;
+  bottom: 12px;
+}
+
+.property-rating-badge--overlay-top-end {
+  inset-inline-end: 12px;
+  top: 12px;
+}
+
+.property-price-display {
+  display: inline-flex;
+  align-items: baseline;
+  color: var(--property-price-color);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.property-price-display strong {
+  color: var(--property-price-color);
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.property-price-display > span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.property-location-display {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  color: inherit;
+}
+
+.property-location-display > span:last-child {
+  min-width: 0;
+}
+
+.property-location-display .material-symbols-outlined {
+  flex: 0 0 auto;
+  font-size: 1em;
+  line-height: 1;
+}
+
+.property-location-display--overlay {
+  position: absolute;
+  inset-inline: 12px;
+  bottom: 12px;
+  z-index: 1;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
 button.primary-button,

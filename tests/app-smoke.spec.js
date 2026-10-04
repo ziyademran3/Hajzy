@@ -37,6 +37,15 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
     expect(count).toBeGreaterThan(0);
     await expect(cards.first().locator('button[data-testid="book-now-button"]'))
       .toHaveText(/^(احجز الآن|Book now)$/);
+    await expect(cards.first().locator('.property-rating-badge .material-symbols-outlined'))
+      .toHaveText('star');
+    await expect(cards.first().locator('.property-rating-badge small'))
+      .toHaveText(/\(\d+ تقييم\)|\(\d+ reviews\)/);
+    await expect(cards.first().locator('.property-price-display'))
+      .toContainText(/ج\.م\s*\/ ليلة|EGP \d[\d,]*\s*\/ night/);
+    await expect(cards.first().locator('.title-block .property-location-display .material-symbols-outlined'))
+      .toHaveText('location_on');
+    await expect(cards.first().locator('.property-location-display')).not.toContainText('📍');
 
     const featureIcons = cards.first().locator('.property-meta-row .material-symbols-outlined');
     await expect(featureIcons).toHaveText(['people', 'wifi', 'local_parking']);

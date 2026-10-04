@@ -36,7 +36,10 @@ test.describe('City Cards and City Page Tests', () => {
       .toHaveText(['people', 'wifi', 'local_parking']);
 
     // Verify card contains price, title, and book button
-    await expect(propertyCards.first().locator('.price-box')).toBeVisible();
+    await expect(propertyCards.first().locator('.property-rating-badge small'))
+      .toHaveText(/\(\d+ تقييم\)|\(\d+ reviews\)/);
+    await expect(propertyCards.first().locator('.property-price-display'))
+      .toContainText(/ج\.م\s*\/ ليلة|EGP \d[\d,]*\s*\/ night/);
     await expect(propertyCards.first().locator('button', { hasText: /احجز الآن|Book now/ })).toBeVisible();
   });
 
