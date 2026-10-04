@@ -6,6 +6,7 @@ import { useAuth } from './hooks/useAuth'
 import { useHaptics } from './hooks/useHaptics'
 import { useOfflineBooking } from './hooks/useOfflineBooking'
 import { useNativeShare } from './hooks/useNativeShare'
+import { getOwnerRevenueMetrics } from './lib/ownerRevenue'
 import Skeleton from './components/Skeleton'
 import LuxuryPageSkeleton from './components/LuxuryPageSkeleton'
 import LoginPage from './pages/LoginPage'
@@ -1524,7 +1525,7 @@ function App() {
 
   const ownerBookings = isOwner
     ? bookings.filter((booking) => {
-        const property = properties.find((item) => item.id === booking.propertyId)
+        const property = properties.find((item) => String(item.id) === String(booking.propertyId))
         return property && (property.ownerId === user?.id || (!property.ownerId && user?.role === 'owner'))
       })
     : []
@@ -1581,7 +1582,15 @@ function App() {
     })
   }
 
-  const ownerRevenue = ownerBookings.reduce((sum, item) => sum + Number(item.total || 0), 0)
+  const ownerRevenueMetrics = getOwnerRevenueMetrics(ownerBookings)
+  const ownerRevenue = ownerRevenueMetrics.totalRevenue
+  const formatRevenuePeriod = (period) => {
+    const locale = language === 'en' ? 'en-US' : 'ar-EG-u-nu-latn'
+    const options = { day: 'numeric', month: 'short' }
+    const start = new Intl.DateTimeFormat(locale, options).format(period.startDate)
+    const end = new Intl.DateTimeFormat(locale, options).format(period.endDate)
+    return `${start} - ${end}`
+  }
 
   const resetOwnerForm = () => {
     setOwnerEditingId(null)
@@ -2042,7 +2051,13 @@ function App() {
               <span className="owner-stat-icon material-symbols-outlined">payments</span>
             </div>
             <strong>{formatCurrency(ownerRevenue, 'EGP', language)}</strong>
-            <small>+18.4% {language === 'en' ? 'vs last week' : 'مقارنة بالأسبوع الماضي'}</small>
+            {ownerRevenueMetrics.growthPercent !== null && (
+              <small>
+                {ownerRevenueMetrics.growthPercent > 0 ? '+' : ''}
+                {formatNumber(ownerRevenueMetrics.growthPercent, { maximumFractionDigits: 1 })}%
+                {' '}{t('ownerRevenue.vsLastWeek')}
+              </small>
+            )}
           </div>
 
           <div className="owner-summary-card accent">
@@ -2137,7 +2152,7 @@ function App() {
             </div>
             <div>
               <span>{language === 'en' ? 'Monthly Revenue' : 'إيراد هذا الشهر'}</span>
-              <strong>{formatCurrency(ownerRevenue, 'EGP', language)}</strong>
+              <strong>{formatCurrency(ownerRevenueMetrics.thisMonthRevenue, 'EGP', language)}</strong>
             </div>
           </div>
           <div className="owner-progress-list">
@@ -2317,30 +2332,18 @@ function App() {
           <span className="status-pill neutral">{language === 'en' ? 'Last 30 Days' : 'آخر 30 يوم'}</span>
         </div>
 
-        {/* Dynamic Tooltip on Bar Click/Hover */}
-        {activeRevenueBar !== null && (
+        {ownerRevenueMetrics.hasRevenue && activeRevenueBar !== null && (
           <div className="mb-2 p-2.5 rounded-xl bg-slate-900 text-white text-xs flex items-center justify-between border border-slate-700 animate-fadeIn shadow-lg">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
               <span>
-                <strong>{language === 'en' ? 'Period:' : 'الفترة:'}</strong> {[
-                  { ar: '1 - 3 سبتمبر', en: 'Sep 1 - 3' },
-                  { ar: '4 - 6 سبتمبر', en: 'Sep 4 - 6' },
-                  { ar: '7 - 9 سبتمبر', en: 'Sep 7 - 9' },
-                  { ar: '10 - 12 سبتمبر', en: 'Sep 10 - 12' },
-                  { ar: '13 - 15 سبتمبر', en: 'Sep 13 - 15' },
-                  { ar: '16 - 18 سبتمبر', en: 'Sep 16 - 18' },
-                  { ar: '19 - 21 سبتمبر', en: 'Sep 19 - 21' },
-                  { ar: '22 - 24 سبتمبر', en: 'Sep 22 - 24' },
-                  { ar: '25 - 28 سبتمبر', en: 'Sep 25 - 28' },
-                ][activeRevenueBar]?.[language === 'en' ? 'en' : 'ar']}
+                <strong>{t('ownerRevenue.period')}:</strong>{' '}
+                {formatRevenuePeriod(ownerRevenueMetrics.bars[activeRevenueBar])}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <strong className="text-emerald-400 font-bold text-sm">
-                {formatCurrency([
-                  42000, 58000, 49000, 63000, 72000, 88000, 96000, 82000, 68000,
-                ][activeRevenueBar], 'EGP', language)}
+                {formatCurrency(ownerRevenueMetrics.bars[activeRevenueBar].amount, 'EGP', language)}
               </strong>
               <button
                 type="button"
@@ -2353,46 +2356,46 @@ function App() {
           </div>
         )}
 
-        <div className="owner-analytics-graph">
-          {[
-            { labelAr: '1-3 سبت', labelEn: '1-3 Sep', value: 42, amount: 42000 },
-            { labelAr: '4-6 سبت', labelEn: '4-6 Sep', value: 58, amount: 58000 },
-            { labelAr: '7-9 سبت', labelEn: '7-9 Sep', value: 49, amount: 49000 },
-            { labelAr: '10-12', labelEn: '10-12', value: 63, amount: 63000 },
-            { labelAr: '13-15', labelEn: '13-15', value: 72, amount: 72000 },
-            { labelAr: '16-18', labelEn: '16-18', value: 88, amount: 88000 },
-            { labelAr: '19-21', labelEn: '19-21', value: 96, amount: 96000 },
-            { labelAr: '22-24', labelEn: '22-24', value: 82, amount: 82000 },
-            { labelAr: '25-28', labelEn: '25-28', value: 68, amount: 68000 },
-          ].map((bar, index) => {
-            const isSelected = activeRevenueBar === index
-            return (
-              <div
-                key={bar.labelAr + index}
-                className={`owner-analytics-bar-wrap cursor-pointer group ${isSelected ? 'active' : ''}`}
-                onClick={() => setActiveRevenueBar(isSelected ? null : index)}
-                onMouseEnter={() => setActiveRevenueBar(index)}
-                title={`${language === 'en' ? bar.labelEn : bar.labelAr}: ${formatCurrency(bar.amount, 'EGP', language)}`}
-              >
-                <span className={`text-[10px] font-bold ${isSelected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}`}>
-                  {formatNumber(bar.value)}k
-                </span>
-                <div
-                  className={`owner-analytics-bar transition-all duration-200 ${isSelected ? 'brightness-125 shadow-md ring-2 ring-emerald-400' : 'group-hover:brightness-110'}`}
-                  style={{ height: `${bar.value}%` }}
-                />
-                <span className={`owner-analytics-x-label text-[9px] font-semibold tracking-tighter mt-1 whitespace-nowrap ${isSelected ? 'text-emerald-700 dark:text-emerald-300 font-bold' : 'text-slate-400'}`}>
-                  {language === 'en' ? bar.labelEn : bar.labelAr}
-                </span>
-              </div>
-            )
-          })}
-        </div>
-        <div className="flex justify-between items-center text-[10px] text-slate-400 mt-2 px-1 border-t border-slate-100 dark:border-slate-800 pt-1.5">
-          <span>{language === 'en' ? '← Early Sep' : '← بداية الشهر'}</span>
-          <span className="text-slate-500 font-medium">{language === 'en' ? 'Tap any bar for exact figures' : 'اضغط على أي عمود لمعرفة المبلغ الدقيق'}</span>
-          <span>{language === 'en' ? 'Today →' : 'اليوم →'}</span>
-        </div>
+        {ownerRevenueMetrics.hasRevenue ? (
+          <>
+            <div className="owner-analytics-graph">
+              {ownerRevenueMetrics.bars.map((bar, index) => {
+                const isSelected = activeRevenueBar === index
+                const periodLabel = formatRevenuePeriod(bar)
+                return (
+                  <div
+                    key={bar.startDate.toISOString()}
+                    className={`owner-analytics-bar-wrap cursor-pointer group ${isSelected ? 'active' : ''}`}
+                    onClick={() => setActiveRevenueBar(isSelected ? null : index)}
+                    onMouseEnter={() => setActiveRevenueBar(index)}
+                    title={`${periodLabel}: ${formatCurrency(bar.amount, 'EGP', language)}`}
+                  >
+                    <span className={`text-[10px] font-bold ${isSelected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}`}>
+                      {formatNumber(bar.amount, { notation: 'compact', maximumFractionDigits: 1 })}
+                    </span>
+                    <div
+                      className={`owner-analytics-bar transition-all duration-200 ${isSelected ? 'brightness-125 shadow-md ring-2 ring-emerald-400' : 'group-hover:brightness-110'}`}
+                      style={{ height: `${bar.height}%`, minHeight: bar.amount ? undefined : 0 }}
+                    />
+                    <span className={`owner-analytics-x-label text-[9px] font-semibold tracking-tighter mt-1 whitespace-nowrap ${isSelected ? 'text-emerald-700 dark:text-emerald-300 font-bold' : 'text-slate-400'}`}>
+                      {periodLabel}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="flex justify-between items-center text-[10px] text-slate-400 mt-2 px-1 border-t border-slate-100 dark:border-slate-800 pt-1.5">
+              <span>{t('ownerRevenue.earliestPeriod')}</span>
+              <span className="text-slate-500 font-medium">{t('ownerRevenue.tapForDetails')}</span>
+              <span>{t('ownerRevenue.today')}</span>
+            </div>
+          </>
+        ) : (
+          <div className="owner-revenue-empty-state" role="status">
+            <span className="material-symbols-outlined" aria-hidden="true">bar_chart</span>
+            <p>{t('ownerRevenue.empty')}</p>
+          </div>
+        )}
       </div>
 
       <div className="owner-analytics-grid">

@@ -3235,6 +3235,27 @@ body::-webkit-scrollbar,
   padding: 12px 0 6px;
 }
 
+.owner-revenue-empty-state {
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  color: var(--muted);
+  text-align: center;
+}
+
+.owner-revenue-empty-state .material-symbols-outlined {
+  color: var(--primary-strong);
+  font-size: var(--type-24);
+}
+
+.owner-revenue-empty-state p {
+  margin: 0;
+  font-size: var(--type-12);
+}
+
 .owner-analytics-bar-wrap {
   display: flex;
   flex-direction: column;
@@ -9747,6 +9768,7 @@ html[data-theme='dark'] .owner-chart-bar-wrap span,
 .app-shell[data-theme='dark'] .owner-alert-row small,
 .app-shell[data-theme='dark'] .owner-mini-metrics span,
 .app-shell[data-theme='dark'] .owner-analytics-bar-wrap,
+.app-shell[data-theme='dark'] .owner-revenue-empty-state,
 .app-shell[data-theme='dark'] .owner-chart-bar-wrap span {
   color: #94a3b8 !important;
 }

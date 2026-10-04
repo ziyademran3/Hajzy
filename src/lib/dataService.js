@@ -584,7 +584,7 @@ const normalizeProperty = (property) => {
 
 export const normalizeBookingStatus = (status) => {
   const s = String(status || '').trim().toLowerCase()
-  if (s === 'confirmed') return 'confirmed'
+  if (s === 'confirmed' || s === 'paid') return 'confirmed'
   if (s === 'cancelled') return 'cancelled'
   return 'pending'
 }
@@ -695,9 +695,10 @@ export const calculateBookingPricing = ({
 
 export const normalizeBooking = (booking) => {
   const rawImage = booking.image || FALLBACK_STAY_PHOTO
+  const rawStatus = String(booking.status || 'confirmed').trim().toLowerCase()
   return {
     id: booking.id || `booking-${Date.now()}`,
-    propertyId: booking.propertyId,
+    propertyId: booking.propertyId || booking.property_id,
     title: booking.title,
     location: booking.location,
     image: sanitizePhotoUrl(rawImage),
@@ -709,13 +710,15 @@ export const normalizeBooking = (booking) => {
     serviceFee: Number(booking.serviceFee || 0),
     discountAmount: Number(booking.discountAmount || 0),
     promoCode: booking.promoCode || null,
-    total: Number(booking.total || 0),
+    total: Number(booking.total || booking.total_price || booking.totalPrice || 0),
     currency: booking.currency || 'EGP',
-    status: booking.status || 'confirmed',
+    status: normalizeBookingStatus(rawStatus),
+    paymentStatus: booking.paymentStatus || booking.payment_status || (rawStatus === 'paid' ? 'paid' : null),
     paidAt: booking.paidAt || booking.paid_at || null,
+    createdAt: booking.createdAt || booking.created_at || null,
     reference: booking.reference || '#REF-00000',
     paymentMethod: booking.paymentMethod || 'card',
-    userId: booking.userId || null,
+    userId: booking.userId || booking.user_id || null,
     fullName: booking.fullName || booking.guestName || '',
     phone: booking.phone || booking.guestPhone || '',
     email: booking.email || booking.guestEmail || '',

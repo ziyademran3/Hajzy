@@ -41,6 +41,14 @@
     "fees": "رسوم",
     "discount": "خصم"
   },
+  "ownerRevenue": {
+    "vsLastWeek": "مقارنة بالأسبوع الماضي",
+    "period": "الفترة",
+    "earliestPeriod": "← الأقدم",
+    "tapForDetails": "اضغط على عمود لمعرفة المبلغ",
+    "today": "اليوم →",
+    "empty": "لا توجد إيرادات مدفوعة ومؤكدة خلال آخر 30 يومًا."
+  },
   "quickActions": {
     "savedHomes": "المنازل المحفوظة",
     "discover": "بحث عن مدينة",

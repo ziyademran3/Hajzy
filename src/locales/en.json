@@ -41,6 +41,14 @@
     "fees": "fees",
     "discount": "discount"
   },
+  "ownerRevenue": {
+    "vsLastWeek": "vs last week",
+    "period": "Period",
+    "earliestPeriod": "← Earliest",
+    "tapForDetails": "Tap a bar for the exact amount",
+    "today": "Today →",
+    "empty": "No paid and confirmed revenue in the last 30 days."
+  },
   "quickActions": {
     "savedHomes": "Saved homes",
     "discover": "Discover",
