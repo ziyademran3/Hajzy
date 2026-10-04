@@ -275,7 +275,7 @@ export default function DashboardPage({
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               {isAr ? 'الحجوزات النشطة' : 'Active Stays'}
             </span>
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 group-hover:scale-110 transition dark:bg-emerald-950/60 dark:text-emerald-400">
+            <div className="dashboard-stat-icon flex h-10 w-10 items-center justify-center rounded-2xl group-hover:scale-110 transition">
               <span className="material-symbols-outlined text-xl">calendar_month</span>
             </div>
           </div>
@@ -298,7 +298,7 @@ export default function DashboardPage({
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               {isAr ? 'إجمالي المدفوعات' : 'Total Spend'}
             </span>
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-teal-50 text-teal-600 group-hover:scale-110 transition dark:bg-teal-950/60 dark:text-teal-400">
+            <div className="dashboard-stat-icon flex h-10 w-10 items-center justify-center rounded-2xl group-hover:scale-110 transition">
               <span className="material-symbols-outlined text-xl">payments</span>
             </div>
           </div>
@@ -339,7 +339,7 @@ export default function DashboardPage({
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               {isAr ? 'المفضلة' : 'Saved Escapes'}
             </span>
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 group-hover:scale-110 transition dark:bg-rose-950/60 dark:text-rose-400">
+            <div className="dashboard-stat-icon flex h-10 w-10 items-center justify-center rounded-2xl group-hover:scale-110 transition">
               <span className="material-symbols-outlined text-xl">favorite</span>
             </div>
           </div>
@@ -360,7 +360,7 @@ export default function DashboardPage({
             <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300">
               {isAr ? 'نادي Hajzy' : 'Hajzy Club'}
             </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-400/20 text-amber-400">
+            <div className="dashboard-stat-icon flex h-8 w-8 items-center justify-center rounded-xl">
               <span className="material-symbols-outlined text-lg">workspace_premium</span>
             </div>
           </div>
