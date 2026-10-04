@@ -120,6 +120,22 @@ test.describe('Hajzy Web & Mobile Smoke Tests', () => {
     await expect(paymentsCard).not.toContainText('نشط');
   });
 
+  test('Active bookings card shows a touch-sized tickets link with an RTL-aware arrow', async ({ page }) => {
+    await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
+    await page.locator('.bottom-nav .nav-item').filter({ hasText: /لوحة التحكم|Dashboard/i }).click();
+
+    const bookingsCard = page.getByText('الحجوزات النشطة', { exact: true }).locator('xpath=../..');
+    const ticketsLink = bookingsCard.getByRole('button', { name: 'عرض تذاكر الحجز' });
+    await expect(ticketsLink).toBeVisible();
+    await expect(ticketsLink.locator('[aria-hidden="true"]')).toHaveText('‹');
+    await expect.poll(() => ticketsLink.evaluate((element) => element.getBoundingClientRect().height))
+      .toBeGreaterThanOrEqual(44);
+
+    await ticketsLink.click();
+    await expect(page.locator('.bottom-nav .nav-item').filter({ hasText: 'حجوزاتي' }))
+      .toHaveClass(/active/);
+  });
+
   test('Typography uses Cairo, the six-size scale, and only the three supported weights', async ({ page }) => {
     await expect(page.locator('.app-shell')).toBeVisible({ timeout: 15000 });
     const typography = await page.locator('#root').evaluate((root) => {

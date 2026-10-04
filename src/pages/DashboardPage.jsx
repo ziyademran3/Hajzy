@@ -287,9 +287,17 @@ export default function DashboardPage({
               {formatNumber(confirmedBookings.length)} {isAr ? 'مؤكد' : 'Confirmed'}
             </span>
           </div>
-          <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400 truncate">
-            {isAr ? 'عرض تذاكر الحجز' : 'Manage tickets'}
-          </p>
+          <button
+            type="button"
+            className="dashboard-booking-link"
+            onClick={(event) => {
+              event.stopPropagation()
+              onNavigate('bookings')
+            }}
+          >
+            <span>{isAr ? 'عرض تذاكر الحجز' : 'Manage tickets'}</span>
+            <span aria-hidden="true" dir="ltr">{isAr ? '‹' : '›'}</span>
+          </button>
         </div>
 
         {/* Total Spend + Breakdown */}
