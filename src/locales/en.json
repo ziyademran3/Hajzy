@@ -49,6 +49,19 @@
     "today": "Today →",
     "empty": "No paid and confirmed revenue in the last 30 days."
   },
+  "smartLock": {
+    "status": {
+      "active": "Active",
+      "expired": "Expired",
+      "unlinked": "Not linked to a booking"
+    },
+    "noActiveCode": "No active code",
+    "bookingRequired": "A code is linked only to a confirmed or paid booking.",
+    "validUntil": "Valid until: {{date}} - 12:00 PM (check-out)",
+    "expiredAt": "Code expired on {{date}} - 12:00 PM",
+    "autoSent": "Sent to the guest 24 hours before arrival and deactivated at check-out.",
+    "deactivated": "The code was automatically deactivated at check-out."
+  },
   "ownerMetrics": {
     "occupancy": "Occupancy",
     "confirmed": "Confirmed",

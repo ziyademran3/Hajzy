@@ -41,6 +41,42 @@ const getBookingInterval = (booking) => ({
   checkOut: parseBookingDate(booking.checkOut || booking.check_out || booking.endDate || booking.end_date),
 })
 
+export const getSmartLockCodeStatus = (bookings = [], propertyId, now = new Date()) => {
+  if (propertyId === null || propertyId === undefined || !Array.isArray(bookings)) {
+    return { status: 'unlinked', expiresAt: null }
+  }
+
+  const linkedBookings = bookings.flatMap((booking) => {
+    const status = getStatus(booking)
+    if (
+      !booking
+      || String(booking.propertyId || booking.property_id || '') !== String(propertyId)
+      || !['confirmed', 'paid', 'completed'].includes(status)
+    ) return []
+
+    const { checkIn, checkOut } = getBookingInterval(booking)
+    if (!checkIn || !checkOut || checkOut <= checkIn) return []
+
+    const expiresAt = new Date(checkOut)
+    expiresAt.setHours(12, 0, 0, 0)
+    return [{ checkIn, expiresAt }]
+  })
+
+  if (!linkedBookings.length) return { status: 'unlinked', expiresAt: null }
+
+  const activeBookings = linkedBookings
+    .filter(({ expiresAt }) => expiresAt >= now)
+    .sort((a, b) => a.checkIn - b.checkIn)
+
+  if (activeBookings.length) {
+    return { status: 'active', expiresAt: activeBookings[0].expiresAt }
+  }
+
+  const latestExpiredBooking = linkedBookings
+    .sort((a, b) => b.expiresAt - a.expiresAt)[0]
+  return { status: 'expired', expiresAt: latestExpiredBooking.expiresAt }
+}
+
 const getPropertyNightKeys = (bookings, propertyIds, startDate, endDate) => {
   const keys = new Set()
   for (const booking of bookings) {

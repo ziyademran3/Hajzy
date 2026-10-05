@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { formatNumber, formatCurrency } from '../lib/formatters'
-import { getBookedDaysForProperty } from '../lib/ownerBookingMetrics'
+import { getBookedDaysForProperty, getSmartLockCodeStatus } from '../lib/ownerBookingMetrics'
 
 export default function HostCalendar({
   language = 'ar',
@@ -11,6 +12,7 @@ export default function HostCalendar({
   bookings = [],
 }) {
   const isArabic = language === 'ar'
+  const { t } = useTranslation()
 
   const [blockedDays, setBlockedDays] = useState([])
   const [weekendSurge, setWeekendSurge] = useState(15) // +15%
@@ -18,6 +20,14 @@ export default function HostCalendar({
   const [copiedCode, setCopiedCode] = useState(false)
 
   const now = new Date()
+  const smartLockCode = getSmartLockCodeStatus(bookings, propertyId, now)
+  const smartLockExpiryLabel = smartLockCode.expiresAt
+    ? new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'ar-EG', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }).format(smartLockCode.expiresAt)
+    : null
   const year = now.getFullYear()
   const month = now.getMonth()
   const daysInMonth = Array.from({ length: new Date(year, month + 1, 0).getDate() }, (_, i) => i + 1)
@@ -185,49 +195,79 @@ export default function HostCalendar({
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
               {isArabic ? 'رمز القفل الذكي (الدخول الذاتي)' : 'Smart Lock Passcode (Self Check-in)'}
             </label>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              {isArabic ? 'نشط للنزيل القادم' : 'Active for next guest'}
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+              smartLockCode.status === 'active'
+                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700'
+                : smartLockCode.status === 'expired'
+                  ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border-rose-300 dark:border-rose-700'
+                  : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-300 dark:border-slate-700'
+            }`}>
+              {smartLockCode.status === 'active' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>}
+              {t(`smartLock.status.${smartLockCode.status}`)}
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="passcode-display flex-1 flex items-center justify-between px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono font-black text-lg tracking-widest text-emerald-700 dark:text-emerald-400 shadow-xs">
-              <span>{selfCheckInCode}</span>
+          {smartLockCode.status === 'active' ? (
+            <div className="flex items-center gap-2">
+              <div className="passcode-display flex-1 flex items-center justify-between px-3.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono font-black text-lg tracking-widest text-emerald-700 dark:text-emerald-400 shadow-xs">
+                <span>{selfCheckInCode}</span>
+                <button
+                  type="button"
+                  className="text-xs text-slate-500 hover:text-emerald-700 dark:hover:text-emerald-400 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                  onClick={handleCopyCode}
+                  title={isArabic ? 'نسخ الكود' : 'Copy code'}
+                  aria-label={isArabic ? 'نسخ رمز القفل' : 'Copy smart lock code'}
+                >
+                  <span className="material-symbols-outlined text-base">
+                    {copiedCode ? 'check' : 'content_copy'}
+                  </span>
+                </button>
+              </div>
               <button
                 type="button"
-                className="text-xs text-slate-500 hover:text-emerald-700 dark:hover:text-emerald-400 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition"
-                onClick={handleCopyCode}
-                title={isArabic ? 'نسخ الكود' : 'Copy code'}
-                aria-label={isArabic ? 'نسخ رمز القفل' : 'Copy smart lock code'}
+                className="secondary-button small-button text-xs py-2 px-3 whitespace-nowrap inline-flex items-center gap-1"
+                onClick={generateNewPasscode}
               >
-                <span className="material-symbols-outlined text-base">
-                  {copiedCode ? 'check' : 'content_copy'}
-                </span>
+                <span className="material-symbols-outlined text-xs">autorenew</span>
+                <span>{isArabic ? 'توليد جديد' : 'Generate'}</span>
               </button>
             </div>
-            <button
-              type="button"
-              className="secondary-button small-button text-xs py-2 px-3 whitespace-nowrap inline-flex items-center gap-1"
-              onClick={generateNewPasscode}
-            >
-              <span className="material-symbols-outlined text-xs">autorenew</span>
-              <span>{isArabic ? 'توليد جديد' : 'Generate'}</span>
-            </button>
-          </div>
-
-          {/* Direct Expiry Information linked to the code */}
-          <div className="flex items-start gap-1.5 text-xs text-emerald-900 dark:text-emerald-200 bg-emerald-50/80 dark:bg-emerald-950/40 p-2 rounded-lg border border-emerald-200 dark:border-emerald-800/60 mt-2">
-            <span className="material-symbols-outlined text-base text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5">event_available</span>
-            <div className="flex-1 min-w-0">
-              <strong className="block text-[11px] leading-snug font-bold">
-                {isArabic ? 'صالح حتى: 30 سبتمبر 2026 - 12:00 ظهراً (موعد المغادرة)' : 'Valid until: Sep 30, 2026 - 12:00 PM (Check-out)'}
-              </strong>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">
-                {isArabic ? 'يُرسل للنزيل تلقائياً قبل الوصول بـ 24 ساعة ويُلغى تلقائياً عند المغادرة' : 'Auto-sent 24h prior to arrival and auto-expires at checkout'}
-              </span>
+          ) : (
+            <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-bold text-slate-700 dark:text-slate-300">
+              <span className="material-symbols-outlined text-base">lock_clock</span>
+              <span>{t('smartLock.noActiveCode')}</span>
             </div>
-          </div>
+          )}
+
+          {smartLockCode.status === 'unlinked' ? (
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-2 mb-0">
+              {t('smartLock.bookingRequired')}
+            </p>
+          ) : (
+            <div className={`flex items-start gap-1.5 text-xs p-2 rounded-lg border mt-2 ${
+              smartLockCode.status === 'active'
+                ? 'text-emerald-900 dark:text-emerald-200 bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60'
+                : 'text-rose-900 dark:text-rose-200 bg-rose-50/80 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800/60'
+            }`}>
+              <span className={`material-symbols-outlined text-base shrink-0 mt-0.5 ${
+                smartLockCode.status === 'active'
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : 'text-rose-600 dark:text-rose-400'
+              }`}>
+                {smartLockCode.status === 'active' ? 'event_available' : 'event_busy'}
+              </span>
+              <div className="flex-1 min-w-0">
+                <strong className="block text-[11px] leading-snug font-bold">
+                  {smartLockCode.status === 'active'
+                    ? t('smartLock.validUntil', { date: smartLockExpiryLabel })
+                    : t('smartLock.expiredAt', { date: smartLockExpiryLabel })}
+                </strong>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">
+                  {t(smartLockCode.status === 'active' ? 'smartLock.autoSent' : 'smartLock.deactivated')}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

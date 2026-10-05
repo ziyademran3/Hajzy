@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test'
 import {
   getBookedDaysForProperty,
   getOwnerBookingMetrics,
+  getSmartLockCodeStatus,
 } from '../src/lib/ownerBookingMetrics.js'
 
 test('owner occupancy and request metrics use active booking nights and request statuses', () => {
@@ -50,6 +51,29 @@ test('calendar booked days match active bookings and exclude checkout dates and 
   expect(getBookedDaysForProperty(bookings, null, 2026, 9)).toEqual([])
 })
 
+test('smart lock code status follows the linked confirmed booking expiry', () => {
+  const now = new Date(2026, 9, 5, 13)
+  const bookings = [
+    { propertyId: 'property-1', checkIn: '2026-10-06', checkOut: '2026-10-08', status: 'confirmed' },
+    { propertyId: 'property-1', checkIn: '2026-10-07', checkOut: '2026-10-09', status: 'pending' },
+  ]
+
+  expect(getSmartLockCodeStatus(bookings, 'property-1', now)).toEqual({
+    status: 'active',
+    expiresAt: new Date(2026, 9, 8, 12),
+  })
+  expect(getSmartLockCodeStatus([
+    { propertyId: 'property-1', checkIn: '2026-09-28', checkOut: '2026-09-30', status: 'completed' },
+  ], 'property-1', now)).toEqual({
+    status: 'expired',
+    expiresAt: new Date(2026, 8, 30, 12),
+  })
+  expect(getSmartLockCodeStatus([
+    { propertyId: 'property-1', checkIn: '2026-10-06', checkOut: '2026-10-08', status: 'pending' },
+  ], 'property-1', now)).toEqual({ status: 'unlinked', expiresAt: null })
+  expect(getSmartLockCodeStatus([], 'property-1', now)).toEqual({ status: 'unlinked', expiresAt: null })
+})
+
 test('empty requests show no conversion rates while occupancy uses available inventory', () => {
   const metrics = getOwnerBookingMetrics([], [{ id: 'property-1' }], new Date(2026, 9, 15))
   const noInventory = getOwnerBookingMetrics([], [], new Date(2026, 9, 15))
@@ -87,6 +111,10 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
   await expect(ownerDashboard.locator('.owner-summary-grid .owner-summary-card').nth(1).locator('strong')).toHaveText('—')
   await expect(ownerDashboard.locator('.owner-progress-list .label-row').first().locator('strong')).toHaveText('—')
   await expect(ownerDashboard.locator('.owner-feature-pills')).toContainText('0%')
+  await expect(ownerDashboard.locator('.host-calendar-manager-card')).toContainText('غير مرتبط بحجز')
+  await expect(ownerDashboard.locator('.host-calendar-manager-card')).toContainText('لا يوجد كود نشط')
+  await expect(ownerDashboard.locator('.host-calendar-manager-card')).not.toContainText('8492')
+  await expect(ownerDashboard.locator('.host-calendar-manager-card').getByRole('button', { name: 'توليد جديد' })).toHaveCount(0)
   await expect(ownerDashboard.locator('.calendar-day-cell.booked')).toHaveCount(0)
   await expect(page.locator('.notification-button .notification-badge')).toHaveText('2')
 })
