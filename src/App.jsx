@@ -44,7 +44,6 @@ import {
   formatDisplayDMY,
   getNextDayISO,
   pluralize,
-  getArabicPluralWord,
   nightsBetween,
 } from './lib/formatters'
 import {
@@ -2011,7 +2010,6 @@ function App() {
     <div className="page-shell owner-shell">
       <div className="owner-dashboard-header flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-1">
         <div>
-          <span className="owner-dashboard-kicker">Owner Portal</span>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
             {language === 'en' ? 'Owner Dashboard' : 'لوحة تحكم المالك'}
           </h2>
@@ -2049,7 +2047,9 @@ function App() {
               <span className="owner-stat-icon material-symbols-outlined">apartment</span>
             </div>
             <strong>{formatNumber(ownerProperties.length)}</strong>
-            <small>+{formatNumber(Math.max(1, Math.round(ownerProperties.length * 0.3)))} {language === 'en' ? 'this month' : 'هذا الشهر'}</small>
+            <small>{t('ownerDashboard.propertyGrowth', {
+              count: pluralize(Math.max(1, Math.round(ownerProperties.length * 0.3)), 'property', language),
+            })}</small>
           </div>
 
           <div
@@ -2064,7 +2064,11 @@ function App() {
               <span className="owner-stat-icon material-symbols-outlined">pending_actions</span>
             </div>
             <strong>{formatNumber(pendingOwnerBookingsCount)}</strong>
-            <small>{pendingOwnerBookingsCount ? `${formatNumber(pendingOwnerBookingsCount)} ${language === 'en' ? 'need review' : 'تحتاج مراجعة'}` : (language === 'en' ? 'No pending requests' : 'لا توجد طلبات معلقة')}</small>
+            <small>{pendingOwnerBookingsCount
+              ? t('ownerDashboard.requestsAwaitingReview', {
+                requests: pluralize(pendingOwnerBookingsCount, 'bookingRequest', language),
+              })
+              : t('ownerDashboard.noPendingRequests')}</small>
           </div>
 
           <div className="owner-summary-card success">
@@ -2088,7 +2092,7 @@ function App() {
               <span className="owner-stat-icon material-symbols-outlined text-amber-500">star</span>
             </div>
             <strong>{formatNumber(4.9, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} ★</strong>
-            <small>{language === 'en' ? 'Guest satisfaction (12+ reviews)' : 'متوسط رضا الضيوف (12+ تقييم)'}</small>
+            <small>{language === 'en' ? 'Guest satisfaction' : 'متوسط رضا الضيوف'}</small>
           </div>
         </div>
       </div>
@@ -2107,7 +2111,9 @@ function App() {
           }}
         >
           <span className="material-symbols-outlined">pending_actions</span>
-          <span>{language === 'en' ? `Review Requests (${formatNumber(pendingOwnerBookingsCount)})` : `مراجعة الطلبات (${formatNumber(pendingOwnerBookingsCount)})`}</span>
+          <span>{t('ownerDashboard.reviewRequestsAction', {
+            requests: pluralize(pendingOwnerBookingsCount, 'request', language),
+          })}</span>
         </button>
         <button
           type="button"
@@ -2118,7 +2124,9 @@ function App() {
           }}
         >
           <span className="material-symbols-outlined">list_alt</span>
-          <span>{language === 'en' ? `All Bookings (${formatNumber(ownerBookings.length)})` : `كل الحجوزات (${formatNumber(ownerBookings.length)})`}</span>
+          <span>{t('ownerDashboard.allBookingsAction', {
+            bookings: pluralize(ownerBookings.length, 'booking', language),
+          })}</span>
         </button>
         <button type="button" className="secondary-button small-button" onClick={() => handleOwnerQuickAction('report')}>
           <span className="material-symbols-outlined">download</span>
@@ -2275,9 +2283,7 @@ function App() {
               <span className="material-symbols-outlined text-amber-600">notifications_active</span>
               <div>
                 <strong>
-                  {language === 'en'
-                    ? `${formatNumber(pendingOwnerBookingsCount)} new ${pendingOwnerBookingsCount === 1 ? 'booking request' : 'booking requests'}`
-                    : `${formatNumber(pendingOwnerBookingsCount)} ${pendingOwnerBookingsCount === 1 ? 'طلب حجز جديد' : pendingOwnerBookingsCount === 2 ? 'طلبا حجز جديدان' : 'طلبات حجز جديدة'}`}
+                  {pluralize(pendingOwnerBookingsCount, 'bookingRequest', language)}
                 </strong>
                 <small>
                   {language === 'en' ? 'Awaiting your review and approval' : 'تحتاج إلى مراجعة وتأكيد من المالك'}
@@ -2302,9 +2308,7 @@ function App() {
               <div>
                 <strong>{language === 'en' ? 'All operations up to date' : 'لا توجد طلبات معلقة'}</strong>
                 <small>
-                  {language === 'en'
-                    ? `${formatNumber(ownerBookings.length)} bookings confirmed & active`
-                    : `تمت مراجعة كافة الطلبات (${formatNumber(ownerBookings.length)} حجز مؤكد)`}
+                  {pluralize(ownerBookings.length, 'confirmedBooking', language)}
                 </small>
               </div>
             </div>
@@ -2499,7 +2503,7 @@ function App() {
         </div>
         <div className="owner-summary-card">
           <span>{language === 'en' ? 'Host Response' : 'استجابة المالك'}</span>
-          <strong>{formatNumber(1.2, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}h</strong>
+          <strong>{pluralize(1.2, 'hour', language)}</strong>
           <small>{language === 'en' ? 'Average reply time' : 'متوسط الرد'}</small>
         </div>
       </div>
@@ -2625,7 +2629,7 @@ function App() {
             />
           </label>
           <label>
-            {language === 'en' ? 'Rate / Night (EGP)' : 'السعر / يوم (ج.م)'}
+            {language === 'en' ? 'Rate / Night (EGP)' : 'السعر / ليلة (ج.م)'}
             <input
               type="number"
               min="0"
@@ -2774,7 +2778,7 @@ function App() {
               {language === 'en' ? 'Managed Properties' : 'الشقق المضافة'}
             </h3>
             <span className="text-xs text-slate-500">
-              {language === 'en' ? `${ownerProperties.length} active listings` : `${ownerProperties.length} عقارات مسجلة`}
+              {pluralize(ownerProperties.length, 'property', language)}
             </span>
           </div>
         </div>
@@ -2829,8 +2833,8 @@ function App() {
             </h3>
             <span className="text-xs text-slate-500">
               {language === 'en'
-                ? `Showing ${filteredOwnerBookings.length} bookings`
-                : `عرض ${filteredOwnerBookings.length} من الحجوزات`}
+                ? `Showing ${pluralize(filteredOwnerBookings.length, 'booking', language)}`
+                : `عرض ${pluralize(filteredOwnerBookings.length, 'booking', language)}`}
             </span>
           </div>
 
@@ -2877,7 +2881,9 @@ function App() {
                 className="secondary-button small-button mt-2"
                 onClick={() => setOwnerBookingFilter('all')}
               >
-                {language === 'en' ? `View all bookings (${formatNumber(ownerBookings.length)})` : `عرض كل الحجوزات (${formatNumber(ownerBookings.length)})`}
+                {t('ownerDashboard.allBookingsAction', {
+                  bookings: pluralize(ownerBookings.length, 'booking', language),
+                })}
               </button>
             )}
           </div>

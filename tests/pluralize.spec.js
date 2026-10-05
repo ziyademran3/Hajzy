@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { pluralize, getArabicPluralWord } from '../src/lib/formatters.js';
+import { pluralize, pluralizeArabic, getArabicPluralWord } from '../src/lib/formatters.js';
 
 test.describe('Arabic & English Pluralization Tests', () => {
   test('follows Arabic grammar rules for stay (إقامة)', () => {
@@ -53,7 +53,21 @@ test.describe('Arabic & English Pluralization Tests', () => {
     expect(pluralize(1, 'booking', 'ar')).toBe('1 حجز');
     expect(pluralize(2, 'booking', 'ar')).toBe('2 حجزان');
     expect(pluralize(5, 'booking', 'ar')).toBe('5 حجوزات');
-    expect(pluralize(11, 'booking', 'ar')).toBe('11 حجز');
+    expect(pluralize(11, 'booking', 'ar')).toBe('11 حجزًا');
+  });
+
+  test('follows Arabic grammar rules for property counters (عقار)', () => {
+    expect(pluralizeArabic(1, 'property')).toBe('1 عقار');
+    expect(pluralizeArabic(2, 'property')).toBe('2 عقاران');
+    expect(pluralizeArabic(3, 'property')).toBe('3 عقارات');
+    expect(pluralizeArabic(10, 'property')).toBe('10 عقارات');
+    expect(pluralizeArabic(11, 'property')).toBe('11 عقارًا');
+    expect(pluralizeArabic(15, 'property')).toBe('15 عقارًا');
+    expect(pluralizeArabic(0, 'property')).toBe('0 عقارات');
+    expect(pluralize(1.2, 'hour', 'ar')).toBe('1.2 ساعة');
+    expect(getArabicPluralWord(3, 'property')).toBe('عقارات');
+    expect(getArabicPluralWord(11, 'property')).toBe('عقارًا');
+    expect(pluralize(15, 'عقار', 'ar')).toBe('15 عقارًا');
   });
 
   test('handles English pluralization properly', () => {

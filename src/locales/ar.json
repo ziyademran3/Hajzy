@@ -62,6 +62,13 @@
     "autoSent": "يُرسل للنزيل قبل الوصول بـ 24 ساعة ويُلغى عند المغادرة.",
     "deactivated": "أُوقف الرمز تلقائيًا عند موعد المغادرة."
   },
+  "ownerDashboard": {
+    "propertyGrowth": "+{{count}} هذا الشهر",
+    "requestsAwaitingReview": "{{requests}} بانتظار المراجعة",
+    "noPendingRequests": "لا توجد طلبات معلقة",
+    "reviewRequestsAction": "مراجعة {{requests}}",
+    "allBookingsAction": "كل {{bookings}}"
+  },
   "ownerMetrics": {
     "occupancy": "الإشغال",
     "confirmed": "المؤكدة",

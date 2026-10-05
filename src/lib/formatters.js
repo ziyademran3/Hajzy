@@ -244,6 +244,43 @@ export const ARABIC_PLURAL_FORMS = {
     singular: 'حجز',
     dual: 'حجزان',
     plural: 'حجوزات',
+    singularAfterCount: 'حجزًا',
+    zero: 'حجوزات',
+  },
+  property: {
+    singular: 'عقار',
+    dual: 'عقاران',
+    plural: 'عقارات',
+    singularAfterCount: 'عقارًا',
+    zero: 'عقارات',
+  },
+  request: {
+    singular: 'طلب',
+    dual: 'طلبان',
+    plural: 'طلبات',
+    singularAfterCount: 'طلبًا',
+    zero: 'طلبات',
+  },
+  review: {
+    singular: 'تقييم',
+    dual: 'تقييمان',
+    plural: 'تقييمات',
+    singularAfterCount: 'تقييمًا',
+    zero: 'تقييمات',
+  },
+  bookingRequest: {
+    singular: 'طلب حجز جديد',
+    dual: 'طلبا حجز جديدان',
+    plural: 'طلبات حجز جديدة',
+    singularAfterCount: 'طلب حجز جديد',
+    zero: 'طلبات حجز جديدة',
+  },
+  confirmedBooking: {
+    singular: 'حجز مؤكد ونشط',
+    dual: 'حجزان مؤكدان ونشطان',
+    plural: 'حجوزات مؤكدة ونشطة',
+    singularAfterCount: 'حجز مؤكد ونشط',
+    zero: 'حجوزات مؤكدة ونشطة',
   },
   trip: {
     singular: 'رحلة',
@@ -274,6 +311,12 @@ ARABIC_PLURAL_FORMS['ضيف'] = ARABIC_PLURAL_FORMS.guest
 ARABIC_PLURAL_FORMS['ضيوف'] = ARABIC_PLURAL_FORMS.guest
 ARABIC_PLURAL_FORMS['حجز'] = ARABIC_PLURAL_FORMS.booking
 ARABIC_PLURAL_FORMS['حجوزات'] = ARABIC_PLURAL_FORMS.booking
+ARABIC_PLURAL_FORMS['عقار'] = ARABIC_PLURAL_FORMS.property
+ARABIC_PLURAL_FORMS['عقارات'] = ARABIC_PLURAL_FORMS.property
+ARABIC_PLURAL_FORMS['طلب'] = ARABIC_PLURAL_FORMS.request
+ARABIC_PLURAL_FORMS['طلبات'] = ARABIC_PLURAL_FORMS.request
+ARABIC_PLURAL_FORMS['تقييم'] = ARABIC_PLURAL_FORMS.review
+ARABIC_PLURAL_FORMS['تقييمات'] = ARABIC_PLURAL_FORMS.review
 ARABIC_PLURAL_FORMS['رحلة'] = ARABIC_PLURAL_FORMS.trip
 ARABIC_PLURAL_FORMS['رحلات'] = ARABIC_PLURAL_FORMS.trip
 ARABIC_PLURAL_FORMS['ساعة'] = ARABIC_PLURAL_FORMS.hour
@@ -286,6 +329,11 @@ export const ENGLISH_PLURAL_FORMS = {
   night: { singular: 'night', plural: 'nights' },
   guest: { singular: 'guest', plural: 'guests' },
   booking: { singular: 'booking', plural: 'bookings' },
+  property: { singular: 'property', plural: 'properties' },
+  request: { singular: 'request', plural: 'requests' },
+  review: { singular: 'review', plural: 'reviews' },
+  bookingRequest: { singular: 'new booking request', plural: 'new booking requests' },
+  confirmedBooking: { singular: 'confirmed active booking', plural: 'confirmed active bookings' },
   trip: { singular: 'trip', plural: 'trips' },
   hour: { singular: 'hour', plural: 'hours' },
   minute: { singular: 'minute', plural: 'minutes' },
@@ -306,6 +354,10 @@ export const getArabicPluralWord = (count, typeOrForms) => {
 
   const n = Math.abs(Number(count) || 0)
 
+  if (n === 0 && forms.zero) {
+    return forms.zero
+  }
+
   // 1 = مفرد
   if (n === 1) {
     return forms.singular || ''
@@ -323,7 +375,16 @@ export const getArabicPluralWord = (count, typeOrForms) => {
   }
 
   // 11 فأكثر = مفرد (و 0 = مفرد)
-  return forms.singular || forms.plural || ''
+  return forms.singularAfterCount || forms.singular || forms.plural || ''
+}
+
+export const pluralizeArabic = (count, typeOrForms, options = {}) => {
+  const n = Number(count) || 0
+  const word = getArabicPluralWord(n, typeOrForms)
+  if (options.includeNumber === false || (n === 2 && options.standaloneDual)) {
+    return word
+  }
+  return `${n} ${word}`
 }
 
 /**
@@ -348,14 +409,5 @@ export const pluralize = (count, typeOrForms, language = 'ar', options = {}) => 
     return options.includeNumber === false ? word : `${n} ${word}`
   }
 
-  const word = getArabicPluralWord(n, typeOrForms)
-  if (options.includeNumber === false) {
-    return word
-  }
-
-  if (n === 2 && options.standaloneDual) {
-    return word
-  }
-
-  return `${n} ${word}`
+  return pluralizeArabic(n, typeOrForms, options)
 }
