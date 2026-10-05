@@ -59,6 +59,19 @@ const getPropertyNightKeys = (bookings, propertyIds, startDate, endDate) => {
   return keys
 }
 
+const calculateOccupancyPercent = (bookings, propertyIds, startDate, endDate) => {
+  if (!propertyIds.size) return null
+
+  let availableNights = 0
+  for (let date = startDate; date < endDate; date = addDays(date, 1)) {
+    availableNights += propertyIds.size
+  }
+
+  if (!availableNights) return null
+  const bookedNights = getPropertyNightKeys(bookings, propertyIds, startDate, endDate)
+  return (bookedNights.size / availableNights) * 100
+}
+
 export const getBookedDaysForProperty = (bookings, propertyId, year, monthIndex) => {
   if (propertyId === null || propertyId === undefined) return []
   const monthStart = new Date(year, monthIndex, 1)
@@ -86,29 +99,32 @@ export const getOwnerBookingMetrics = (bookings = [], properties = [], now = new
 
   const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
   const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1)
-  const daysInCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
   const propertyIds = new Set(safeProperties.map((property) => String(property.id)))
-  const currentMonthBookedNights = getPropertyNightKeys(
+  const monthlyOccupancyPercent = calculateOccupancyPercent(
     activeBookings,
     propertyIds,
     currentMonthStart,
     nextMonthStart,
   )
-  const availableNights = safeProperties.length * daysInCurrentMonth
-  const monthlyOccupancyPercent = availableNights
-    ? (currentMonthBookedNights.size / availableNights) * 100
-    : null
+  const previousMonthOccupancyPercent = calculateOccupancyPercent(
+    activeBookings,
+    propertyIds,
+    previousMonthStart,
+    currentMonthStart,
+  )
+  const monthlyOccupancyChangePoints = monthlyOccupancyPercent === null
+    || previousMonthOccupancyPercent === null
+    ? null
+    : monthlyOccupancyPercent - previousMonthOccupancyPercent
 
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const lastSevenDays = Array.from({ length: 7 }, (_, index) => {
     const date = addDays(today, index - 6)
     const nextDate = addDays(date, 1)
-    const bookedNights = getPropertyNightKeys(activeBookings, propertyIds, date, nextDate)
     return {
       date,
-      occupancyPercent: safeProperties.length
-        ? (bookedNights.size / safeProperties.length) * 100
-        : null,
+      occupancyPercent: calculateOccupancyPercent(activeBookings, propertyIds, date, nextDate),
     }
   })
 
@@ -120,6 +136,8 @@ export const getOwnerBookingMetrics = (bookings = [], properties = [], now = new
     bookingConversionPercent,
     confirmedRequestPercent,
     monthlyOccupancyPercent,
+    previousMonthOccupancyPercent,
+    monthlyOccupancyChangePoints,
     lastSevenDays,
   }
 }

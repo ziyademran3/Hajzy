@@ -55,9 +55,11 @@
     "averageOccupancy": "Average occupancy",
     "confirmedRequests": "Confirmed requests",
     "monthlyOccupancy": "Occupancy this month",
+    "monthlyOccupancyChange": "{{change}} percentage points vs last month",
     "bookingConversion": "Request-to-booking conversion",
     "requestsRatio": "Non-cancelled bookings ÷ total requests",
-    "currentMonth": "Current month",
+    "currentMonth": "This month",
+    "lastSevenDays": "Last 7 days",
     "weeklyOccupancyDescription": "Daily booked-night occupancy over the last 7 days"
   },
   "quickActions": {

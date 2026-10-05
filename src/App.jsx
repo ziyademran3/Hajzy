@@ -1546,6 +1546,12 @@ function App() {
     })
     : []
   const ownerBookingMetrics = getOwnerBookingMetrics(ownerBookings, ownerProperties)
+  const occupancyChangePoints = ownerBookingMetrics.monthlyOccupancyChangePoints
+  const occupancyChangeLabel = occupancyChangePoints === null
+    ? null
+    : t('ownerMetrics.monthlyOccupancyChange', {
+      change: `${occupancyChangePoints > 0 ? '+' : ''}${formatNumber(occupancyChangePoints, { maximumFractionDigits: 1 })}`,
+    })
   const pendingOwnerBookingsCount = ownerBookingMetrics.pendingRequestsCount
 
   const filteredOwnerBookings = ownerBookings.filter((booking) => {
@@ -2136,7 +2142,7 @@ function App() {
         </div>
         <div className="owner-feature-actions-wrap flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="owner-feature-pills">
-            <span>{t('ownerMetrics.occupancy')} {formatPercent(ownerBookingMetrics.monthlyOccupancyPercent)}</span>
+            <span>{t('ownerMetrics.monthlyOccupancy')}: {formatPercent(ownerBookingMetrics.monthlyOccupancyPercent)}</span>
             <span>{t('ownerMetrics.confirmed')} {formatPercent(ownerBookingMetrics.confirmedRequestPercent)}</span>
             <span>{language === 'en' ? 'Rating 4.9 ★' : 'تقييم 4.9 ★'}</span>
           </div>
@@ -2159,8 +2165,9 @@ function App() {
           </div>
           <div className="owner-metrics-grid">
             <div>
-              <span>{t('ownerMetrics.averageOccupancy')}</span>
+              <span>{t('ownerMetrics.monthlyOccupancy')}</span>
               <strong>{formatPercent(ownerBookingMetrics.monthlyOccupancyPercent)}</strong>
+              {occupancyChangeLabel && <small className="owner-metric-comparison">{occupancyChangeLabel}</small>}
             </div>
             <div>
               <span>{language === 'en' ? 'Top Destination' : 'أعلى مدينة'}</span>
@@ -2185,6 +2192,7 @@ function App() {
                 <strong>{formatPercent(ownerBookingMetrics.monthlyOccupancyPercent)}</strong>
               </div>
               <div className="progress-bar"><span style={{ width: `${ownerBookingMetrics.monthlyOccupancyPercent ?? 0}%` }}></span></div>
+              {occupancyChangeLabel && <small className="owner-metric-comparison">{occupancyChangeLabel}</small>}
             </div>
           </div>
         </div>
@@ -2480,9 +2488,9 @@ function App() {
 
       <div className="owner-summary-grid">
         <div className="owner-summary-card">
-          <span>{t('ownerMetrics.averageOccupancy')}</span>
+          <span>{t('ownerMetrics.monthlyOccupancy')}</span>
           <strong>{formatPercent(ownerBookingMetrics.monthlyOccupancyPercent)}</strong>
-          <small>{t('ownerMetrics.currentMonth')}</small>
+          {occupancyChangeLabel && <small className="owner-metric-comparison">{occupancyChangeLabel}</small>}
         </div>
         <div className="owner-summary-card">
           <span>{t('ownerMetrics.bookingConversion')}</span>
@@ -2506,7 +2514,7 @@ function App() {
               {t('ownerMetrics.weeklyOccupancyDescription')}
             </span>
           </div>
-          <span className="status-pill neutral">{language === 'en' ? 'Last 7 Days' : 'آخر 7 أيام'}</span>
+          <span className="status-pill neutral">{t('ownerMetrics.lastSevenDays')}</span>
         </div>
         <div className="owner-chart">
           {ownerBookingMetrics.lastSevenDays.map((item) => {

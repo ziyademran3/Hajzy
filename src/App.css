@@ -6793,6 +6793,12 @@ html[dir='rtl'] .settings-switch[aria-checked='true'] .settings-switch-thumb {
   font-weight: 700;;
 }
 
+.owner-metric-comparison {
+  color: var(--muted);
+  font-size: var(--type-12);
+  font-weight: var(--font-weight-subheading);
+}
+
 .mini-booking-list {
   display: flex;
   flex-direction: column;

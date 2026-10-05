@@ -55,9 +55,11 @@
     "averageOccupancy": "متوسط الإشغال",
     "confirmedRequests": "الطلبات المؤكدة",
     "monthlyOccupancy": "الإشغال هذا الشهر",
+    "monthlyOccupancyChange": "{{change}} نقطة مئوية عن الشهر الماضي",
     "bookingConversion": "تحويل الطلبات إلى حجوزات",
     "requestsRatio": "الحجوزات غير الملغاة ÷ إجمالي الطلبات",
-    "currentMonth": "الشهر الحالي",
+    "currentMonth": "هذا الشهر",
+    "lastSevenDays": "آخر 7 أيام",
     "weeklyOccupancyDescription": "نسبة الليالي المحجوزة يوميًا خلال آخر 7 أيام"
   },
   "quickActions": {
