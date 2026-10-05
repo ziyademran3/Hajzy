@@ -67,7 +67,7 @@ export default function HostCalendar({
             {isArabic ? 'تقويم التوافر والأسعار' : 'Availability & Pricing Calendar'}
           </h3>
           <p className="text-xs text-slate-500 m-0 mt-0.5">
-            {isArabic ? `إدارة مواعيد الحجز والأسعار لـ: ${propertyTitle}` : `Manage availability & rates for: ${propertyTitle}`}
+            {t('ownerDashboard.manageCalendar', { propertyTitle })}
           </p>
         </div>
 

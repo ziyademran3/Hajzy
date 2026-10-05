@@ -1632,7 +1632,7 @@ function App() {
   const handleOwnerQuickAction = (action) => {
     if (action === 'manage') {
       document.getElementById('owner-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      showToast(language === 'en' ? 'You can now manage properties from the form below.' : 'يمكنك الآن إدارة العقارات من نموذج إضافة الشقة.')
+      showToast(t('ownerDashboard.managePropertiesFromForm'))
       return
     }
 
@@ -1736,7 +1736,7 @@ function App() {
     event.preventDefault()
 
     if (!propertyForm.title || !propertyForm.location || !propertyForm.priceValue) {
-      showToast('يرجى تعبئة عنوان الشقة والموقع والسعر قبل الحفظ')
+      showToast(t('ownerDashboard.propertyRequiredFields'))
       return
     }
 
@@ -1778,7 +1778,7 @@ function App() {
     })
 
     setSelectedProperty(responseProperty)
-    showToast(ownerEditingId ? 'تم تحديث الشقة بنجاح' : activeText.propertyAdded)
+    showToast(ownerEditingId ? t('ownerDashboard.propertyUpdated') : activeText.propertyAdded)
     resetOwnerForm()
   }
 
@@ -2026,7 +2026,7 @@ function App() {
             onClick={() => document.getElementById('owner-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           >
             <span className="material-symbols-outlined text-base">add_circle</span>
-            <span>{language === 'en' ? 'Add New Property' : 'إضافة شقة جديدة'}</span>
+            <span>{t('ownerDashboard.addNewProperty')}</span>
           </button>
           <button
             type="button"
@@ -2461,7 +2461,7 @@ function App() {
           </div>
           <ul className="owner-task-list">
             <li>{language === 'en' ? 'Review new booking requests' : 'متابعة طلبات الحجز الجديدة'}</li>
-            <li><span className="material-symbols-outlined">inventory_2</span>{language === 'en' ? 'Update main property description' : 'تحديث وصف الشقة الرئيسية'}</li>
+            <li><span className="material-symbols-outlined">inventory_2</span>{t('ownerDashboard.updateMainPropertyDescription')}</li>
             <li><span className="material-symbols-outlined">campaign</span>{language === 'en' ? 'Send welcome message to guests' : 'إرسال رسالة ترحيب للضيوف'}</li>
             <li><span className="material-symbols-outlined">payments</span>{language === 'en' ? 'Audit monthly revenue statements' : 'مراجعة الإيرادات الشهرية'}</li>
           </ul>
@@ -2581,7 +2581,7 @@ function App() {
         <div className="owner-form-head">
           <div>
             <h3 className="m-0 text-lg font-bold text-slate-900 dark:text-white">
-              {ownerEditingId ? (language === 'en' ? 'Edit Property' : 'تعديل الشقة') : (language === 'en' ? 'Add New Property' : 'إضافة شقة جديدة')}
+              {ownerEditingId ? t('ownerDashboard.editProperty') : t('ownerDashboard.addNewProperty')}
             </h3>
             <span className="text-xs text-slate-500 block mt-0.5">
               {language === 'en' ? 'Fill details to publish or update your listing' : 'أدخل تفاصيل الوحدة لنشرها واستقبال طلبات الحجز'}
@@ -2598,12 +2598,12 @@ function App() {
 
         <div className="owner-grid">
           <label>
-            {language === 'en' ? 'Property Title' : 'عنوان الشقة'}
+            {t('ownerDashboard.propertyTitle')}
             <input
               type="text"
               value={propertyForm.title}
               onChange={(event) => setPropertyForm({ ...propertyForm, title: event.target.value })}
-              placeholder={language === 'en' ? 'e.g. Luxury Seafront Suite' : 'اسم الشقة'}
+              placeholder={t('ownerDashboard.propertyNamePlaceholder')}
             />
           </label>
           <label>
@@ -2702,7 +2702,7 @@ function App() {
                 </div>
                 <div>
                   <strong className="block text-sm text-slate-800 dark:text-slate-200">
-                    {language === 'en' ? 'Upload photo from your device' : 'اضغط لرفع صورة الشقة من جهازك'}
+                    {t('ownerDashboard.uploadPropertyPhoto')}
                   </strong>
                   <span className="text-xs text-slate-500 block mt-0.5">
                     {language === 'en' ? 'Supports JPG, PNG, WebP (Max 5MB)' : 'يدعم صيغ JPG، PNG، WebP (حتى 5 ميجابايت)'}
@@ -2752,7 +2752,7 @@ function App() {
               rows="3"
               value={propertyForm.description}
               onChange={(event) => setPropertyForm({ ...propertyForm, description: event.target.value })}
-              placeholder={language === 'en' ? 'Write an appealing property description' : 'اكتب وصف الشقة بشكل جذاب'}
+              placeholder={t('ownerDashboard.propertyDescriptionPlaceholder')}
             />
           </label>
           <label className="wide">
@@ -2767,7 +2767,7 @@ function App() {
         </div>
 
         <button type="submit" className="primary-button">
-          {ownerEditingId ? (language === 'en' ? 'Save Changes' : 'حفظ التعديلات') : (language === 'en' ? 'Add Property' : 'إضافة الشقة')}
+          {ownerEditingId ? (language === 'en' ? 'Save Changes' : 'حفظ التعديلات') : t('ownerDashboard.addProperty')}
         </button>
       </form>
 
@@ -2775,7 +2775,7 @@ function App() {
         <div className="owner-form-head">
           <div>
             <h3 className="m-0 text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-              {language === 'en' ? 'Managed Properties' : 'الشقق المضافة'}
+              {t('ownerDashboard.managedProperties')}
             </h3>
             <span className="text-xs text-slate-500">
               {pluralize(ownerProperties.length, 'property', language)}
@@ -2786,7 +2786,7 @@ function App() {
         {ownerProperties.length === 0 ? (
           <div className="owner-empty-state">
             <span className="material-symbols-outlined">apartment</span>
-            <p>{language === 'en' ? 'No properties listed yet. Add your first listing.' : 'لا توجد شقق مضافة بعد، أضف أول إعلان لك.'}</p>
+            <p>{t('ownerDashboard.noProperties')}</p>
           </div>
         ) : (
           ownerProperties.map((property) => (

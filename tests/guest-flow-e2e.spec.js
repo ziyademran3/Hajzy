@@ -535,7 +535,7 @@ test.describe('Guest Flow & Auth Fix Verification', () => {
     await expect(page.locator('.app-shell')).toBeVisible();
 
     // Owner view or owner navigation should be present (such as the Add Property form)
-    const ownerIndicator = page.locator('.owner-shell, .owner-badge, [data-role="owner"], .tab-btn.active:has-text("لوحة المالك"), .tab-btn.active:has-text("Owner"), button:has-text("إضافة الشقة")');
+    const ownerIndicator = page.locator('.owner-shell, .owner-badge, [data-role="owner"], .tab-btn.active:has-text("لوحة المالك"), .tab-btn.active:has-text("Owner"), button:has-text("إضافة عقار")');
     await expect(ownerIndicator.first()).toBeVisible({ timeout: 10000 });
   });
 

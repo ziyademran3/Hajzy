@@ -109,9 +109,22 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
   await expect(ownerDashboard.locator('.owner-feature-pills')).toContainText('الإشغال هذا الشهر')
   await expect(ownerDashboard.locator('.owner-summary-grid .owner-summary-card').first()).toContainText('نقطة مئوية عن الشهر الماضي')
   await expect(ownerDashboard.locator('.owner-dashboard-header')).not.toContainText('Owner Portal')
+  await expect(ownerDashboard.locator('.owner-dashboard-header')).toContainText('إضافة عقار جديد')
   await expect(ownerDashboard.locator('.owner-summary-grid .owner-summary-card').nth(2).locator('strong')).toContainText('ساعة')
   await expect(ownerDashboard.locator('.owner-action-rail')).toContainText('كل 0 حجوزات')
-  await expect(ownerDashboard.locator('.owner-listings').first()).toContainText('15 عقارًا')
+  const propertySection = ownerDashboard.locator('.owner-listings').first()
+  await expect(propertySection).toContainText('15 عقارًا')
+  await expect(propertySection.locator('.owner-form-head h3')).toHaveText('العقارات المضافة')
+  const firstPropertyTitle = (await propertySection.locator('.owner-card h4').first().textContent())?.trim()
+  await expect(ownerDashboard.locator('.owner-form')).toContainText('عنوان العقار')
+  await expect(ownerDashboard.locator('.owner-form').getByRole('button', { name: 'إضافة عقار' })).toBeVisible()
+  await expect(ownerDashboard.locator('.host-calendar-manager-card')).toContainText(
+    `إدارة مواعيد الحجز وأسعار العقار: ${firstPropertyTitle}`,
+  )
+  await ownerDashboard.locator('.owner-form').getByRole('button', { name: 'إضافة عقار' }).click()
+  await expect(ownerDashboard.locator('.owner-form')).toContainText(
+    'يرجى تعبئة عنوان العقار والموقع والسعر قبل الحفظ',
+  )
   await expect(ownerDashboard.locator('.owner-summary-grid .owner-summary-card').nth(1).locator('strong')).toHaveText('—')
   await expect(ownerDashboard.locator('.owner-progress-list .label-row').first().locator('strong')).toHaveText('—')
   await expect(ownerDashboard.locator('.owner-feature-pills')).toContainText('0%')
