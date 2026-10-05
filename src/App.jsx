@@ -7,6 +7,7 @@ import { useHaptics } from './hooks/useHaptics'
 import { useOfflineBooking } from './hooks/useOfflineBooking'
 import { useNativeShare } from './hooks/useNativeShare'
 import { getOwnerRevenueMetrics } from './lib/ownerRevenue'
+import { getOwnerBookingMetrics } from './lib/ownerBookingMetrics'
 import Skeleton from './components/Skeleton'
 import LuxuryPageSkeleton from './components/LuxuryPageSkeleton'
 import LoginPage from './pages/LoginPage'
@@ -128,6 +129,12 @@ const handleStayImageError = (event) => {
     event.currentTarget.src = FALLBACK_STAY_PHOTO
   }
 }
+
+const formatPercent = (value) => (
+  value === null || value === undefined
+    ? '—'
+    : `${formatNumber(value, { maximumFractionDigits: 1 })}%`
+)
 
 const pageTitlesByLanguage = {
   ar: {
@@ -1517,7 +1524,11 @@ function App() {
 
   const ownerProperties = isOwner
     ? properties.filter((property) => {
-        const isOwnedByCurrentUser = property.ownerId === user?.id
+        const isOwnedByCurrentUser = user?.id !== null
+          && user?.id !== undefined
+          && property.ownerId !== null
+          && property.ownerId !== undefined
+          && String(property.ownerId) === String(user.id)
         const isDemoOwnerProperty = user?.role === 'owner' && !property.ownerId
         return isOwnedByCurrentUser || isDemoOwnerProperty
       })
@@ -1526,9 +1537,16 @@ function App() {
   const ownerBookings = isOwner
     ? bookings.filter((booking) => {
         const property = properties.find((item) => String(item.id) === String(booking.propertyId))
-        return property && (property.ownerId === user?.id || (!property.ownerId && user?.role === 'owner'))
-      })
+      const isOwnedByCurrentUser = user?.id !== null
+        && user?.id !== undefined
+        && property?.ownerId !== null
+        && property?.ownerId !== undefined
+        && String(property.ownerId) === String(user.id)
+      return property && (isOwnedByCurrentUser || (!property.ownerId && user?.role === 'owner'))
+    })
     : []
+  const ownerBookingMetrics = getOwnerBookingMetrics(ownerBookings, ownerProperties)
+  const pendingOwnerBookingsCount = ownerBookingMetrics.pendingRequestsCount
 
   const filteredOwnerBookings = ownerBookings.filter((booking) => {
     if (ownerBookingFilter === 'all') return true
@@ -1983,8 +2001,6 @@ function App() {
     }
   }
 
-  const pendingOwnerBookingsCount = ownerBookings.filter((b) => b.status === 'pending').length
-
   const renderOwnerPage = () => (
     <div className="page-shell owner-shell">
       <div className="owner-dashboard-header flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-1">
@@ -2120,8 +2136,8 @@ function App() {
         </div>
         <div className="owner-feature-actions-wrap flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="owner-feature-pills">
-            <span>{language === 'en' ? 'Occupancy 78%' : 'إشغال 78%'}</span>
-            <span>{language === 'en' ? 'Confirmed 84%' : 'حجوزات مؤكدة 84%'}</span>
+            <span>{t('ownerMetrics.occupancy')} {formatPercent(ownerBookingMetrics.monthlyOccupancyPercent)}</span>
+            <span>{t('ownerMetrics.confirmed')} {formatPercent(ownerBookingMetrics.confirmedRequestPercent)}</span>
             <span>{language === 'en' ? 'Rating 4.9 ★' : 'تقييم 4.9 ★'}</span>
           </div>
           <button
@@ -2143,8 +2159,8 @@ function App() {
           </div>
           <div className="owner-metrics-grid">
             <div>
-              <span>{language === 'en' ? 'Avg Occupancy' : 'متوسط الإشغال'}</span>
-              <strong>{formatNumber(78)}%</strong>
+              <span>{t('ownerMetrics.averageOccupancy')}</span>
+              <strong>{formatPercent(ownerBookingMetrics.monthlyOccupancyPercent)}</strong>
             </div>
             <div>
               <span>{language === 'en' ? 'Top Destination' : 'أعلى مدينة'}</span>
@@ -2158,17 +2174,17 @@ function App() {
           <div className="owner-progress-list">
             <div>
               <div className="label-row">
-                <span>{language === 'en' ? 'Confirmed Requests' : 'الطلبات المؤكدة'}</span>
-                <strong>{formatNumber(84)}%</strong>
+                <span>{t('ownerMetrics.confirmedRequests')}</span>
+                <strong>{formatPercent(ownerBookingMetrics.confirmedRequestPercent)}</strong>
               </div>
-              <div className="progress-bar"><span style={{ width: '84%' }}></span></div>
+              <div className="progress-bar"><span style={{ width: `${ownerBookingMetrics.confirmedRequestPercent ?? 0}%` }}></span></div>
             </div>
             <div>
               <div className="label-row">
-                <span>{language === 'en' ? 'Monthly Occupancy' : 'الإشغال هذا الشهر'}</span>
-                <strong>{formatNumber(71)}%</strong>
+                <span>{t('ownerMetrics.monthlyOccupancy')}</span>
+                <strong>{formatPercent(ownerBookingMetrics.monthlyOccupancyPercent)}</strong>
               </div>
-              <div className="progress-bar"><span style={{ width: '71%' }}></span></div>
+              <div className="progress-bar"><span style={{ width: `${ownerBookingMetrics.monthlyOccupancyPercent ?? 0}%` }}></span></div>
             </div>
           </div>
         </div>
@@ -2235,6 +2251,8 @@ function App() {
         basePrice={ownerProperties[0]?.priceValue || 2800}
         currency={ownerProperties[0]?.currency || 'EGP'}
         propertyTitle={ownerProperties[0]?.title || (language === 'en' ? 'My Properties' : 'عقاراتي')}
+        propertyId={ownerProperties[0]?.id}
+        bookings={ownerBookings}
       />
 
       <div className="owner-operational-panel">
@@ -2462,14 +2480,14 @@ function App() {
 
       <div className="owner-summary-grid">
         <div className="owner-summary-card">
-          <span>{language === 'en' ? 'Avg Occupancy' : 'متوسط الإشغال'}</span>
-          <strong>{formatNumber(78)}%</strong>
-          <small>{language === 'en' ? 'Past 30 days' : 'منذ آخر 30 يوم'}</small>
+          <span>{t('ownerMetrics.averageOccupancy')}</span>
+          <strong>{formatPercent(ownerBookingMetrics.monthlyOccupancyPercent)}</strong>
+          <small>{t('ownerMetrics.currentMonth')}</small>
         </div>
         <div className="owner-summary-card">
-          <span>{language === 'en' ? 'Booking Rate' : 'معدل الحجز'}</span>
-          <strong>{formatNumber(14)}%</strong>
-          <small>{language === 'en' ? 'Conversion rate' : 'نسبة التحويل'}</small>
+          <span>{t('ownerMetrics.bookingConversion')}</span>
+          <strong>{formatPercent(ownerBookingMetrics.bookingConversionPercent)}</strong>
+          <small>{t('ownerMetrics.requestsRatio')}</small>
         </div>
         <div className="owner-summary-card">
           <span>{language === 'en' ? 'Host Response' : 'استجابة المالك'}</span>
@@ -2485,29 +2503,27 @@ function App() {
               {language === 'en' ? 'Weekly Occupancy Rate' : 'إحصاءات الإقبال ونسبة الإشغال'}
             </h3>
             <span className="text-[11px] text-slate-500 block mt-0.5">
-              {language === 'en' ? 'Daily visitor and booking traction' : 'معدل تفاعل وحجوزات الضيوف اليومية'}
+              {t('ownerMetrics.weeklyOccupancyDescription')}
             </span>
           </div>
           <span className="status-pill neutral">{language === 'en' ? 'Last 7 Days' : 'آخر 7 أيام'}</span>
         </div>
         <div className="owner-chart">
-          {[
-            { dayAr: 'السبت', dayEn: 'Sat', value: 48 },
-            { dayAr: 'الأحد', dayEn: 'Sun', value: 72 },
-            { dayAr: 'الإثنين', dayEn: 'Mon', value: 58 },
-            { dayAr: 'الثلاثاء', dayEn: 'Tue', value: 90 },
-            { dayAr: 'الأربعاء', dayEn: 'Wed', value: 84 },
-            { dayAr: 'الخميس', dayEn: 'Thu', value: 96 },
-            { dayAr: 'الجمعة', dayEn: 'Fri', value: 76 },
-          ].map((item, index) => (
-            <div key={item.dayAr + index} className="owner-chart-bar-wrap" title={`${language === 'en' ? item.dayEn : item.dayAr}: ${formatNumber(item.value)}%`}>
-              <span className="owner-chart-val text-[11px] font-bold text-slate-600 dark:text-slate-400">{formatNumber(item.value)}%</span>
-              <div className="owner-chart-bar" style={{ height: `${item.value}%` }}></div>
-              <span className="owner-chart-day-label text-[10px] font-bold text-slate-500 mt-1">
-                {language === 'en' ? item.dayEn : item.dayAr}
-              </span>
-            </div>
-          ))}
+          {ownerBookingMetrics.lastSevenDays.map((item) => {
+            const dayLabel = new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'ar-EG', {
+              weekday: 'short',
+            }).format(item.date)
+            const occupancyLabel = formatPercent(item.occupancyPercent)
+            return (
+              <div key={item.date.toISOString()} className="owner-chart-bar-wrap" title={`${dayLabel}: ${occupancyLabel}`}>
+                <span className="owner-chart-val text-[11px] font-bold text-slate-600 dark:text-slate-400">{occupancyLabel}</span>
+                <div className="owner-chart-bar" style={{ height: `${item.occupancyPercent ?? 0}%` }}></div>
+                <span className="owner-chart-day-label text-[10px] font-bold text-slate-500 mt-1">
+                  {dayLabel}
+                </span>
+              </div>
+            )
+          })}
         </div>
       </div>
 

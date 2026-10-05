@@ -49,6 +49,17 @@
     "today": "Today →",
     "empty": "No paid and confirmed revenue in the last 30 days."
   },
+  "ownerMetrics": {
+    "occupancy": "Occupancy",
+    "confirmed": "Confirmed",
+    "averageOccupancy": "Average occupancy",
+    "confirmedRequests": "Confirmed requests",
+    "monthlyOccupancy": "Occupancy this month",
+    "bookingConversion": "Request-to-booking conversion",
+    "requestsRatio": "Non-cancelled bookings ÷ total requests",
+    "currentMonth": "Current month",
+    "weeklyOccupancyDescription": "Daily booked-night occupancy over the last 7 days"
+  },
   "quickActions": {
     "savedHomes": "Saved homes",
     "discover": "Discover",

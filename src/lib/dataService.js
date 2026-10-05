@@ -577,7 +577,7 @@ const normalizeProperty = (property) => {
     amenities: property.amenities || seed.amenities || [],
     amenitiesEn: property.amenitiesEn || seed.amenitiesEn || [],
     bookingInfo: property.bookingInfo || seed.bookingInfo || '',
-    ownerId: property.ownerId || seed.ownerId || null,
+    ownerId: property.ownerId || property.owner_id || seed.ownerId || null,
     minNights: Number(property.minNights || property.min_nights || seed?.minNights || seed?.min_nights || 1),
   }
 }
@@ -702,8 +702,8 @@ export const normalizeBooking = (booking) => {
     title: booking.title,
     location: booking.location,
     image: sanitizePhotoUrl(rawImage),
-    checkIn: booking.checkIn,
-    checkOut: booking.checkOut,
+    checkIn: booking.checkIn || booking.check_in || booking.startDate || booking.start_date,
+    checkOut: booking.checkOut || booking.check_out || booking.endDate || booking.end_date,
     guests: Number(booking.guests || 1),
     pricePerNight: Number(booking.pricePerNight || booking.nightlyRate || 0),
     nights: Number(booking.nights || 0),

@@ -49,6 +49,17 @@
     "today": "اليوم →",
     "empty": "لا توجد إيرادات مدفوعة ومؤكدة خلال آخر 30 يومًا."
   },
+  "ownerMetrics": {
+    "occupancy": "الإشغال",
+    "confirmed": "المؤكدة",
+    "averageOccupancy": "متوسط الإشغال",
+    "confirmedRequests": "الطلبات المؤكدة",
+    "monthlyOccupancy": "الإشغال هذا الشهر",
+    "bookingConversion": "تحويل الطلبات إلى حجوزات",
+    "requestsRatio": "الحجوزات غير الملغاة ÷ إجمالي الطلبات",
+    "currentMonth": "الشهر الحالي",
+    "weeklyOccupancyDescription": "نسبة الليالي المحجوزة يوميًا خلال آخر 7 أيام"
+  },
   "quickActions": {
     "savedHomes": "المنازل المحفوظة",
     "discover": "بحث عن مدينة",

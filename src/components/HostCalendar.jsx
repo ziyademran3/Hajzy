@@ -1,23 +1,32 @@
 import React, { useState } from 'react'
 import { formatNumber, formatCurrency } from '../lib/formatters'
+import { getBookedDaysForProperty } from '../lib/ownerBookingMetrics'
 
 export default function HostCalendar({
   language = 'ar',
   basePrice = 2800,
   currency = 'EGP',
   propertyTitle = 'Luxury Sea View Stay',
+  propertyId,
+  bookings = [],
 }) {
   const isArabic = language === 'ar'
 
-  // Blocked dates set (day numbers in current month)
-  const [blockedDays, setBlockedDays] = useState([4, 5, 18, 19])
-  const [bookedDays] = useState([10, 11, 12, 24, 25, 26])
+  const [blockedDays, setBlockedDays] = useState([])
   const [weekendSurge, setWeekendSurge] = useState(15) // +15%
   const [selfCheckInCode, setSelfCheckInCode] = useState('8492#')
   const [copiedCode, setCopiedCode] = useState(false)
 
-  // Current month days mock (30 days)
-  const daysInMonth = Array.from({ length: 30 }, (_, i) => i + 1)
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth()
+  const daysInMonth = Array.from({ length: new Date(year, month + 1, 0).getDate() }, (_, i) => i + 1)
+  const bookedDays = getBookedDaysForProperty(bookings, propertyId, year, month)
+  const leadingBlankDays = new Date(year, month, 1).getDay()
+  const calendarCells = [
+    ...Array.from({ length: leadingBlankDays }, (_, index) => ({ type: 'blank', key: `blank-${index}` })),
+    ...daysInMonth.map((day) => ({ type: 'day', day })),
+  ]
   const weekdaysAr = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت']
   const weekdaysEn = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
   const weekdays = isArabic ? weekdaysAr : weekdaysEn
@@ -90,10 +99,14 @@ export default function HostCalendar({
           </div>
 
           <div className="calendar-days-grid">
-            {daysInMonth.map((day) => {
+            {calendarCells.map((cell) => {
+              if (cell.type === 'blank') {
+                return <span key={cell.key} className="calendar-day-spacer" aria-hidden="true" />
+              }
+              const day = cell.day
               const isBooked = bookedDays.includes(day)
               const isBlocked = blockedDays.includes(day)
-              const isWeekend = (day % 7 === 5) || (day % 7 === 6)
+              const isWeekend = [4, 5].includes(new Date(year, month, day).getDay())
               const dailyPrice = isWeekend ? Math.round(basePrice * (1 + weekendSurge / 100)) : basePrice
 
               return (
