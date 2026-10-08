@@ -1640,10 +1640,16 @@ function App() {
     ownerMetricsPeriod,
   )
   const occupancyChangePoints = ownerBookingMetrics.occupancyChangePoints
+  const ownerPeriodComparisonLabel = t(
+    ownerMetricsPeriod === 'thisWeek'
+      ? 'ownerMetrics.vsPreviousWeek'
+      : 'ownerMetrics.vsPreviousPeriod',
+  )
   const occupancyChangeLabel = occupancyChangePoints === null
     ? null
     : t('ownerMetrics.periodOccupancyChange', {
       change: `${occupancyChangePoints > 0 ? '+' : ''}${formatNumber(occupancyChangePoints, { maximumFractionDigits: 1 })}`,
+      comparison: ownerPeriodComparisonLabel,
     })
   const pendingOwnerBookingsCount = ownerBookingMetrics.pendingRequestsCount
 
@@ -2276,7 +2282,7 @@ function App() {
               <small>
                 {ownerRevenueMetrics.growthPercent > 0 ? '+' : ''}
                 {formatNumber(ownerRevenueMetrics.growthPercent, { maximumFractionDigits: 1 })}%
-                {' '}{t('ownerMetrics.vsPreviousPeriod')}
+                {' '}{ownerPeriodComparisonLabel}
               </small>
             )}
           </div>

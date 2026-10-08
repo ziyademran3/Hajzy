@@ -10144,6 +10144,101 @@ html[data-theme='dark'] .owner-table td,
   border-bottom-color: rgba(255, 255, 255, 0.08) !important;
 }
 
+@media (max-width: 640px) {
+  .owner-shell .owner-tab-panel,
+  .owner-shell .owner-listings,
+  .owner-shell .owner-summary-grid,
+  .owner-shell .owner-summary-card,
+  .owner-shell .owner-analytics-grid,
+  .owner-shell .owner-analytics-card,
+  .owner-shell .owner-main-panel,
+  .owner-shell .owner-table-card,
+  .owner-shell .owner-booking-card,
+  .owner-shell .owner-empty-state,
+  .owner-shell .mini-booking-item,
+  .owner-shell .owner-main-panel-header,
+  .owner-shell .owner-overview-header {
+    min-width: 0;
+  }
+
+  .owner-shell .owner-main-panel-header > div {
+    min-width: 0;
+  }
+
+  .owner-shell .owner-summary-card > span,
+  .owner-shell .owner-summary-card > small,
+  .owner-shell .owner-summary-card strong,
+  .owner-shell .owner-card-topline p,
+  .owner-shell .owner-overview-header h3,
+  .owner-shell .owner-main-panel-header h3,
+  .owner-shell .owner-main-panel-header span,
+  .owner-shell .mini-booking-item strong,
+  .owner-shell .mini-booking-item span,
+  .owner-shell .owner-empty-state p,
+  .owner-shell .owner-booking-card .booking-head h3,
+  .owner-shell .owner-booking-card .booking-head p,
+  .owner-shell .owner-booking-card .booking-footer small,
+  .owner-shell .owner-listing-copy strong,
+  .owner-shell .owner-listing-copy span {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    text-overflow: ellipsis;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .owner-shell .mini-booking-item > div,
+  .owner-shell .owner-booking-card .booking-head > div,
+  .owner-shell .owner-booking-card .booking-footer > div,
+  .owner-shell .owner-listing-copy,
+  .owner-shell .owner-listing-meta {
+    min-width: 0;
+  }
+
+  .owner-shell .mini-booking-item > div:first-child {
+    flex: 1 1 0;
+  }
+
+  .owner-shell .mini-booking-item > div:last-child {
+    flex: 0 1 auto;
+    text-align: end;
+  }
+
+  .owner-shell .owner-empty-state p,
+  .owner-shell .empty-inline {
+    overflow-wrap: anywhere;
+  }
+
+  .owner-shell .owner-booking-card {
+    grid-template-columns: minmax(118px, 36%) minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .owner-shell .owner-booking-card .booking-body {
+    min-width: 0;
+    padding: var(--space-3);
+  }
+
+  .owner-shell .owner-booking-card .booking-head p {
+    display: -webkit-box;
+  }
+
+  .owner-shell .owner-listing-card {
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .owner-shell .empty-inline {
+    min-width: 0;
+  }
+}
+
 /* =========================================================
    SETTINGS & PROFILE - DARK THEME OVERRIDES
    ========================================================= */

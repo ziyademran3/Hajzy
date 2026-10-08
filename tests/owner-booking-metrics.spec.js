@@ -169,7 +169,7 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
 
   const ownerDashboard = page.locator('.owner-shell')
   await expect(ownerDashboard).toBeVisible()
-  await expect(ownerDashboard.locator('.owner-summary-grid .owner-summary-card').first()).toContainText('نقطة مئوية عن الفترة السابقة')
+  await expect(ownerDashboard.locator('.owner-summary-grid .owner-summary-card').first()).toContainText('نقطة مئوية مقارنة بالفترة السابقة')
   await expect(ownerDashboard.locator('.owner-dashboard-header')).not.toContainText('Owner Portal')
   await expect(ownerDashboard.locator('.owner-dashboard-header')).not.toContainText('إضافة عقار')
   await expect(ownerDashboard.locator('.owner-summary-grid .owner-summary-card').nth(2).locator('strong')).toContainText('ساعة')
@@ -217,6 +217,9 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
   expect((await reportDownload).suggestedFilename()).toBe('owner-report.csv')
   await ownerNavigation.getByRole('tab', { name: 'نظرة عامة' }).click()
   await expect(ownerDashboard.locator('#owner-overview-panel .owner-period-toolbar').getByRole('button', { name: 'هذا الأسبوع' })).toHaveAttribute('aria-pressed', 'true')
+  await ownerNavigation.getByRole('tab', { name: 'الحجوزات' }).click()
+  await expect(ownerDashboard.locator('#owner-booking-metrics-panel .owner-summary-card').first()).toContainText('مقارنة بالأسبوع الماضي')
+  await ownerNavigation.getByRole('tab', { name: 'نظرة عامة' }).click()
 
   await quickActions.getByRole('button', { name: 'إرسال رسالة' }).click()
   await expect(page.locator('.chat-shell')).toBeVisible()
@@ -345,6 +348,55 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
   await ownerDashboard.locator('.owner-form').getByRole('button', { name: 'إلغاء' }).click()
   await expect(ownerDashboard.locator('.owner-form')).toHaveCount(0)
   await expect(ownerDashboard.getByRole('button', { name: 'إضافة عقار جديد' })).toBeVisible()
+})
+
+test('owner dashboard text wraps without horizontal overflow at 360px', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 })
+  await page.addInitScript(() => {
+    const ownerId = 'owner-mobile-copy-test'
+    localStorage.setItem('hajzy_user', JSON.stringify({ id: ownerId, role: 'owner', name: 'Test Owner' }))
+    localStorage.setItem('hajzy_bookings', JSON.stringify([{
+      id: 'mobile-booking-1',
+      propertyId: 'sharm-naama-hotel',
+      title: 'فندق نعمة باي',
+      location: 'نعمة باي، شرم الشيخ',
+      image: '',
+      status: 'confirmed',
+      checkIn: '2030-06-15',
+      checkOut: '2030-06-17',
+      total: 4200,
+      currency: 'EGP',
+    }]))
+  })
+  await page.route('**/rest/v1/**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: '[]',
+  }))
+  await page.goto('/')
+
+  const ownerDashboard = page.locator('.owner-shell')
+  await expect(ownerDashboard).toBeVisible()
+  const location = ownerDashboard.locator('.mini-booking-item span').first()
+  await expect(location).toHaveText('نعمة باي، شرم الشيخ')
+  await expect(location).toHaveCSS('-webkit-line-clamp', '2')
+
+  const overviewOverflow = await ownerDashboard.evaluate((element) => (
+    element.scrollWidth - element.clientWidth
+  ))
+  expect(overviewOverflow).toBeLessThanOrEqual(1)
+
+  const ownerNavigation = page.getByRole('tablist', { name: 'التنقل في لوحة المالك' })
+  await ownerNavigation.getByRole('tab', { name: 'الحجوزات' }).click()
+  const bookingCard = ownerDashboard.locator('#owner-bookings-panel .owner-booking-card')
+  await expect(bookingCard).toBeVisible()
+  const bookingDates = bookingCard.locator('.booking-footer small')
+  await expect(bookingDates).toHaveCSS('-webkit-line-clamp', '2')
+
+  const bookingsOverflow = await ownerDashboard.evaluate((element) => (
+    element.scrollWidth - element.clientWidth
+  ))
+  expect(bookingsOverflow).toBeLessThanOrEqual(1)
 })
 
 test('owner overview shows three latest bookings and the bookings tab is the only full list', async ({ page }) => {
