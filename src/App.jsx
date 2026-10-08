@@ -350,6 +350,7 @@ function App() {
   })
   const [ownerNotice, setOwnerNotice] = useState('')
   const [ownerEditingId, setOwnerEditingId] = useState(null)
+  const [showOwnerPropertyForm, setShowOwnerPropertyForm] = useState(false)
   const [ownerDetailPropertyId, setOwnerDetailPropertyId] = useState(null)
   const [activeOwnerPropertyTab, setActiveOwnerPropertyTab] = useState('overview')
   const [ownerPropertyReviews, setOwnerPropertyReviews] = useState([])
@@ -1676,6 +1677,7 @@ function App() {
 
   const resetOwnerForm = () => {
     setOwnerEditingId(null)
+    setShowOwnerPropertyForm(false)
     setPropertyForm({
       title: '',
       city: 'الإسكندرية',
@@ -1779,6 +1781,7 @@ function App() {
 
   const handleOwnerEditProperty = (property) => {
     setOwnerEditingId(property.id)
+    setShowOwnerPropertyForm(true)
     setPropertyForm({
       title: property.title,
       city: property.city,
@@ -1790,6 +1793,11 @@ function App() {
       bookingInfo: property.bookingInfo || '',
     })
     setOwnerNotice('')
+    window.requestAnimationFrame(() => {
+      const form = document.getElementById('owner-form')
+      form?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      form?.querySelector('input')?.focus({ preventScroll: true })
+    })
   }
 
   const handleOwnerDeleteProperty = async (propertyId) => {
@@ -2104,14 +2112,6 @@ function App() {
           <div className="owner-header-actions flex items-center gap-2 flex-wrap">
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:from-emerald-500 hover:to-teal-500 transition"
-              onClick={() => handleOwnerTabChange('properties')}
-            >
-              <span className="material-symbols-outlined text-base">add_circle</span>
-              <span>{t('ownerDashboard.addNewProperty')}</span>
-            </button>
-            <button
-              type="button"
               className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
               onClick={() => navigate('owner-settings')}
             >
@@ -2192,10 +2192,6 @@ function App() {
       </div>
 
       <div className="owner-action-rail" role="toolbar" aria-label={language === 'en' ? 'Quick actions' : 'إجراءات سريعة'}>
-        <button type="button" className="secondary-button small-button" onClick={() => handleOwnerTabChange('properties')}>
-          <span className="material-symbols-outlined">add</span>
-          <span>{language === 'en' ? 'Add Property' : 'إضافة عقار'}</span>
-        </button>
         <button
           type="button"
           className="secondary-button small-button"
@@ -2777,6 +2773,7 @@ function App() {
         </div>
       ) : (
         <>
+      {showOwnerPropertyForm && (
       <form id="owner-form" className="owner-form" onSubmit={handleOwnerAddProperty}>
         <div className="owner-form-head">
           <div>
@@ -2787,11 +2784,9 @@ function App() {
               {language === 'en' ? 'Fill details to publish or update your listing' : 'أدخل تفاصيل الوحدة لنشرها واستقبال طلبات الحجز'}
             </span>
           </div>
-          {ownerEditingId && (
-            <button type="button" className="secondary-button small-button" onClick={resetOwnerForm}>
-              {language === 'en' ? 'Cancel' : 'إلغاء'}
-            </button>
-          )}
+          <button type="button" className="secondary-button small-button" onClick={resetOwnerForm}>
+            {language === 'en' ? 'Cancel' : 'إلغاء'}
+          </button>
         </div>
 
         {ownerNotice && <div className="success-banner">{ownerNotice}</div>}
@@ -2970,6 +2965,7 @@ function App() {
           {ownerEditingId ? (language === 'en' ? 'Save Changes' : 'حفظ التعديلات') : t('ownerDashboard.addProperty')}
         </button>
       </form>
+      )}
 
       <div className="owner-listings">
         <div className="owner-form-head">
@@ -3031,6 +3027,26 @@ function App() {
           ))
         )}
       </div>
+      {!showOwnerPropertyForm && !ownerEditingId && (
+        <button
+          type="button"
+          className="owner-property-add-fab"
+          aria-label={t('ownerDashboard.addNewProperty')}
+          title={t('ownerDashboard.addNewProperty')}
+          onClick={() => {
+            resetOwnerForm()
+            setOwnerNotice('')
+            setShowOwnerPropertyForm(true)
+            window.requestAnimationFrame(() => {
+              const form = document.getElementById('owner-form')
+              form?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              form?.querySelector('input')?.focus({ preventScroll: true })
+            })
+          }}
+        >
+          <span className="material-symbols-outlined" aria-hidden="true">add</span>
+        </button>
+      )}
         </>
       )}
       </section>

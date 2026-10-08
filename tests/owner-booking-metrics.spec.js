@@ -109,7 +109,7 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
   await expect(ownerDashboard.locator('.owner-feature-pills')).toContainText('الإشغال هذا الشهر')
   await expect(ownerDashboard.locator('.owner-summary-grid .owner-summary-card').first()).toContainText('نقطة مئوية عن الشهر الماضي')
   await expect(ownerDashboard.locator('.owner-dashboard-header')).not.toContainText('Owner Portal')
-  await expect(ownerDashboard.locator('.owner-dashboard-header')).toContainText('إضافة عقار جديد')
+  await expect(ownerDashboard.locator('.owner-dashboard-header')).not.toContainText('إضافة عقار')
   await expect(ownerDashboard.locator('.owner-summary-grid .owner-summary-card').nth(2).locator('strong')).toContainText('ساعة')
   await expect(ownerDashboard.locator('.owner-action-rail')).toContainText('كل 0 حجوزات')
   await expect(ownerDashboard.locator('.owner-summary-grid .owner-summary-card').nth(1).locator('strong')).toHaveText('—')
@@ -161,9 +161,14 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
   await expect(propertySection).toContainText('15 عقارًا')
   await expect(propertySection.locator('.owner-form-head h3')).toHaveText('العقارات المضافة')
   const firstPropertyTitle = (await propertySection.locator('.owner-card h4').first().textContent())?.trim()
-  await expect(ownerDashboard.locator('.owner-form')).toContainText('عنوان العقار')
-  await expect(ownerDashboard.locator('.owner-form').getByRole('button', { name: 'إضافة عقار' })).toBeVisible()
+  await expect(ownerDashboard.locator('.owner-form')).toHaveCount(0)
+  const addPropertyFab = ownerDashboard.getByRole('button', { name: 'إضافة عقار جديد' })
+  await expect(addPropertyFab).toBeVisible()
+  await expect(ownerDashboard.locator('.owner-action-rail')).not.toContainText('إضافة عقار')
   await expect(ownerDashboard.locator('.host-calendar-manager-card')).toHaveCount(0)
+  await addPropertyFab.click()
+  await expect(ownerDashboard.locator('.owner-form')).toContainText('عنوان العقار')
+  await expect(addPropertyFab).toHaveCount(0)
   await ownerDashboard.locator('.owner-form').getByRole('button', { name: 'إضافة عقار' }).click()
   await expect(ownerDashboard.locator('.owner-form')).toContainText(
     'يرجى تعبئة عنوان العقار والموقع والسعر قبل الحفظ',
@@ -220,6 +225,14 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
   await expect(ownerDashboard.locator('#owner-revenue-panel')).toBeVisible()
   await expect(ownerDashboard.locator('#owner-revenue-panel').getByRole('button', { name: 'تصدير التقرير' })).toBeVisible()
   await expect(ownerDashboard.locator('#owner-bookings-panel')).toBeHidden()
+
+  await ownerNavigation.getByRole('tab', { name: 'العقارات' }).click()
+  await propertySection.locator('.owner-card').first().getByRole('button', { name: 'تعديل' }).click()
+  await expect(ownerDashboard.locator('.owner-form')).toBeVisible()
+  await expect(ownerDashboard.locator('.owner-form .owner-form-head h3')).toHaveText('تعديل العقار')
+  await ownerDashboard.locator('.owner-form').getByRole('button', { name: 'إلغاء' }).click()
+  await expect(ownerDashboard.locator('.owner-form')).toHaveCount(0)
+  await expect(ownerDashboard.getByRole('button', { name: 'إضافة عقار جديد' })).toBeVisible()
 })
 
 test('owner overview shows three latest bookings and the bookings tab is the only full list', async ({ page }) => {

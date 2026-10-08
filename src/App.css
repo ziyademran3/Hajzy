@@ -6922,6 +6922,44 @@ html[dir='rtl'] .settings-switch[aria-checked='true'] .settings-switch-thumb {
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.04);
 }
 
+.owner-property-add-fab {
+  position: fixed;
+  inset-inline-end: 24px;
+  bottom: calc(64px + env(safe-area-inset-bottom, 0px) + var(--space-4));
+  z-index: 80;
+  display: grid;
+  width: 56px;
+  height: 56px;
+  place-items: center;
+  border: 1px solid var(--accent-gold);
+  border-radius: 50%;
+  background: var(--button-primary-background);
+  color: var(--button-primary-foreground);
+  box-shadow: var(--shadow-soft);
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.owner-property-add-fab .material-symbols-outlined {
+  font-size: var(--type-28);
+}
+
+.owner-property-add-fab:hover {
+  background: var(--button-primary-hover);
+  transform: translateY(-2px);
+}
+
+.owner-property-add-fab:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .owner-property-add-fab {
+    inset-inline-end: max(18px, calc((100vw - 480px) / 2 + 18px));
+  }
+}
+
 .owner-task-list {
   list-style: none;
   padding: 0;
