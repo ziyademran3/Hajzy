@@ -112,6 +112,25 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
   await expect(ownerDashboard.locator('.owner-dashboard-header')).toContainText('إضافة عقار جديد')
   await expect(ownerDashboard.locator('.owner-summary-grid .owner-summary-card').nth(2).locator('strong')).toContainText('ساعة')
   await expect(ownerDashboard.locator('.owner-action-rail')).toContainText('كل 0 حجوزات')
+  await expect(ownerDashboard.locator('.owner-summary-grid .owner-summary-card').nth(1).locator('strong')).toHaveText('—')
+  await expect(ownerDashboard.locator('.owner-progress-list .label-row').first().locator('strong')).toHaveText('—')
+  await expect(ownerDashboard.locator('.owner-feature-pills')).toContainText('0%')
+  await expect(page.locator('.notification-button .notification-badge')).toHaveText('2')
+
+  const ownerNavigation = page.getByRole('tablist', { name: 'التنقل في لوحة المالك' })
+  await expect(ownerNavigation.getByRole('tab').locator('.nav-label')).toHaveText([
+    'نظرة عامة',
+    'العقارات',
+    'الحجوزات',
+    'الأرباح',
+  ])
+  await expect(ownerDashboard.locator('#owner-overview-panel')).toBeVisible()
+  await expect(ownerDashboard.locator('#owner-calendar-panel')).toBeHidden()
+
+  await ownerNavigation.getByRole('tab', { name: 'العقارات' }).click()
+  await expect(ownerDashboard.locator('#owner-overview-panel')).toBeHidden()
+  await expect(ownerDashboard.locator('#owner-calendar-panel')).toBeVisible()
+  await expect(ownerDashboard.locator('#owner-properties-panel')).toBeVisible()
   const propertySection = ownerDashboard.locator('.owner-listings').first()
   await expect(propertySection).toContainText('15 عقارًا')
   await expect(propertySection.locator('.owner-form-head h3')).toHaveText('العقارات المضافة')
@@ -121,17 +140,23 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
   await expect(ownerDashboard.locator('.host-calendar-manager-card')).toContainText(
     `إدارة مواعيد الحجز وأسعار العقار: ${firstPropertyTitle}`,
   )
-  await ownerDashboard.locator('.owner-form').getByRole('button', { name: 'إضافة عقار' }).click()
-  await expect(ownerDashboard.locator('.owner-form')).toContainText(
-    'يرجى تعبئة عنوان العقار والموقع والسعر قبل الحفظ',
-  )
-  await expect(ownerDashboard.locator('.owner-summary-grid .owner-summary-card').nth(1).locator('strong')).toHaveText('—')
-  await expect(ownerDashboard.locator('.owner-progress-list .label-row').first().locator('strong')).toHaveText('—')
-  await expect(ownerDashboard.locator('.owner-feature-pills')).toContainText('0%')
   await expect(ownerDashboard.locator('.host-calendar-manager-card')).toContainText('غير مرتبط بحجز')
   await expect(ownerDashboard.locator('.host-calendar-manager-card')).toContainText('لا يوجد كود نشط')
   await expect(ownerDashboard.locator('.host-calendar-manager-card')).not.toContainText('8492')
   await expect(ownerDashboard.locator('.host-calendar-manager-card').getByRole('button', { name: 'توليد جديد' })).toHaveCount(0)
   await expect(ownerDashboard.locator('.calendar-day-cell.booked')).toHaveCount(0)
-  await expect(page.locator('.notification-button .notification-badge')).toHaveText('2')
+  await ownerDashboard.locator('.owner-form').getByRole('button', { name: 'إضافة عقار' }).click()
+  await expect(ownerDashboard.locator('.owner-form')).toContainText(
+    'يرجى تعبئة عنوان العقار والموقع والسعر قبل الحفظ',
+  )
+
+  await ownerNavigation.getByRole('tab', { name: 'الحجوزات' }).click()
+  await expect(ownerDashboard.locator('#owner-bookings-panel')).toBeVisible()
+  await expect(ownerDashboard.locator('#owner-booking-overview-panel')).toBeVisible()
+  await expect(ownerDashboard.locator('#owner-properties-panel')).toBeHidden()
+
+  await ownerNavigation.getByRole('tab', { name: 'الأرباح' }).click()
+  await expect(ownerDashboard.locator('#owner-revenue-panel')).toBeVisible()
+  await expect(ownerDashboard.locator('#owner-revenue-panel').getByRole('button', { name: 'تصدير التقرير' })).toBeVisible()
+  await expect(ownerDashboard.locator('#owner-bookings-panel')).toBeHidden()
 })

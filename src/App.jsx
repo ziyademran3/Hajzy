@@ -350,6 +350,7 @@ function App() {
   const [ownerEditingId, setOwnerEditingId] = useState(null)
   const [bookingFilter, setBookingFilter] = useState('upcoming')
   const [ownerBookingFilter, setOwnerBookingFilter] = useState('all')
+  const [activeOwnerTab, setActiveOwnerTab] = useState('overview')
   const [notifFilter, setNotifFilter] = useState('all')
   const [ownerNotifPrefs, setOwnerNotifPrefs] = useState(() => getNotificationPreferences(null))
   const [showReviewsTooltip, setShowReviewsTooltip] = useState(false)
@@ -1631,13 +1632,13 @@ function App() {
 
   const handleOwnerQuickAction = (action) => {
     if (action === 'manage') {
-      document.getElementById('owner-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      handleOwnerTabChange('properties')
       showToast(t('ownerDashboard.managePropertiesFromForm'))
       return
     }
 
     if (action === 'price') {
-      document.getElementById('owner-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      handleOwnerTabChange('properties')
       showToast(language === 'en' ? 'Price update mode active. You can modify property pricing in the form.' : 'وضع تحديث الأسعار مفعل. يمكنك تعديل سعر أي عقار من النموذج.')
       return
     }
@@ -1679,14 +1680,19 @@ function App() {
   }
 
   const handleOwnerAlertDetails = () => {
+    setActiveOwnerTab('bookings')
     setOwnerBookingFilter('all')
-    document.getElementById('owner-bookings-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     showToast(language === 'en' ? 'Showing all bookings on screen' : 'تم تحديث عرض الحجوزات على الشاشة.')
   }
 
   const handleViewAllOwnerBookings = () => {
+    setActiveOwnerTab('bookings')
     setOwnerBookingFilter('all')
-    document.getElementById('owner-bookings-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  const handleOwnerTabChange = (tab) => {
+    setActiveOwnerTab(tab)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const handleViewAllProperties = () => {
@@ -2023,7 +2029,7 @@ function App() {
           <button
             type="button"
             className="inline-flex items-center gap-1.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:from-emerald-500 hover:to-teal-500 transition"
-            onClick={() => document.getElementById('owner-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            onClick={() => handleOwnerTabChange('properties')}
           >
             <span className="material-symbols-outlined text-base">add_circle</span>
             <span>{t('ownerDashboard.addNewProperty')}</span>
@@ -2039,6 +2045,13 @@ function App() {
         </div>
       </div>
 
+      <section
+        id="owner-overview-panel"
+        className="owner-tab-panel"
+        role="tabpanel"
+        aria-labelledby="owner-tab-overview"
+        hidden={activeOwnerTab !== 'overview'}
+      >
       <div className="owner-summary-grid-wrap">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
           <div className="owner-summary-card accent">
@@ -2055,7 +2068,7 @@ function App() {
           <div
             onClick={() => {
               setOwnerBookingFilter('pending')
-              document.getElementById('owner-bookings-section')?.scrollIntoView({ behavior: 'smooth' })
+              handleOwnerTabChange('bookings')
             }}
             className="owner-summary-card warn cursor-pointer hover:shadow-md transition"
           >
@@ -2098,7 +2111,7 @@ function App() {
       </div>
 
       <div className="owner-action-rail" role="toolbar" aria-label={language === 'en' ? 'Quick actions' : 'إجراءات سريعة'}>
-        <button type="button" className="secondary-button small-button" onClick={() => document.getElementById('owner-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+        <button type="button" className="secondary-button small-button" onClick={() => handleOwnerTabChange('properties')}>
           <span className="material-symbols-outlined">add</span>
           <span>{language === 'en' ? 'Add Property' : 'إضافة عقار'}</span>
         </button>
@@ -2107,7 +2120,7 @@ function App() {
           className="secondary-button small-button"
           onClick={() => {
             setOwnerBookingFilter('pending')
-            document.getElementById('owner-bookings-section')?.scrollIntoView({ behavior: 'smooth' })
+            handleOwnerTabChange('bookings')
           }}
         >
           <span className="material-symbols-outlined">pending_actions</span>
@@ -2120,7 +2133,7 @@ function App() {
           className="secondary-button small-button"
           onClick={() => {
             setOwnerBookingFilter('all')
-            document.getElementById('owner-bookings-section')?.scrollIntoView({ behavior: 'smooth' })
+            handleOwnerTabChange('bookings')
           }}
         >
           <span className="material-symbols-outlined">list_alt</span>
@@ -2157,7 +2170,7 @@ function App() {
           <button
             type="button"
             className="owner-feature-cta-button inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-white text-emerald-900 font-bold text-xs shadow-md hover:bg-emerald-50 transition cursor-pointer"
-            onClick={() => document.getElementById('owner-bookings-section')?.scrollIntoView({ behavior: 'smooth' })}
+            onClick={() => handleOwnerTabChange('bookings')}
           >
             <span>{language === 'en' ? 'Review Bookings & Demand' : 'مراجعة الطلبات والحجوزات'}</span>
             <span className="material-symbols-outlined text-sm">arrow_forward</span>
@@ -2261,6 +2274,15 @@ function App() {
         </div>
       </div>
 
+      </section>
+
+      <section
+        id="owner-calendar-panel"
+        className="owner-tab-panel"
+        role="tabpanel"
+        aria-labelledby="owner-tab-properties"
+        hidden={activeOwnerTab !== 'properties'}
+      >
       {/* Interactive Host Calendar & Seasonal Pricing Management */}
       <HostCalendar
         language={language}
@@ -2270,7 +2292,15 @@ function App() {
         propertyId={ownerProperties[0]?.id}
         bookings={ownerBookings}
       />
+      </section>
 
+      <section
+        id="owner-alerts-panel"
+        className="owner-tab-panel"
+        role="tabpanel"
+        aria-labelledby="owner-tab-overview"
+        hidden={activeOwnerTab !== 'overview'}
+      >
       <div className="owner-operational-panel">
         <div className="owner-overview-header">
           <h3>{language === 'en' ? 'Operational Alerts' : 'تنبيهات التشغيل'}</h3>
@@ -2295,7 +2325,7 @@ function App() {
               className="secondary-button small-button"
               onClick={() => {
                 setOwnerBookingFilter('pending')
-                document.getElementById('owner-bookings-section')?.scrollIntoView({ behavior: 'smooth' })
+                handleOwnerTabChange('bookings')
               }}
             >
               {language === 'en' ? 'Review' : 'مراجعة'}
@@ -2333,7 +2363,15 @@ function App() {
           </button>
         </div>
       </div>
+      </section>
 
+      <section
+        id="owner-quick-actions-panel"
+        className="owner-tab-panel"
+        role="tabpanel"
+        aria-labelledby="owner-tab-overview"
+        hidden={activeOwnerTab !== 'overview'}
+      >
       <div className="owner-quick-actions">
         <button type="button" className="primary-button" onClick={() => handleOwnerQuickAction('manage')}>
           {language === 'en' ? 'Manage Properties' : 'إدارة العقارات'}
@@ -2348,7 +2386,15 @@ function App() {
           {language === 'en' ? 'Export Report' : 'تصدير تقرير'}
         </button>
       </div>
+      </section>
 
+      <section
+        id="owner-revenue-panel"
+        className="owner-tab-panel"
+        role="tabpanel"
+        aria-labelledby="owner-tab-earnings"
+        hidden={activeOwnerTab !== 'earnings'}
+      >
       <div className="owner-analytics-surface relative">
         <div className="owner-insights-header flex items-center justify-between mb-3">
           <div>
@@ -2427,7 +2473,23 @@ function App() {
           </div>
         )}
       </div>
+      <button
+        type="button"
+        className="primary-button mt-4"
+        onClick={() => handleOwnerQuickAction('report')}
+      >
+        <span className="material-symbols-outlined" aria-hidden="true">download</span>
+        <span>{language === 'en' ? 'Export Report' : 'تصدير التقرير'}</span>
+      </button>
+      </section>
 
+      <section
+        id="owner-booking-overview-panel"
+        className="owner-tab-panel"
+        role="tabpanel"
+        aria-labelledby="owner-tab-bookings"
+        hidden={activeOwnerTab !== 'bookings'}
+      >
       <div className="owner-analytics-grid">
         <div className="owner-analytics-card">
           <div className="owner-overview-header">
@@ -2467,7 +2529,15 @@ function App() {
           </ul>
         </div>
       </div>
+      </section>
 
+      <section
+        id="owner-leading-properties-panel"
+        className="owner-tab-panel"
+        role="tabpanel"
+        aria-labelledby="owner-tab-properties"
+        hidden={activeOwnerTab !== 'properties'}
+      >
       <div className="owner-leading-listings">
         <div className="owner-overview-header">
           <h3>{language === 'en' ? 'Top Performing Properties' : 'أفضل العقارات أداءً'}</h3>
@@ -2489,7 +2559,15 @@ function App() {
           ))}
         </div>
       </div>
+      </section>
 
+      <section
+        id="owner-booking-metrics-panel"
+        className="owner-tab-panel"
+        role="tabpanel"
+        aria-labelledby="owner-tab-bookings"
+        hidden={activeOwnerTab !== 'bookings'}
+      >
       <div className="owner-summary-grid">
         <div className="owner-summary-card">
           <span>{t('ownerMetrics.monthlyOccupancy')}</span>
@@ -2576,7 +2654,15 @@ function App() {
           </table>
         </div>
       </div>
+      </section>
 
+      <section
+        id="owner-properties-panel"
+        className="owner-tab-panel"
+        role="tabpanel"
+        aria-labelledby="owner-tab-properties"
+        hidden={activeOwnerTab !== 'properties'}
+      >
       <form id="owner-form" className="owner-form" onSubmit={handleOwnerAddProperty}>
         <div className="owner-form-head">
           <div>
@@ -2824,7 +2910,15 @@ function App() {
           ))
         )}
       </div>
+      </section>
 
+      <section
+        id="owner-bookings-panel"
+        className="owner-tab-panel"
+        role="tabpanel"
+        aria-labelledby="owner-tab-bookings"
+        hidden={activeOwnerTab !== 'bookings'}
+      >
       <div id="owner-bookings-section" className="owner-listings owner-bookings-panel">
         <div className="owner-form-head flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
@@ -2961,6 +3055,7 @@ function App() {
           ))
         )}
       </div>
+      </section>
     </div>
   )
 
@@ -6197,6 +6292,12 @@ function App() {
       icon: 'person',
     },
   ]
+  const ownerBottomNavItems = [
+    { key: 'overview', label: t('ownerNavigation.overview'), icon: 'dashboard' },
+    { key: 'properties', label: t('ownerNavigation.properties'), icon: 'apartment' },
+    { key: 'bookings', label: t('ownerNavigation.bookings'), icon: 'calendar_month' },
+    { key: 'earnings', label: t('ownerNavigation.earnings'), icon: 'payments' },
+  ]
 
   const renderDealModal = () => {
     if (!showDealModal) return null
@@ -6760,7 +6861,36 @@ function App() {
         </div>
       )}
 
-      {!isOwner && (
+      {isOwner && ['owner', 'dashboard', 'home'].includes(activePage) ? (
+        <nav
+          className="bottom-nav owner-bottom-nav"
+          role="tablist"
+          aria-label={t('ownerNavigation.ariaLabel')}
+        >
+          {ownerBottomNavItems.map((item) => {
+            const isItemActive = activeOwnerTab === item.key
+
+            return (
+              <button
+                key={item.key}
+                id={`owner-tab-${item.key}`}
+                type="button"
+                role="tab"
+                aria-selected={isItemActive}
+                className={isItemActive ? 'nav-item active' : 'nav-item'}
+                onClick={() => handleOwnerTabChange(item.key)}
+                aria-label={item.label}
+                title={item.label}
+              >
+                <span className="nav-icon-wrap">
+                  <span className="material-symbols-outlined" aria-hidden="true">{item.icon}</span>
+                </span>
+                <span className="nav-label">{item.label}</span>
+              </button>
+            )
+          })}
+        </nav>
+      ) : !isOwner && (
         <nav className="bottom-nav" aria-label="التنقل الرئيسي">
           {bottomNavItems.map((item) => {
             const isItemActive =

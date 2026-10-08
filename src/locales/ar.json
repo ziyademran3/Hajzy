@@ -62,6 +62,13 @@
     "autoSent": "يُرسل للنزيل قبل الوصول بـ 24 ساعة ويُلغى عند المغادرة.",
     "deactivated": "أُوقف الرمز تلقائيًا عند موعد المغادرة."
   },
+  "ownerNavigation": {
+    "ariaLabel": "التنقل في لوحة المالك",
+    "overview": "نظرة عامة",
+    "properties": "العقارات",
+    "bookings": "الحجوزات",
+    "earnings": "الأرباح"
+  },
   "ownerDashboard": {
     "addNewProperty": "إضافة عقار جديد",
     "editProperty": "تعديل العقار",

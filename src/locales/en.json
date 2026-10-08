@@ -62,6 +62,13 @@
     "autoSent": "Sent to the guest 24 hours before arrival and deactivated at check-out.",
     "deactivated": "The code was automatically deactivated at check-out."
   },
+  "ownerNavigation": {
+    "ariaLabel": "Owner dashboard navigation",
+    "overview": "Overview",
+    "properties": "Properties",
+    "bookings": "Bookings",
+    "earnings": "Earnings"
+  },
   "ownerDashboard": {
     "addNewProperty": "Add New Property",
     "editProperty": "Edit Property",

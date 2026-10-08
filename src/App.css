@@ -2773,6 +2773,10 @@ body::-webkit-scrollbar,
   gap: 18px;
 }
 
+.owner-shell .owner-tab-panel[hidden] {
+  display: none !important;
+}
+
 /* Gallery controls and overlays for details page */
 .gallery-hero {
   position: relative;
