@@ -299,8 +299,8 @@ body::-webkit-scrollbar,
   z-index: 50;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  background: rgba(247, 250, 245, 0.96);
-  border-bottom: 1px solid rgba(15, 118, 110, 0.08);
+  background-color: var(--bg-soft);
+  border-bottom: 1px solid var(--line);
   box-shadow: 0 2px 12px rgba(0, 67, 63, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
@@ -317,10 +317,10 @@ body::-webkit-scrollbar,
 }
 
 .app-shell[data-theme='dark'] .topbar {
-  background: rgba(11, 13, 16, 0.96);
+  background-color: var(--bg-soft);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--line);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
 }
 
@@ -7917,8 +7917,8 @@ input {
   z-index: 50;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  background: rgba(247, 250, 245, 0.96);
-  border-bottom: 1px solid rgba(15, 118, 110, 0.08);
+  background-color: var(--bg-soft);
+  border-bottom: 1px solid var(--line);
   box-shadow: 0 2px 12px rgba(0, 67, 63, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
@@ -8805,10 +8805,10 @@ body[data-theme='dark'] .app-shell {
 }
 
 .app-shell[data-theme='dark'] .topbar {
-  background: rgba(11, 13, 16, 0.96);
+  background-color: var(--bg-soft);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--line);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
 }
 
