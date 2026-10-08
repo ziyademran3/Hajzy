@@ -249,6 +249,19 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
   await addPropertyFab.click()
   await expect(ownerDashboard.locator('.owner-form')).toContainText('عنوان العقار')
   await expect(addPropertyFab).toHaveCount(0)
+  const propertyCity = ownerDashboard.locator('.owner-form select')
+  const propertyLocation = ownerDashboard.locator('.owner-form input').nth(1)
+  await expect(propertyCity).toHaveValue('')
+  await expect(propertyCity.locator('option').first()).toHaveText('اختر المدينة')
+  await expect(propertyCity).toHaveAttribute('required', '')
+  await expect(propertyLocation).toHaveAttribute('placeholder', 'اختر المدينة أولًا لعرض مثال للموقع')
+  await propertyCity.selectOption('القاهرة')
+  await expect(propertyLocation).toHaveAttribute('placeholder', 'مثال: شارع النيل، القاهرة')
+  await propertyCity.selectOption('الإسكندرية')
+  await expect(propertyLocation).toHaveAttribute('placeholder', 'مثال: شارع الكورنيش، الإسكندرية')
+  await propertyCity.selectOption('شرم الشيخ')
+  await expect(propertyLocation).toHaveAttribute('placeholder', 'مثال: خليج نعمة، شرم الشيخ')
+  await propertyCity.selectOption('القاهرة')
   const propertyDescription = ownerDashboard.locator('.owner-form textarea').nth(0)
   const bookingInfo = ownerDashboard.locator('.owner-form textarea').nth(1)
   await expect(propertyDescription).toHaveAttribute('maxlength', '500')
@@ -270,7 +283,7 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
   )
   await ownerDashboard.locator('.owner-form').getByRole('button', { name: 'إضافة عقار' }).click()
   await expect(ownerDashboard.locator('.owner-form')).toContainText(
-    'يرجى تعبئة عنوان العقار والموقع والسعر قبل الحفظ',
+    'يرجى تعبئة عنوان العقار والمدينة والموقع والسعر قبل الحفظ',
   )
 
   await propertySection.locator('.owner-card').first().getByRole('button', { name: 'تفاصيل العقار' }).click()

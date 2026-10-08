@@ -462,7 +462,7 @@ function App() {
   })
   const [propertyForm, setPropertyForm] = useState({
     title: '',
-    city: 'الإسكندرية',
+    city: '',
     location: '',
     priceValue: '',
     image: '',
@@ -1758,7 +1758,7 @@ function App() {
     setShowOwnerPropertyForm(false)
     setPropertyForm({
       title: '',
-      city: 'الإسكندرية',
+      city: '',
       location: '',
       priceValue: '',
       image: '',
@@ -1894,7 +1894,7 @@ function App() {
     setShowOwnerPropertyForm(true)
     setPropertyForm({
       title: property.title,
-      city: property.city,
+      city: destinationOptions.find((city) => city.id === property.city || city.label === property.city)?.id || '',
       location: property.location,
       priceValue: String(property.priceValue),
       image: property.image || '',
@@ -1934,7 +1934,7 @@ function App() {
   const handleOwnerAddProperty = async (event) => {
     event.preventDefault()
 
-    if (!propertyForm.title || !propertyForm.location || !propertyForm.priceValue) {
+    if (!propertyForm.title || !propertyForm.city || !propertyForm.location || !propertyForm.priceValue) {
       showToast(t('ownerDashboard.propertyRequiredFields'))
       return
     }
@@ -2815,11 +2815,15 @@ function App() {
           <label>
             {language === 'en' ? 'City' : 'المدينة'}
             <select
+              required
               value={propertyForm.city}
               onChange={(event) => setPropertyForm({ ...propertyForm, city: event.target.value })}
             >
-              {filterOptions.slice(1).map((city) => (
-                <option key={city.id} value={city.label}>
+              <option value="" disabled>
+                {t('ownerDashboard.selectCity')}
+              </option>
+              {destinationOptions.map((city) => (
+                <option key={city.id} value={city.id}>
                   {city.label}
                 </option>
               ))}
@@ -2831,7 +2835,17 @@ function App() {
               type="text"
               value={propertyForm.location}
               onChange={(event) => setPropertyForm({ ...propertyForm, location: event.target.value })}
-              placeholder={language === 'en' ? 'e.g. Nile Corniche, Cairo' : 'مثال: شارع النيل، القاهرة'}
+              placeholder={
+                propertyForm.city
+                  ? t(`ownerDashboard.locationExamples.${{
+                    'الإسكندرية': 'alexandria',
+                    'القاهرة': 'cairo',
+                    'الجيزة': 'giza',
+                    'الغردقة': 'hurghada',
+                    'شرم الشيخ': 'sharmElSheikh',
+                  }[propertyForm.city]}`)
+                  : t('ownerDashboard.selectCityForLocation')
+              }
             />
           </label>
           <label>
