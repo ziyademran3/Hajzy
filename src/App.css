@@ -640,6 +640,26 @@ body::-webkit-scrollbar,
   justify-content: center;
 }
 
+.owner-nav-pending-badge {
+  position: absolute;
+  inset-block-start: -7px;
+  inset-inline-end: -12px;
+  display: inline-flex;
+  min-width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 4px;
+  border: 1px solid var(--bg-card);
+  border-radius: 999px;
+  background: var(--accent-gold);
+  color: #17332f;
+  font-size: var(--type-10);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
 .nav-item .material-symbols-outlined {
   font-size: var(--type-20);
   line-height: 1;

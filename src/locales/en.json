@@ -67,6 +67,7 @@
     "overview": "Overview",
     "properties": "Properties",
     "bookings": "Bookings",
+    "bookingsWithPending": "Bookings, {{count}} pending requests",
     "earnings": "Earnings"
   },
   "ownerPropertyDetails": {
@@ -100,7 +101,7 @@
     "propertyGrowth": "+{{count}} this month",
     "requestsAwaitingReview": "{{requests}} awaiting review",
     "noPendingRequests": "No pending requests",
-    "reviewRequestsAction": "Review {{requests}}",
+    "reviewPendingRequests": "Review pending requests",
     "allBookingsAction": "All {{bookings}}"
   },
   "ownerMetrics": {

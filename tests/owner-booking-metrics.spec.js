@@ -111,7 +111,9 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
   await expect(ownerDashboard.locator('.owner-dashboard-header')).not.toContainText('Owner Portal')
   await expect(ownerDashboard.locator('.owner-dashboard-header')).not.toContainText('إضافة عقار')
   await expect(ownerDashboard.locator('.owner-summary-grid .owner-summary-card').nth(2).locator('strong')).toContainText('ساعة')
-  await expect(ownerDashboard.locator('.owner-action-rail')).toContainText('كل 0 حجوزات')
+  await expect(ownerDashboard.locator('.owner-action-rail')).not.toContainText('مراجعة الطلبات')
+  await expect(ownerDashboard.locator('.owner-feature-banner')).not.toContainText('مراجعة الطلبات والحجوزات')
+  await expect(ownerDashboard.locator('.owner-action-rail .secondary-button')).toHaveCount(2)
   await expect(ownerDashboard.locator('.owner-summary-grid .owner-summary-card').nth(1).locator('strong')).toHaveText('—')
   await expect(ownerDashboard.locator('.owner-progress-list .label-row').first().locator('strong')).toHaveText('—')
   await expect(ownerDashboard.locator('.owner-feature-pills')).toContainText('0%')
@@ -124,6 +126,7 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
     'الحجوزات',
     'الأرباح',
   ])
+  await expect(ownerNavigation.locator('#owner-tab-bookings .owner-nav-pending-badge')).toHaveCount(0)
   await expect(ownerDashboard.locator('#owner-overview-panel')).toBeVisible()
   const quickActions = ownerDashboard.locator('.owner-quick-actions')
   await expect(quickActions.getByRole('button')).toHaveCount(4)
@@ -266,6 +269,7 @@ test('owner overview shows three latest bookings and the bookings tab is the onl
   await page.goto('/')
 
   const ownerDashboard = page.locator('.owner-shell')
+  const ownerNavigation = page.getByRole('tablist', { name: 'التنقل في لوحة المالك' })
   const recentBookingItems = ownerDashboard.locator('.owner-recent-bookings-panel .mini-booking-item')
   await expect(recentBookingItems).toHaveCount(3)
   await expect(recentBookingItems.locator('strong').nth(0)).toHaveText('Recent test booking 4')
@@ -277,4 +281,9 @@ test('owner overview shows three latest bookings and the bookings tab is the onl
   await expect(ownerDashboard.locator('.owner-booking-card')).toHaveCount(4)
   await expect(ownerDashboard.locator('#owner-bookings-panel')).not.toContainText('أحدث الحجوزات')
   await expect(ownerDashboard.locator('#owner-bookings-panel')).not.toContainText('قائمة الحجوزات')
+  await expect(ownerDashboard.locator('#owner-bookings-panel').getByRole('button', { name: 'مراجعة الطلبات المعلقة' })).toBeVisible()
+  await ownerDashboard.locator('#owner-bookings-panel').getByRole('button', { name: 'مراجعة الطلبات المعلقة' }).click()
+  await expect(ownerDashboard.locator('#owner-bookings-panel').getByRole('tab', { name: /قيد المراجعة/ })).toHaveAttribute('aria-selected', 'true')
+  await expect(ownerNavigation.getByRole('tab', { name: /الحجوزات.*عدد الطلبات المعلقة/ })).toBeVisible()
+  await expect(ownerNavigation.locator('#owner-tab-bookings .owner-nav-pending-badge')).toHaveText('2')
 })

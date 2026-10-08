@@ -2142,13 +2142,7 @@ function App() {
             })}</small>
           </div>
 
-          <div
-            onClick={() => {
-              setOwnerBookingFilter('pending')
-              handleOwnerTabChange('bookings')
-            }}
-            className="owner-summary-card warn cursor-pointer hover:shadow-md transition"
-          >
+          <div className="owner-summary-card warn">
             <div className="owner-card-topline">
               <p>{language === 'en' ? 'Pending Requests' : 'الطلبات المعلقة'}</p>
               <span className="owner-stat-icon material-symbols-outlined">pending_actions</span>
@@ -2192,32 +2186,6 @@ function App() {
       </div>
 
       <div className="owner-action-rail" role="toolbar" aria-label={language === 'en' ? 'Quick actions' : 'إجراءات سريعة'}>
-        <button
-          type="button"
-          className="secondary-button small-button"
-          onClick={() => {
-            setOwnerBookingFilter('pending')
-            handleOwnerTabChange('bookings')
-          }}
-        >
-          <span className="material-symbols-outlined">pending_actions</span>
-          <span>{t('ownerDashboard.reviewRequestsAction', {
-            requests: pluralize(pendingOwnerBookingsCount, 'request', language),
-          })}</span>
-        </button>
-        <button
-          type="button"
-          className="secondary-button small-button"
-          onClick={() => {
-            setOwnerBookingFilter('all')
-            handleOwnerTabChange('bookings')
-          }}
-        >
-          <span className="material-symbols-outlined">list_alt</span>
-          <span>{t('ownerDashboard.allBookingsAction', {
-            bookings: pluralize(ownerBookings.length, 'booking', language),
-          })}</span>
-        </button>
         <button type="button" className="secondary-button small-button" onClick={handleOwnerReportExport}>
           <span className="material-symbols-outlined">download</span>
           <span>{language === 'en' ? 'Export Report' : 'تصدير تقرير'}</span>
@@ -2249,14 +2217,6 @@ function App() {
                 : `${formatNumber(ownerAverageRating, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} ★`}
             </span>
           </div>
-          <button
-            type="button"
-            className="owner-feature-cta-button inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-white text-emerald-900 font-bold text-xs shadow-md hover:bg-emerald-50 transition cursor-pointer"
-            onClick={() => handleOwnerTabChange('bookings')}
-          >
-            <span>{language === 'en' ? 'Review Bookings & Demand' : 'مراجعة الطلبات والحجوزات'}</span>
-            <span className="material-symbols-outlined text-sm">arrow_forward</span>
-          </button>
         </div>
       </div>
 
@@ -2370,16 +2330,6 @@ function App() {
                 </small>
               </div>
             </div>
-            <button
-              type="button"
-              className="secondary-button small-button"
-              onClick={() => {
-                setOwnerBookingFilter('pending')
-                handleOwnerTabChange('bookings')
-              }}
-            >
-              {language === 'en' ? 'Review' : 'مراجعة'}
-            </button>
           </div>
         ) : (
           <div className="owner-alert-row success-alert">
@@ -3070,6 +3020,14 @@ function App() {
                 : `عرض ${pluralize(filteredOwnerBookings.length, 'booking', language)}`}
             </span>
           </div>
+          <button
+            type="button"
+            className="secondary-button small-button"
+            onClick={() => setOwnerBookingFilter('pending')}
+          >
+            <span className="material-symbols-outlined" aria-hidden="true">pending_actions</span>
+            <span>{t('ownerDashboard.reviewPendingRequests')}</span>
+          </button>
 
           {/* Unified Segmented Control */}
           <div className="booking-segmented-control" role="tablist" aria-label={language === 'en' ? 'Filter bookings' : 'تصفية الحجوزات'}>
@@ -7014,6 +6972,7 @@ function App() {
         >
           {ownerBottomNavItems.map((item) => {
             const isItemActive = activeOwnerTab === item.key
+            const isBookingsTab = item.key === 'bookings'
 
             return (
               <button
@@ -7024,11 +6983,20 @@ function App() {
                 aria-selected={isItemActive}
                 className={isItemActive ? 'nav-item active' : 'nav-item'}
                 onClick={() => handleOwnerTabChange(item.key)}
-                aria-label={item.label}
+                aria-label={isBookingsTab && pendingOwnerBookingsCount > 0
+                  ? t('ownerNavigation.bookingsWithPending', {
+                    count: formatNumber(pendingOwnerBookingsCount),
+                  })
+                  : item.label}
                 title={item.label}
               >
                 <span className="nav-icon-wrap">
                   <span className="material-symbols-outlined" aria-hidden="true">{item.icon}</span>
+                  {isBookingsTab && pendingOwnerBookingsCount > 0 && (
+                    <span className="owner-nav-pending-badge" aria-hidden="true">
+                      {formatNumber(pendingOwnerBookingsCount)}
+                    </span>
+                  )}
                 </span>
                 <span className="nav-label">{item.label}</span>
               </button>

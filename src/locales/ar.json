@@ -67,6 +67,7 @@
     "overview": "نظرة عامة",
     "properties": "العقارات",
     "bookings": "الحجوزات",
+    "bookingsWithPending": "الحجوزات، عدد الطلبات المعلقة: {{count}}",
     "earnings": "الأرباح"
   },
   "ownerPropertyDetails": {
@@ -100,7 +101,7 @@
     "propertyGrowth": "+{{count}} هذا الشهر",
     "requestsAwaitingReview": "{{requests}} بانتظار المراجعة",
     "noPendingRequests": "لا توجد طلبات معلقة",
-    "reviewRequestsAction": "مراجعة {{requests}}",
+    "reviewPendingRequests": "مراجعة الطلبات المعلقة",
     "allBookingsAction": "كل {{bookings}}"
   },
   "ownerMetrics": {
