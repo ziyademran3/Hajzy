@@ -125,6 +125,34 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
     'الأرباح',
   ])
   await expect(ownerDashboard.locator('#owner-overview-panel')).toBeVisible()
+  const quickActions = ownerDashboard.locator('.owner-quick-actions')
+  await expect(quickActions.getByRole('button')).toHaveCount(4)
+  await expect(quickActions).toHaveCSS('grid-template-columns', /.+/)
+  await expect(quickActions.locator('.owner-quick-action-icon').first()).toHaveCSS('width', '48px')
+  await expect(quickActions.locator('.owner-quick-action-label').first()).toHaveCSS('white-space', 'nowrap')
+
+  await quickActions.getByRole('button', { name: 'تصدير تقرير' }).click()
+  await expect(ownerDashboard.locator('#owner-revenue-panel')).toBeVisible()
+  const reportDownload = page.waitForEvent('download')
+  await ownerDashboard.locator('#owner-revenue-panel').getByRole('button', { name: 'تصدير التقرير' }).click()
+  expect((await reportDownload).suggestedFilename()).toBe('owner-report.csv')
+  await ownerNavigation.getByRole('tab', { name: 'نظرة عامة' }).click()
+
+  await quickActions.getByRole('button', { name: 'إرسال رسالة' }).click()
+  await expect(page.locator('.chat-shell')).toBeVisible()
+  await expect(page.locator('.chat-shell .chat-title strong')).toHaveText(/\S+/)
+  await page.locator('.chat-shell button[aria-label="رجوع"]').click()
+  await expect(ownerDashboard.locator('#owner-overview-panel')).toBeVisible()
+
+  await quickActions.getByRole('button', { name: 'تحديث الأسعار' }).click()
+  await expect(ownerDashboard.locator('.owner-property-detail')).toBeVisible()
+  await expect(ownerDashboard.locator('.host-calendar-manager-card')).toBeVisible()
+  await ownerDashboard.getByRole('button', { name: 'العودة إلى العقارات' }).click()
+  await ownerNavigation.getByRole('tab', { name: 'نظرة عامة' }).click()
+
+  await quickActions.getByRole('button', { name: 'إدارة العقارات' }).click()
+  await expect(ownerDashboard.locator('#owner-properties-panel')).toBeVisible()
+  await ownerNavigation.getByRole('tab', { name: 'نظرة عامة' }).click()
 
   await ownerNavigation.getByRole('tab', { name: 'العقارات' }).click()
   await expect(ownerDashboard.locator('#owner-overview-panel')).toBeHidden()

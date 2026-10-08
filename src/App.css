@@ -3199,12 +3199,64 @@ body::-webkit-scrollbar,
 .owner-quick-actions {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  align-items: start;
+  gap: var(--space-2);
   margin: 18px 0;
 }
 
-.owner-quick-actions button {
-  min-height: 46px;
+.owner-quick-action {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-2);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  text-align: center;
+}
+
+.owner-quick-action-icon {
+  display: inline-flex;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--card-glass);
+  color: var(--primary);
+  font-size: 22px;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.owner-quick-action-label {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: var(--type-12);
+  font-weight: 700;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.owner-quick-action:hover .owner-quick-action-icon,
+.owner-quick-action:focus-visible .owner-quick-action-icon {
+  transform: translateY(-2px);
+  border-color: var(--accent-gold);
+  background: var(--primary);
+  color: var(--button-primary-foreground);
+}
+
+.owner-quick-action:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 3px;
+  border-radius: var(--radius-xs);
 }
 
 .owner-analytics-surface {

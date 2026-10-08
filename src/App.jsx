@@ -1678,52 +1678,61 @@ function App() {
     })
   }
 
+  const handleOwnerReportExport = () => {
+    const csvRows = [
+      language === 'en'
+        ? ['Property', 'Status', 'Total', 'Check In', 'Check Out']
+        : ['العقار', 'الحالة', 'الإجمالي', 'تاريخ الوصول', 'تاريخ المغادرة'],
+      ...ownerBookings.map((booking) => [
+        booking.title || (language === 'en' ? 'Property' : 'العقار'),
+        booking.status === 'confirmed'
+          ? (language === 'en' ? 'Confirmed' : 'مؤكد')
+          : (language === 'en' ? 'Pending' : 'قيد المراجعة'),
+        String(booking.total || 0),
+        booking.checkIn || '',
+        booking.checkOut || '',
+      ]),
+    ]
+
+    const csvContent = csvRows.map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'owner-report.csv'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    showToast(language === 'en' ? 'Bookings report exported successfully.' : 'تم تصدير تقرير الحجوزات بنجاح.')
+  }
+
   const handleOwnerQuickAction = (action) => {
     if (action === 'manage') {
       handleOwnerTabChange('properties')
-      showToast(t('ownerDashboard.managePropertiesFromForm'))
       return
     }
 
     if (action === 'price') {
-      handleOwnerTabChange('properties')
-      showToast(language === 'en' ? 'Price update mode active. You can modify property pricing in the form.' : 'وضع تحديث الأسعار مفعل. يمكنك تعديل سعر أي عقار من النموذج.')
+      const property = ownerProperties[0]
+      if (property) {
+        setActiveOwnerTab('properties')
+        setOwnerDetailPropertyId(property.id)
+        setActiveOwnerPropertyTab('availability')
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      } else {
+        handleOwnerTabChange('properties')
+      }
       return
     }
 
     if (action === 'message') {
-      setChatOpen(true)
-      showToast(language === 'en' ? 'Welcome message prepared for guests. You can send it from property chat.' : 'تم تجهيز رسالة ترحيب للضيوف، ويمكنك إرسالها من محادثة العقار.')
+      navigate('chat', ownerProperties[0] || selectedProperty)
       return
     }
 
     if (action === 'report') {
-      const csvRows = [
-        language === 'en'
-          ? ['Property', 'Status', 'Total', 'Check In', 'Check Out']
-          : ['العقار', 'الحالة', 'الإجمالي', 'تاريخ الوصول', 'تاريخ المغادرة'],
-        ...ownerBookings.map((booking) => [
-          booking.title || (language === 'en' ? 'Property' : 'العقار'),
-          booking.status === 'confirmed'
-            ? (language === 'en' ? 'Confirmed' : 'مؤكد')
-            : (language === 'en' ? 'Pending' : 'قيد المراجعة'),
-          String(booking.total || 0),
-          booking.checkIn || '',
-          booking.checkOut || '',
-        ]),
-      ]
-
-      const csvContent = csvRows.map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(',')).join('\n')
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = 'owner-report.csv'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-      showToast(language === 'en' ? 'Bookings report exported successfully.' : 'تم تصدير تقرير الحجوزات بنجاح.')
+      handleOwnerTabChange('earnings')
     }
   }
 
@@ -2203,7 +2212,7 @@ function App() {
             bookings: pluralize(ownerBookings.length, 'booking', language),
           })}</span>
         </button>
-        <button type="button" className="secondary-button small-button" onClick={() => handleOwnerQuickAction('report')}>
+        <button type="button" className="secondary-button small-button" onClick={handleOwnerReportExport}>
           <span className="material-symbols-outlined">download</span>
           <span>{language === 'en' ? 'Export Report' : 'تصدير تقرير'}</span>
         </button>
@@ -2368,17 +2377,21 @@ function App() {
         hidden={activeOwnerTab !== 'overview'}
       >
       <div className="owner-quick-actions">
-        <button type="button" className="primary-button" onClick={() => handleOwnerQuickAction('manage')}>
-          {language === 'en' ? 'Manage Properties' : 'إدارة العقارات'}
+        <button type="button" className="owner-quick-action" onClick={() => handleOwnerQuickAction('manage')}>
+          <span className="owner-quick-action-icon material-symbols-outlined" aria-hidden="true">apartment</span>
+          <span className="owner-quick-action-label">{language === 'en' ? 'Manage Properties' : 'إدارة العقارات'}</span>
         </button>
-        <button type="button" className="secondary-button" onClick={() => handleOwnerQuickAction('price')}>
-          {language === 'en' ? 'Update Prices' : 'تحديث الأسعار'}
+        <button type="button" className="owner-quick-action" onClick={() => handleOwnerQuickAction('price')}>
+          <span className="owner-quick-action-icon material-symbols-outlined" aria-hidden="true">calendar_month</span>
+          <span className="owner-quick-action-label">{language === 'en' ? 'Update Prices' : 'تحديث الأسعار'}</span>
         </button>
-        <button type="button" className="secondary-button" onClick={() => handleOwnerQuickAction('message')}>
-          {language === 'en' ? 'Send Message' : 'إرسال رسالة'}
+        <button type="button" className="owner-quick-action" onClick={() => handleOwnerQuickAction('message')}>
+          <span className="owner-quick-action-icon material-symbols-outlined" aria-hidden="true">chat</span>
+          <span className="owner-quick-action-label">{language === 'en' ? 'Send Message' : 'إرسال رسالة'}</span>
         </button>
-        <button type="button" className="secondary-button" onClick={() => handleOwnerQuickAction('report')}>
-          {language === 'en' ? 'Export Report' : 'تصدير تقرير'}
+        <button type="button" className="owner-quick-action" onClick={() => handleOwnerQuickAction('report')}>
+          <span className="owner-quick-action-icon material-symbols-outlined" aria-hidden="true">bar_chart</span>
+          <span className="owner-quick-action-label">{language === 'en' ? 'Export Report' : 'تصدير تقرير'}</span>
         </button>
       </div>
       </section>
@@ -2471,7 +2484,7 @@ function App() {
       <button
         type="button"
         className="primary-button mt-4"
-        onClick={() => handleOwnerQuickAction('report')}
+        onClick={handleOwnerReportExport}
       >
         <span className="material-symbols-outlined" aria-hidden="true">download</span>
         <span>{language === 'en' ? 'Export Report' : 'تصدير التقرير'}</span>
@@ -6376,7 +6389,7 @@ function App() {
         property={selectedProperty}
         user={user || effectiveUser}
         language={language}
-        onBack={() => navigate('details', selectedProperty)}
+        onBack={() => navigate(isOwner ? 'owner' : 'details', selectedProperty)}
       />
     )
     if (activePage === 'reviews') return (
