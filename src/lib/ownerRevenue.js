@@ -62,7 +62,12 @@ const getTopRevenueCity = (bookings, properties) => {
     .sort((cityA, cityB) => cityB.amount - cityA.amount)[0] || null
 }
 
-export const getOwnerRevenueMetrics = (bookings = [], now = new Date(), properties = []) => {
+export const getOwnerRevenueMetrics = (
+  bookings = [],
+  now = new Date(),
+  properties = [],
+  chartPeriod = 'last30Days',
+) => {
   const eligibleBookings = (Array.isArray(bookings) ? bookings : [])
     .filter(isPaidBooking)
     .map((booking) => ({
@@ -91,8 +96,12 @@ export const getOwnerRevenueMetrics = (bookings = [], now = new Date(), properti
     ? ((currentWeekRevenue - previousWeekRevenue) / previousWeekRevenue) * 100
     : null
 
-  const chartStart = addDays(today, -29)
-  const chartDays = 30
+  const chartStart = chartPeriod === 'thisMonth'
+    ? monthStart
+    : addDays(today, -29)
+  const chartDays = chartPeriod === 'thisMonth'
+    ? Math.round((nextMonthStart - monthStart) / 86400000)
+    : 30
   const bars = Array.from({ length: 9 }, (_, index) => {
     const startOffset = Math.floor(index * chartDays / 9)
     const endOffset = Math.floor((index + 1) * chartDays / 9)
@@ -115,6 +124,7 @@ export const getOwnerRevenueMetrics = (bookings = [], now = new Date(), properti
     topRevenueCity: getTopRevenueCity(eligibleBookings, properties),
     growthPercent,
     hasRevenue: totalRevenue > 0,
+    hasChartRevenue: sumAmounts(bars) > 0,
     bars: bars.map((bar) => ({
       ...bar,
       height: maxBarAmount ? (bar.amount / maxBarAmount) * 100 : 0,

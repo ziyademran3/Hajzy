@@ -62,3 +62,18 @@ test('top revenue city is empty when there is no eligible linked revenue', () =>
 
   expect(metrics.topRevenueCity).toBeNull()
 })
+
+test('revenue chart period switches between the last 30 days and current month', () => {
+  const bookings = [
+    { status: 'paid', paidAt: '2026-09-30T12:00:00', total: 500 },
+    { status: 'paid', paidAt: '2026-10-03T12:00:00', total: 1200 },
+  ]
+  const now = new Date(2026, 9, 8, 12)
+  const last30Days = getOwnerRevenueMetrics(bookings, now, [], 'last30Days')
+  const thisMonth = getOwnerRevenueMetrics(bookings, now, [], 'thisMonth')
+
+  expect(last30Days.bars.reduce((sum, bar) => sum + bar.amount, 0)).toBe(1700)
+  expect(thisMonth.bars.reduce((sum, bar) => sum + bar.amount, 0)).toBe(1200)
+  expect(thisMonth.bars).toHaveLength(9)
+  expect(thisMonth.hasChartRevenue).toBe(true)
+})

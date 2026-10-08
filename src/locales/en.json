@@ -48,7 +48,13 @@
     "tapForDetails": "Tap a bar for the exact amount",
     "today": "Today →",
     "topCity": "Top earning city (all time)",
-    "empty": "No paid and confirmed revenue in the last 30 days."
+    "chartPeriodLabel": "Revenue chart period",
+    "filterLast30Days": "Last 30 days",
+    "filterMonth": "This month",
+    "chartPeriodLast30Days": "Revenue over the last 30 days",
+    "chartPeriodMonth": "Revenue this month",
+    "empty": "No paid and confirmed revenue in the last 30 days.",
+    "emptyMonth": "No paid and confirmed revenue this month."
   },
   "smartLock": {
     "status": {
@@ -118,7 +124,11 @@
     "requestsRatio": "Non-cancelled bookings ÷ total requests",
     "currentMonth": "This month",
     "lastSevenDays": "Last 7 days",
-    "weeklyOccupancyDescription": "Daily booked-night occupancy over the last 7 days"
+    "weeklyOccupancyDescription": "Daily booked-night occupancy over the last 7 days",
+    "monthlyOccupancyDescription": "Daily booked-night occupancy this month",
+    "occupancyPeriodLabel": "Occupancy chart period",
+    "filterLastSevenDays": "Last 7 days",
+    "filterMonth": "This month"
   },
   "quickActions": {
     "savedHomes": "Saved homes",

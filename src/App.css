@@ -6724,6 +6724,42 @@ html[dir='rtl'] .settings-switch[aria-checked='true'] .settings-switch-thumb {
   font-weight: 700;
 }
 
+.owner-period-filter {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-soft);
+}
+
+.owner-period-filter button {
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--type-12);
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.owner-period-filter button[aria-pressed='true'] {
+  background: var(--bg-card);
+  color: var(--primary-700);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+
+.owner-period-filter button:focus-visible {
+  outline: 2px solid var(--primary-700);
+  outline-offset: 2px;
+}
+
 .owner-metric-comparison {
   color: var(--muted);
   font-size: var(--type-12);

@@ -163,6 +163,16 @@ export const getOwnerBookingMetrics = (bookings = [], properties = [], now = new
       occupancyPercent: calculateOccupancyPercent(activeBookings, propertyIds, date, nextDate),
     }
   })
+  const currentMonthDays = Array.from(
+    { length: Math.round((nextMonthStart - currentMonthStart) / 86400000) },
+    (_, index) => {
+      const date = addDays(currentMonthStart, index)
+      return {
+        date,
+        occupancyPercent: calculateOccupancyPercent(activeBookings, propertyIds, date, addDays(date, 1)),
+      }
+    },
+  )
 
   return {
     totalRequests,
@@ -175,5 +185,6 @@ export const getOwnerBookingMetrics = (bookings = [], properties = [], now = new
     previousMonthOccupancyPercent,
     monthlyOccupancyChangePoints,
     lastSevenDays,
+    currentMonthDays,
   }
 }

@@ -48,7 +48,13 @@
     "tapForDetails": "اضغط على عمود لمعرفة المبلغ",
     "today": "اليوم →",
     "topCity": "أعلى مدينة إيرادًا (الإجمالي)",
-    "empty": "لا توجد إيرادات مدفوعة ومؤكدة خلال آخر 30 يومًا."
+    "chartPeriodLabel": "فترة عرض الإيرادات",
+    "filterLast30Days": "آخر 30 يومًا",
+    "filterMonth": "هذا الشهر",
+    "chartPeriodLast30Days": "الإيرادات خلال آخر 30 يومًا",
+    "chartPeriodMonth": "الإيرادات خلال هذا الشهر",
+    "empty": "لا توجد إيرادات مدفوعة ومؤكدة خلال آخر 30 يومًا.",
+    "emptyMonth": "لا توجد إيرادات مدفوعة ومؤكدة خلال هذا الشهر."
   },
   "smartLock": {
     "status": {
@@ -118,7 +124,11 @@
     "requestsRatio": "الحجوزات غير الملغاة ÷ إجمالي الطلبات",
     "currentMonth": "هذا الشهر",
     "lastSevenDays": "آخر 7 أيام",
-    "weeklyOccupancyDescription": "نسبة الليالي المحجوزة يوميًا خلال آخر 7 أيام"
+    "weeklyOccupancyDescription": "نسبة الليالي المحجوزة يوميًا خلال آخر 7 أيام",
+    "monthlyOccupancyDescription": "نسبة الليالي المحجوزة يوميًا خلال هذا الشهر",
+    "occupancyPeriodLabel": "فترة عرض الإشغال",
+    "filterLastSevenDays": "آخر 7 أيام",
+    "filterMonth": "هذا الشهر"
   },
   "quickActions": {
     "savedHomes": "المنازل المحفوظة",

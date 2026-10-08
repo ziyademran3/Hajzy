@@ -460,6 +460,8 @@ function App() {
     bookingInfo: '',
   })
   const [activeRevenueBar, setActiveRevenueBar] = useState(null)
+  const [ownerRevenueChartPeriod, setOwnerRevenueChartPeriod] = useState('last30Days')
+  const [ownerOccupancyChartPeriod, setOwnerOccupancyChartPeriod] = useState('lastSevenDays')
   const propertyFileInputRef = useRef(null)
 
   const handlePropertyImageUpload = (e) => {
@@ -1665,7 +1667,12 @@ function App() {
     })
   }
 
-  const ownerRevenueMetrics = getOwnerRevenueMetrics(ownerBookings, new Date(), ownerProperties)
+  const ownerRevenueMetrics = getOwnerRevenueMetrics(
+    ownerBookings,
+    new Date(),
+    ownerProperties,
+    ownerRevenueChartPeriod,
+  )
   const ownerRevenue = ownerRevenueMetrics.totalRevenue
   const formatRevenuePeriod = (period) => {
     const locale = language === 'en' ? 'en-US' : 'ar-EG-u-nu-latn'
@@ -2291,7 +2298,6 @@ function App() {
       <div className="owner-operational-panel">
         <div className="owner-overview-header">
           <h3>{language === 'en' ? 'Operational Alerts' : 'تنبيهات التشغيل'}</h3>
-          <span className="status-pill neutral">{language === 'en' ? 'Today' : 'اليوم'}</span>
         </div>
 
         {pendingOwnerBookingsCount > 0 ? (
@@ -2319,7 +2325,6 @@ function App() {
                 </small>
               </div>
             </div>
-            <span className="status-pill success">{language === 'en' ? 'Up to date' : 'منتظم'}</span>
           </div>
         )}
 
@@ -2383,13 +2388,27 @@ function App() {
               {language === 'en' ? 'Property Revenue' : 'إيرادات العقارات'}
             </h3>
             <span className="text-[11px] text-slate-500 block mt-0.5">
-              {language === 'en' ? 'Historical revenue breakdown (last 30 days)' : 'تحليل الإيرادات مقسمة على فترات خلال آخر 30 يوماً'}
+              {t(ownerRevenueChartPeriod === 'thisMonth' ? 'ownerRevenue.chartPeriodMonth' : 'ownerRevenue.chartPeriodLast30Days')}
             </span>
           </div>
-          <span className="status-pill neutral">{language === 'en' ? 'Last 30 Days' : 'آخر 30 يوم'}</span>
+        </div>
+        <div className="owner-period-filter" role="group" aria-label={t('ownerRevenue.chartPeriodLabel')}>
+          {['last30Days', 'thisMonth'].map((period) => (
+            <button
+              key={period}
+              type="button"
+              aria-pressed={ownerRevenueChartPeriod === period}
+              onClick={() => {
+                setOwnerRevenueChartPeriod(period)
+                setActiveRevenueBar(null)
+              }}
+            >
+              {t(period === 'thisMonth' ? 'ownerRevenue.filterMonth' : 'ownerRevenue.filterLast30Days')}
+            </button>
+          ))}
         </div>
 
-        {ownerRevenueMetrics.hasRevenue && activeRevenueBar !== null && (
+        {ownerRevenueMetrics.hasChartRevenue && activeRevenueBar !== null && (
           <div className="mb-2 p-2.5 rounded-xl bg-slate-900 text-white text-xs flex items-center justify-between border border-slate-700 animate-fadeIn shadow-lg">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
@@ -2413,7 +2432,7 @@ function App() {
           </div>
         )}
 
-        {ownerRevenueMetrics.hasRevenue ? (
+        {ownerRevenueMetrics.hasChartRevenue ? (
           <>
             <div className="owner-analytics-graph">
               {ownerRevenueMetrics.bars.map((bar, index) => {
@@ -2450,7 +2469,7 @@ function App() {
         ) : (
           <div className="owner-revenue-empty-state" role="status">
             <span className="material-symbols-outlined" aria-hidden="true">bar_chart</span>
-            <p>{t('ownerRevenue.empty')}</p>
+            <p>{t(ownerRevenueChartPeriod === 'thisMonth' ? 'ownerRevenue.emptyMonth' : 'ownerRevenue.empty')}</p>
           </div>
         )}
         {ownerRevenueMetrics.topRevenueCity && (
@@ -2483,7 +2502,6 @@ function App() {
       <div className="owner-leading-listings">
         <div className="owner-overview-header">
           <h3>{language === 'en' ? 'Top Performing Properties' : 'أفضل العقارات أداءً'}</h3>
-          <span className="status-pill neutral">{language === 'en' ? 'This Week' : 'هذا الأسبوع'}</span>
         </div>
         <div className="owner-listing-strip">
           {properties.slice(0, 3).map((property) => (
@@ -2532,16 +2550,30 @@ function App() {
         <div className="owner-main-panel-header">
           <div>
             <h3 className="m-0 text-base font-bold text-slate-900 dark:text-white">
-              {language === 'en' ? 'Weekly Occupancy Rate' : 'إحصاءات الإقبال ونسبة الإشغال'}
+              {language === 'en' ? 'Occupancy Rate' : 'نسبة الإشغال'}
             </h3>
             <span className="text-[11px] text-slate-500 block mt-0.5">
-              {t('ownerMetrics.weeklyOccupancyDescription')}
+              {t(ownerOccupancyChartPeriod === 'thisMonth' ? 'ownerMetrics.monthlyOccupancyDescription' : 'ownerMetrics.weeklyOccupancyDescription')}
             </span>
           </div>
-          <span className="status-pill neutral">{t('ownerMetrics.lastSevenDays')}</span>
+          <div className="owner-period-filter" role="group" aria-label={t('ownerMetrics.occupancyPeriodLabel')}>
+            {['lastSevenDays', 'thisMonth'].map((period) => (
+              <button
+                key={period}
+                type="button"
+                aria-pressed={ownerOccupancyChartPeriod === period}
+                onClick={() => setOwnerOccupancyChartPeriod(period)}
+              >
+                {t(period === 'thisMonth' ? 'ownerMetrics.filterMonth' : 'ownerMetrics.filterLastSevenDays')}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="owner-chart">
-          {ownerBookingMetrics.lastSevenDays.map((item) => {
+          {(ownerOccupancyChartPeriod === 'thisMonth'
+            ? ownerBookingMetrics.currentMonthDays
+            : ownerBookingMetrics.lastSevenDays
+          ).map((item) => {
             const dayLabel = new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'ar-EG', {
               weekday: 'short',
             }).format(item.date)
