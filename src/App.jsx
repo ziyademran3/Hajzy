@@ -472,6 +472,23 @@ function App() {
   })
   const [activeRevenueBar, setActiveRevenueBar] = useState(null)
   const propertyFileInputRef = useRef(null)
+  const propertyDescriptionRef = useRef(null)
+  const propertyBookingInfoRef = useRef(null)
+
+  useEffect(() => {
+    ;[propertyDescriptionRef.current, propertyBookingInfoRef.current].forEach((textarea) => {
+      if (!textarea) return
+      textarea.style.height = 'auto'
+      textarea.style.height = `${textarea.scrollHeight}px`
+    })
+  }, [propertyForm.description, propertyForm.bookingInfo, showOwnerPropertyForm])
+
+  const handleOwnerTextareaChange = (field, event) => {
+    const textarea = event.target
+    textarea.style.height = 'auto'
+    textarea.style.height = `${textarea.scrollHeight}px`
+    setPropertyForm((previous) => ({ ...previous, [field]: textarea.value }))
+  }
 
   const handlePropertyImageUpload = (e) => {
     const file = e.target.files?.[0]
@@ -2937,21 +2954,39 @@ function App() {
           </label>
           <label className="wide">
             {language === 'en' ? 'Description' : 'الوصف'}
-            <textarea
-              rows="3"
-              value={propertyForm.description}
-              onChange={(event) => setPropertyForm({ ...propertyForm, description: event.target.value })}
-              placeholder={t('ownerDashboard.propertyDescriptionPlaceholder')}
-            />
+            <div className="owner-form-textarea-field">
+              <textarea
+                ref={propertyDescriptionRef}
+                className="owner-form-textarea"
+                rows={3}
+                maxLength={500}
+                value={propertyForm.description}
+                onChange={(event) => handleOwnerTextareaChange('description', event)}
+                placeholder={t('ownerDashboard.propertyDescriptionPlaceholder')}
+                aria-describedby="owner-description-count"
+              />
+              <span id="owner-description-count" className="owner-form-char-count" dir={language === 'en' ? 'ltr' : 'rtl'}>
+                {t('ownerDashboard.characterCount', { count: propertyForm.description.length })}
+              </span>
+            </div>
           </label>
           <label className="wide">
             {language === 'en' ? 'Booking Policies' : 'معلومات الحجز'}
-            <textarea
-              rows="3"
-              value={propertyForm.bookingInfo}
-              onChange={(event) => setPropertyForm({ ...propertyForm, bookingInfo: event.target.value })}
-              placeholder={language === 'en' ? 'e.g. Free cancellation up to 48 hours prior to arrival' : 'مثل: إلغاء مجاني حتى 48 ساعة قبل الوصول'}
-            />
+            <div className="owner-form-textarea-field">
+              <textarea
+                ref={propertyBookingInfoRef}
+                className="owner-form-textarea"
+                rows={3}
+                maxLength={500}
+                value={propertyForm.bookingInfo}
+                onChange={(event) => handleOwnerTextareaChange('bookingInfo', event)}
+                placeholder={language === 'en' ? 'e.g. Free cancellation up to 48 hours prior to arrival' : 'مثل: إلغاء مجاني حتى 48 ساعة قبل الوصول'}
+                aria-describedby="owner-booking-info-count"
+              />
+              <span id="owner-booking-info-count" className="owner-form-char-count" dir={language === 'en' ? 'ltr' : 'rtl'}>
+                {t('ownerDashboard.characterCount', { count: propertyForm.bookingInfo.length })}
+              </span>
+            </div>
           </label>
         </div>
 

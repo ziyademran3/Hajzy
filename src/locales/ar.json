@@ -90,6 +90,7 @@
     "propertyNamePlaceholder": "اسم العقار",
     "uploadPropertyPhoto": "اضغط لرفع صورة العقار من جهازك",
     "propertyDescriptionPlaceholder": "اكتب وصف العقار بشكل جذاب",
+    "characterCount": "{{count}}/500 حرفًا",
     "addProperty": "إضافة عقار",
     "managedProperties": "العقارات المضافة",
     "noProperties": "لا توجد عقارات مضافة بعد، أضف أول عقار لك.",

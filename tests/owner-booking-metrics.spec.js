@@ -249,6 +249,25 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
   await addPropertyFab.click()
   await expect(ownerDashboard.locator('.owner-form')).toContainText('عنوان العقار')
   await expect(addPropertyFab).toHaveCount(0)
+  const propertyDescription = ownerDashboard.locator('.owner-form textarea').nth(0)
+  const bookingInfo = ownerDashboard.locator('.owner-form textarea').nth(1)
+  await expect(propertyDescription).toHaveAttribute('maxlength', '500')
+  await expect(bookingInfo).toHaveAttribute('maxlength', '500')
+  await expect(propertyDescription).toHaveCSS('resize', 'none')
+  await expect(bookingInfo).toHaveCSS('resize', 'none')
+  await expect(ownerDashboard.locator('#owner-description-count')).toHaveText('0/500 حرفًا')
+  await expect(ownerDashboard.locator('#owner-booking-info-count')).toHaveText('0/500 حرفًا')
+  const initialDescriptionHeight = await propertyDescription.evaluate((element) => element.getBoundingClientRect().height)
+  await propertyDescription.fill('وصف إقامة مميز. '.repeat(20))
+  await expect(ownerDashboard.locator('#owner-description-count')).toHaveText(
+    `${('وصف إقامة مميز. '.repeat(20)).length}/500 حرفًا`,
+  )
+  await expect.poll(() => propertyDescription.evaluate((element) => element.getBoundingClientRect().height))
+    .toBeGreaterThan(initialDescriptionHeight)
+  await bookingInfo.fill('معلومات الحجز '.repeat(12))
+  await expect(ownerDashboard.locator('#owner-booking-info-count')).toHaveText(
+    `${('معلومات الحجز '.repeat(12)).length}/500 حرفًا`,
+  )
   await ownerDashboard.locator('.owner-form').getByRole('button', { name: 'إضافة عقار' }).click()
   await expect(ownerDashboard.locator('.owner-form')).toContainText(
     'يرجى تعبئة عنوان العقار والموقع والسعر قبل الحفظ',

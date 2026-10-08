@@ -7086,6 +7086,36 @@ html[dir='rtl'] .owner-task-list .owner-task-arrow {
   grid-column: 1 / -1;
 }
 
+.owner-form-textarea-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.owner-grid textarea.owner-form-textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: calc(1.5em * 3 + 24px);
+  padding: 12px 14px;
+  border: 1px solid rgba(0, 67, 63, 0.15);
+  border-radius: 12px;
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: var(--type-16);
+  line-height: 1.5;
+  resize: none;
+  overflow-y: hidden;
+}
+
+.owner-form-char-count {
+  align-self: flex-end;
+  color: var(--muted);
+  font-size: var(--type-12);
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+
 .owner-grid input,
 .owner-grid select {
   border: 1px solid rgba(0, 67, 63, 0.15);

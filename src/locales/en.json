@@ -90,6 +90,7 @@
     "propertyNamePlaceholder": "e.g. Luxury Seafront Suite",
     "uploadPropertyPhoto": "Upload photo from your device",
     "propertyDescriptionPlaceholder": "Write an appealing property description",
+    "characterCount": "{{count}}/500 characters",
     "addProperty": "Add Property",
     "managedProperties": "Managed Properties",
     "noProperties": "No properties listed yet. Add your first listing.",
