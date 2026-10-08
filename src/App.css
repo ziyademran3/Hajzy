@@ -1159,7 +1159,6 @@ body::-webkit-scrollbar,
 .app-shell[data-theme='dark'] .booking-card,
 .app-shell[data-theme='dark'] .owner-card,
 .app-shell[data-theme='dark'] .owner-analytics-card,
-.app-shell[data-theme='dark'] .owner-overview-card,
 .app-shell[data-theme='dark'] .value-card,
 .app-shell[data-theme='dark'] .profile-card,
 .app-shell[data-theme='dark'] .panel,
@@ -3286,6 +3285,30 @@ body::-webkit-scrollbar,
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(239, 246, 244, 0.96));
   border: 1px solid rgba(0, 67, 63, 0.08);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.03);
+}
+
+.owner-revenue-city-insight {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--type-12);
+}
+
+.owner-revenue-city-insight strong {
+  color: var(--text);
+  font-size: var(--type-14);
+}
+
+.owner-revenue-city-insight span:last-child {
+  grid-column: 2;
+  color: var(--primary-700);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
 }
 
 .owner-insights-header {
@@ -6578,24 +6601,6 @@ html[dir='rtl'] .settings-switch[aria-checked='true'] .settings-switch-thumb {
   flex-wrap: wrap;
 }
 
-.owner-overview {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr;
-  gap: 16px;
-}
-
-.owner-overview-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(248, 251, 250, 0.96));
-  border: 1px solid rgba(0, 67, 63, 0.08);
-  border-radius: 20px;
-  padding: 18px;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.04);
-}
-
-.owner-overview-card.wide {
-  grid-column: 1 / -1;
-}
-
 .owner-analytics {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -6729,24 +6734,6 @@ html[dir='rtl'] .settings-switch[aria-checked='true'] .settings-switch-thumb {
   font-weight: 700;;
 }
 
-.owner-progress-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.owner-progress-list > div {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.owner-progress-list label {
-  color: var(--muted);
-  font-size: var(--type-12);
-  font-weight: 700;
-}
-
 .progress-bar {
   width: 100%;
   height: 10px;
@@ -6840,33 +6827,6 @@ html[dir='rtl'] .settings-switch[aria-checked='true'] .settings-switch-thumb {
   color: #065f46;
   font-size: var(--type-12);
   font-weight: 700;
-}
-
-.owner-metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.owner-metrics-grid > div {
-  background: rgba(0, 67, 63, 0.03);
-  border: 1px solid rgba(0, 67, 63, 0.06);
-  border-radius: 15px;
-  padding: 12px 10px;
-}
-
-.owner-metrics-grid span {
-  display: block;
-  color: var(--muted);
-  font-size: var(--type-12);
-  margin-bottom: 8px;
-}
-
-.owner-metrics-grid strong {
-  display: block;
-  color: var(--primary);
-  font-size: var(--type-16);
-  font-weight: 700;;
 }
 
 .owner-metric-comparison {
@@ -7748,8 +7708,6 @@ html[dir='rtl'] .settings-switch[aria-checked='true'] .settings-switch-thumb {
 
 @media (max-width: 540px) {
   .owner-summary,
-  .owner-overview,
-  .owner-metrics-grid,
   .details-grid {
     grid-template-columns: 1fr;
   }
@@ -10035,21 +9993,18 @@ html[data-theme='dark'] .owner-quick-actions .secondary-button:hover,
 }
 
 /* Panels and Cards in Owner Dashboard */
-html[data-theme='dark'] .owner-overview-card,
 html[data-theme='dark'] .owner-operational-panel,
 html[data-theme='dark'] .owner-analytics-surface,
 html[data-theme='dark'] .owner-analytics-card,
 html[data-theme='dark'] .owner-leading-listings,
 html[data-theme='dark'] .owner-main-panel,
 html[data-theme='dark'] .owner-table-card,
-.dark .owner-overview-card,
 .dark .owner-operational-panel,
 .dark .owner-analytics-surface,
 .dark .owner-analytics-card,
 .dark .owner-leading-listings,
 .dark .owner-main-panel,
 .dark .owner-table-card,
-.app-shell[data-theme='dark'] .owner-overview-card,
 .app-shell[data-theme='dark'] .owner-operational-panel,
 .app-shell[data-theme='dark'] .owner-analytics-surface,
 .app-shell[data-theme='dark'] .owner-analytics-card,
@@ -10063,17 +10018,14 @@ html[data-theme='dark'] .owner-table-card,
 }
 
 /* Inner elements inside cards */
-html[data-theme='dark'] .owner-metrics-grid > div,
 html[data-theme='dark'] .rating-score-box,
 html[data-theme='dark'] .owner-listing-card,
 html[data-theme='dark'] .owner-alert-row,
 html[data-theme='dark'] .owner-mini-metrics > div,
-.dark .owner-metrics-grid > div,
 .dark .rating-score-box,
 .dark .owner-listing-card,
 .dark .owner-alert-row,
 .dark .owner-mini-metrics > div,
-.app-shell[data-theme='dark'] .owner-metrics-grid > div,
 .app-shell[data-theme='dark'] .rating-score-box,
 .app-shell[data-theme='dark'] .owner-listing-card,
 .app-shell[data-theme='dark'] .owner-alert-row,
@@ -10083,15 +10035,12 @@ html[data-theme='dark'] .owner-mini-metrics > div,
 }
 
 html[data-theme='dark'] .owner-listing-copy strong,
-html[data-theme='dark'] .owner-metrics-grid strong,
 html[data-theme='dark'] .owner-alert-row strong,
 html[data-theme='dark'] .owner-mini-metrics strong,
 .dark .owner-listing-copy strong,
-.dark .owner-metrics-grid strong,
 .dark .owner-alert-row strong,
 .dark .owner-mini-metrics strong,
 .app-shell[data-theme='dark'] .owner-listing-copy strong,
-.app-shell[data-theme='dark'] .owner-metrics-grid strong,
 .app-shell[data-theme='dark'] .owner-alert-row strong,
 .app-shell[data-theme='dark'] .owner-mini-metrics strong {
   color: #f8fafc !important;
@@ -10099,21 +10048,18 @@ html[data-theme='dark'] .owner-mini-metrics strong,
 
 html[data-theme='dark'] .owner-listing-copy span,
 html[data-theme='dark'] .owner-listing-meta span,
-html[data-theme='dark'] .owner-metrics-grid span,
 html[data-theme='dark'] .owner-alert-row small,
 html[data-theme='dark'] .owner-mini-metrics span,
 html[data-theme='dark'] .owner-analytics-bar-wrap,
 html[data-theme='dark'] .owner-chart-bar-wrap span,
 .dark .owner-listing-copy span,
 .dark .owner-listing-meta span,
-.dark .owner-metrics-grid span,
 .dark .owner-alert-row small,
 .dark .owner-mini-metrics span,
 .dark .owner-analytics-bar-wrap,
 .dark .owner-chart-bar-wrap span,
 .app-shell[data-theme='dark'] .owner-listing-copy span,
 .app-shell[data-theme='dark'] .owner-listing-meta span,
-.app-shell[data-theme='dark'] .owner-metrics-grid span,
 .app-shell[data-theme='dark'] .owner-alert-row small,
 .app-shell[data-theme='dark'] .owner-mini-metrics span,
 .app-shell[data-theme='dark'] .owner-analytics-bar-wrap,

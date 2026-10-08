@@ -42,12 +42,33 @@ const addDays = (date, days) => {
 
 const sumAmounts = (bookings) => bookings.reduce((sum, booking) => sum + booking.amount, 0)
 
-export const getOwnerRevenueMetrics = (bookings = [], now = new Date()) => {
+const getTopRevenueCity = (bookings, properties) => {
+  const propertyCities = new Map(
+    (Array.isArray(properties) ? properties : [])
+      .filter((property) => property?.id !== null && property?.id !== undefined)
+      .map((property) => [String(property.id), String(property.city || '').trim()]),
+  )
+  const revenueByCity = new Map()
+
+  bookings.forEach((booking) => {
+    const propertyId = booking?.propertyId ?? booking?.property_id
+    const city = propertyCities.get(String(propertyId ?? ''))
+    if (!city || booking.amount <= 0) return
+    revenueByCity.set(city, (revenueByCity.get(city) || 0) + booking.amount)
+  })
+
+  return [...revenueByCity.entries()]
+    .map(([city, amount]) => ({ city, amount }))
+    .sort((cityA, cityB) => cityB.amount - cityA.amount)[0] || null
+}
+
+export const getOwnerRevenueMetrics = (bookings = [], now = new Date(), properties = []) => {
   const eligibleBookings = (Array.isArray(bookings) ? bookings : [])
     .filter(isPaidBooking)
     .map((booking) => ({
       amount: getBookingAmount(booking),
       paymentDate: getPaymentDate(booking),
+      propertyId: booking?.propertyId ?? booking?.property_id,
     }))
   const totalRevenue = sumAmounts(eligibleBookings)
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -91,6 +112,7 @@ export const getOwnerRevenueMetrics = (bookings = [], now = new Date()) => {
   return {
     totalRevenue,
     thisMonthRevenue,
+    topRevenueCity: getTopRevenueCity(eligibleBookings, properties),
     growthPercent,
     hasRevenue: totalRevenue > 0,
     bars: bars.map((bar) => ({

@@ -115,7 +115,6 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
   await expect(ownerDashboard.locator('.owner-feature-banner')).not.toContainText('مراجعة الطلبات والحجوزات')
   await expect(ownerDashboard.locator('.owner-action-rail .secondary-button')).toHaveCount(2)
   await expect(ownerDashboard.locator('.owner-summary-grid .owner-summary-card').nth(1).locator('strong')).toHaveText('—')
-  await expect(ownerDashboard.locator('.owner-progress-list .label-row').first().locator('strong')).toHaveText('—')
   await expect(ownerDashboard.locator('.owner-feature-pills')).toContainText('0%')
   await expect(page.locator('.notification-button .notification-badge')).toHaveText('2')
 
@@ -128,6 +127,9 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
   ])
   await expect(ownerNavigation.locator('#owner-tab-bookings .owner-nav-pending-badge')).toHaveCount(0)
   await expect(ownerDashboard.locator('#owner-overview-panel')).toBeVisible()
+  await expect(ownerDashboard.locator('#owner-overview-panel')).not.toContainText('نظرة سريعة')
+  await expect(ownerDashboard.locator('#owner-overview-panel .owner-overview-card')).toHaveCount(0)
+  await expect(ownerDashboard.locator('#owner-overview-panel .owner-progress-list')).toHaveCount(0)
   const quickActions = ownerDashboard.locator('.owner-quick-actions')
   await expect(quickActions.getByRole('button')).toHaveCount(4)
   await expect(quickActions).toHaveCSS('grid-template-columns', /.+/)

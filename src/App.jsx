@@ -1665,7 +1665,7 @@ function App() {
     })
   }
 
-  const ownerRevenueMetrics = getOwnerRevenueMetrics(ownerBookings)
+  const ownerRevenueMetrics = getOwnerRevenueMetrics(ownerBookings, new Date(), ownerProperties)
   const ownerRevenue = ownerRevenueMetrics.totalRevenue
   const formatRevenuePeriod = (period) => {
     const locale = language === 'en' ? 'en-US' : 'ar-EG-u-nu-latn'
@@ -2220,48 +2220,6 @@ function App() {
         </div>
       </div>
 
-      <div className="owner-overview">
-        <div className="owner-overview-card wide">
-          <div className="owner-overview-header">
-            <h3>{language === 'en' ? 'Quick Overview' : 'نظرة سريعة'}</h3>
-            <span className="status-pill">{language === 'en' ? 'Updated' : 'محدث الآن'}</span>
-          </div>
-          <div className="owner-metrics-grid">
-            <div>
-              <span>{t('ownerMetrics.monthlyOccupancy')}</span>
-              <strong>{formatPercent(ownerBookingMetrics.monthlyOccupancyPercent)}</strong>
-              {occupancyChangeLabel && <small className="owner-metric-comparison">{occupancyChangeLabel}</small>}
-            </div>
-            <div>
-              <span>{language === 'en' ? 'Top Destination' : 'أعلى مدينة'}</span>
-              <strong>{language === 'en' ? 'Alexandria' : 'الإسكندرية'}</strong>
-            </div>
-            <div>
-              <span>{language === 'en' ? 'Monthly Revenue' : 'إيراد هذا الشهر'}</span>
-              <strong>{formatCurrency(ownerRevenueMetrics.thisMonthRevenue, 'EGP', language)}</strong>
-            </div>
-          </div>
-          <div className="owner-progress-list">
-            <div>
-              <div className="label-row">
-                <span>{t('ownerMetrics.confirmedRequests')}</span>
-                <strong>{formatPercent(ownerBookingMetrics.confirmedRequestPercent)}</strong>
-              </div>
-              <div className="progress-bar"><span style={{ width: `${ownerBookingMetrics.confirmedRequestPercent ?? 0}%` }}></span></div>
-            </div>
-            <div>
-              <div className="label-row">
-                <span>{t('ownerMetrics.monthlyOccupancy')}</span>
-                <strong>{formatPercent(ownerBookingMetrics.monthlyOccupancyPercent)}</strong>
-              </div>
-              <div className="progress-bar"><span style={{ width: `${ownerBookingMetrics.monthlyOccupancyPercent ?? 0}%` }}></span></div>
-              {occupancyChangeLabel && <small className="owner-metric-comparison">{occupancyChangeLabel}</small>}
-            </div>
-          </div>
-        </div>
-
-      </div>
-
       <div className="owner-analytics-grid owner-recent-bookings-panel">
           <div className="owner-analytics-card">
             <div className="owner-overview-header">
@@ -2474,6 +2432,15 @@ function App() {
           <div className="owner-revenue-empty-state" role="status">
             <span className="material-symbols-outlined" aria-hidden="true">bar_chart</span>
             <p>{t('ownerRevenue.empty')}</p>
+          </div>
+        )}
+        {ownerRevenueMetrics.topRevenueCity && (
+          <div className="owner-revenue-city-insight">
+            <span>{t('ownerRevenue.topCity')}</span>
+            <strong>{ownerRevenueMetrics.topRevenueCity.city}</strong>
+            <span>
+              {formatCurrency(ownerRevenueMetrics.topRevenueCity.amount, 'EGP', language)}
+            </span>
           </div>
         )}
       </div>
