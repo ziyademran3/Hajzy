@@ -29,6 +29,7 @@ import PropertyGalleryModal from './components/PropertyGalleryModal'
 import AiConciergeModal from './components/AiConciergeModal'
 import NeighborhoodExplorer from './components/NeighborhoodExplorer'
 import HostCalendar from './components/HostCalendar'
+import ReviewCard from './components/ReviewCard'
 import PropertyLocation from './components/PropertyLocation'
 import PropertyPrice from './components/PropertyPrice'
 import PropertyRating from './components/PropertyRating'
@@ -87,6 +88,7 @@ import {
   FALLBACK_STAY_PHOTO,
   fetchBookings,
   fetchChatMessages,
+  fetchPropertyReviews,
   fetchProperties,
   getCitySlug,
   getSafeBookings,
@@ -348,12 +350,16 @@ function App() {
   })
   const [ownerNotice, setOwnerNotice] = useState('')
   const [ownerEditingId, setOwnerEditingId] = useState(null)
+  const [ownerDetailPropertyId, setOwnerDetailPropertyId] = useState(null)
+  const [activeOwnerPropertyTab, setActiveOwnerPropertyTab] = useState('overview')
+  const [ownerPropertyReviews, setOwnerPropertyReviews] = useState([])
+  const [ownerPropertyReviewsStatus, setOwnerPropertyReviewsStatus] = useState('idle')
+  const [ownerPropertyReviewsRetry, setOwnerPropertyReviewsRetry] = useState(0)
   const [bookingFilter, setBookingFilter] = useState('upcoming')
   const [ownerBookingFilter, setOwnerBookingFilter] = useState('all')
   const [activeOwnerTab, setActiveOwnerTab] = useState('overview')
   const [notifFilter, setNotifFilter] = useState('all')
   const [ownerNotifPrefs, setOwnerNotifPrefs] = useState(() => getNotificationPreferences(null))
-  const [showReviewsTooltip, setShowReviewsTooltip] = useState(false)
   const [language, setLanguage] = useState(() => {
     if (typeof window === 'undefined') {
       return 'ar'
@@ -1545,6 +1551,48 @@ function App() {
       return property && (isOwnedByCurrentUser || (!property.ownerId && user?.role === 'owner'))
     })
     : []
+  const ownerDetailProperty = ownerProperties.find(
+    (property) => String(property.id) === String(ownerDetailPropertyId),
+  ) || null
+  const ownerDetailPropertyBookings = ownerDetailProperty
+    ? ownerBookings.filter((booking) => String(booking.propertyId) === String(ownerDetailProperty.id))
+    : []
+  const ratedOwnerProperties = ownerProperties.filter(
+    (property) => property.rating !== null
+      && property.rating !== undefined
+      && property.rating !== ''
+      && Number.isFinite(Number(property.rating)),
+  )
+  const ownerAverageRating = ratedOwnerProperties.length
+    ? ratedOwnerProperties.reduce((total, property) => total + Number(property.rating), 0) / ratedOwnerProperties.length
+    : null
+
+  useEffect(() => {
+    if (!ownerDetailPropertyId) {
+      setOwnerPropertyReviews([])
+      setOwnerPropertyReviewsStatus('idle')
+      return undefined
+    }
+
+    let isCurrentProperty = true
+    setOwnerPropertyReviewsStatus('loading')
+    fetchPropertyReviews(ownerDetailPropertyId)
+      .then((reviews) => {
+        if (!isCurrentProperty) return
+        setOwnerPropertyReviews(reviews)
+        setOwnerPropertyReviewsStatus('ready')
+      })
+      .catch((error) => {
+        if (!isCurrentProperty) return
+        console.error('Failed to load owner property reviews', error)
+        setOwnerPropertyReviewsStatus('error')
+      })
+
+    return () => {
+      isCurrentProperty = false
+    }
+  }, [ownerDetailPropertyId, ownerPropertyReviewsRetry])
+
   const ownerBookingMetrics = getOwnerBookingMetrics(ownerBookings, ownerProperties)
   const occupancyChangePoints = ownerBookingMetrics.monthlyOccupancyChangePoints
   const occupancyChangeLabel = occupancyChangePoints === null
@@ -1692,6 +1740,14 @@ function App() {
 
   const handleOwnerTabChange = (tab) => {
     setActiveOwnerTab(tab)
+    setOwnerDetailPropertyId(null)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleOpenOwnerPropertyDetails = (property) => {
+    setActiveOwnerTab('properties')
+    setOwnerDetailPropertyId(property.id)
+    setActiveOwnerPropertyTab('overview')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -2014,36 +2070,38 @@ function App() {
 
   const renderOwnerPage = () => (
     <div className="page-shell owner-shell">
-      <div className="owner-dashboard-header flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-1">
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-            {language === 'en' ? 'Owner Dashboard' : 'لوحة تحكم المالك'}
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            {language === 'en'
-              ? `Welcome back, ${user?.name || user?.fullName || 'Owner'} • Manage stays, bookings and revenue`
-              : `مرحباً بك، ${user?.name || user?.fullName || 'المالك'} • إدارة العقارات والطلبات والأرباح في مكان واحد`}
-          </p>
+      {!ownerDetailProperty && (
+        <div className="owner-dashboard-header flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-1">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+              {language === 'en' ? 'Owner Dashboard' : 'لوحة تحكم المالك'}
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+              {language === 'en'
+                ? `Welcome back, ${user?.name || user?.fullName || 'Owner'} • Manage stays, bookings and revenue`
+                : `مرحباً بك، ${user?.name || user?.fullName || 'المالك'} • إدارة العقارات والطلبات والأرباح في مكان واحد`}
+            </p>
+          </div>
+          <div className="owner-header-actions flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:from-emerald-500 hover:to-teal-500 transition"
+              onClick={() => handleOwnerTabChange('properties')}
+            >
+              <span className="material-symbols-outlined text-base">add_circle</span>
+              <span>{t('ownerDashboard.addNewProperty')}</span>
+            </button>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+              onClick={() => navigate('owner-settings')}
+            >
+              <span className="material-symbols-outlined text-base text-emerald-600 dark:text-emerald-400">tune</span>
+              <span>{language === 'en' ? 'Owner Settings' : 'إعدادات المالك'}</span>
+            </button>
+          </div>
         </div>
-        <div className="owner-header-actions flex items-center gap-2 flex-wrap">
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:from-emerald-500 hover:to-teal-500 transition"
-            onClick={() => handleOwnerTabChange('properties')}
-          >
-            <span className="material-symbols-outlined text-base">add_circle</span>
-            <span>{t('ownerDashboard.addNewProperty')}</span>
-          </button>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
-            onClick={() => navigate('owner-settings')}
-          >
-            <span className="material-symbols-outlined text-base text-emerald-600 dark:text-emerald-400">tune</span>
-            <span>{language === 'en' ? 'Owner Settings' : 'إعدادات المالك'}</span>
-          </button>
-        </div>
-      </div>
+      )}
 
       <section
         id="owner-overview-panel"
@@ -2104,7 +2162,11 @@ function App() {
               <p>{language === 'en' ? 'Host Rating' : 'تقييم المضيف'}</p>
               <span className="owner-stat-icon material-symbols-outlined text-amber-500">star</span>
             </div>
-            <strong>{formatNumber(4.9, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} ★</strong>
+            <strong>
+              {ownerAverageRating === null
+                ? '—'
+                : `${formatNumber(ownerAverageRating, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} ★`}
+            </strong>
             <small>{language === 'en' ? 'Guest satisfaction' : 'متوسط رضا الضيوف'}</small>
           </div>
         </div>
@@ -2165,7 +2227,12 @@ function App() {
           <div className="owner-feature-pills">
             <span>{t('ownerMetrics.monthlyOccupancy')}: {formatPercent(ownerBookingMetrics.monthlyOccupancyPercent)}</span>
             <span>{t('ownerMetrics.confirmed')} {formatPercent(ownerBookingMetrics.confirmedRequestPercent)}</span>
-            <span>{language === 'en' ? 'Rating 4.9 ★' : 'تقييم 4.9 ★'}</span>
+            <span>
+              {language === 'en' ? 'Rating' : 'التقييم'}{' '}
+              {ownerAverageRating === null
+                ? '—'
+                : `${formatNumber(ownerAverageRating, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} ★`}
+            </span>
           </div>
           <button
             type="button"
@@ -2218,80 +2285,8 @@ function App() {
           </div>
         </div>
 
-        <div className="owner-overview-card">
-          <div className="owner-overview-header relative">
-            <h3>{language === 'en' ? 'Reviews' : 'التقييمات'}</h3>
-            <div className="relative inline-flex items-center gap-1.5">
-              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium hidden sm:inline">
-                {language === 'en' ? 'vs last month' : 'مقارنة بالشهر الماضي'}
-              </span>
-              <button
-                type="button"
-                className="status-pill neutral cursor-pointer inline-flex items-center gap-1 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-700 transition"
-                onClick={() => setShowReviewsTooltip((prev) => !prev)}
-                title={language === 'en' ? `+${formatNumber(12)}% increase in guest reviews count compared to last month` : `+${formatNumber(12)}% زيادة في عدد تقييمات الضيوف مقارنة بالشهر الماضي`}
-                aria-label={language === 'en' ? `+${formatNumber(12)}% vs last month` : `+${formatNumber(12)}% مقارنة بالشهر الماضي`}
-              >
-                <span>+{formatNumber(12)}%</span>
-                <span className="material-symbols-outlined text-[13px] text-slate-400">info</span>
-              </button>
-
-              {showReviewsTooltip && (
-                <div className="absolute top-full mt-2 ltr:right-0 rtl:left-0 z-30 w-56 p-2.5 rounded-xl bg-slate-900 text-white text-[11px] leading-relaxed shadow-xl border border-slate-700 animate-fadeIn">
-                  <div className="flex items-start justify-between gap-1 mb-1">
-                    <strong className="text-emerald-400 font-bold">
-                      {language === 'en' ? `+${formatNumber(12)}% Reviews Growth` : `+${formatNumber(12)}% نمو التقييمات`}
-                    </strong>
-                    <button
-                      type="button"
-                      className="text-slate-400 hover:text-white"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setShowReviewsTooltip(false)
-                      }}
-                    >
-                      <span className="material-symbols-outlined text-xs">close</span>
-                    </button>
-                  </div>
-                  <p className="m-0 text-slate-300">
-                    {language === 'en'
-                      ? `${formatNumber(12)}% increase in the number of guest reviews compared to the previous 30-day period.`
-                      : `زيادة بنسبة ${formatNumber(12)}% في إجمالي عدد تقييمات الضيوف مقارنة بفترة الـ 30 يوماً السابقة.`}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="rating-score-box">
-            <strong>{formatNumber(4.9, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</strong>
-            <span>{language === 'en' ? 'Average Guest Rating' : 'متوسط تقييم الضيوف'}</span>
-          </div>
-          <ul className="mini-score-list">
-            <li><span>{language === 'en' ? 'Cleanliness' : 'النظافة'}</span><strong>{formatNumber(4.9, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</strong></li>
-            <li><span>{language === 'en' ? 'Location' : 'الموقع'}</span><strong>{formatNumber(4.8, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</strong></li>
-            <li><span>{language === 'en' ? 'Communication' : 'التواصل'}</span><strong>{formatNumber(5.0, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</strong></li>
-          </ul>
-        </div>
       </div>
 
-      </section>
-
-      <section
-        id="owner-calendar-panel"
-        className="owner-tab-panel"
-        role="tabpanel"
-        aria-labelledby="owner-tab-properties"
-        hidden={activeOwnerTab !== 'properties'}
-      >
-      {/* Interactive Host Calendar & Seasonal Pricing Management */}
-      <HostCalendar
-        language={language}
-        basePrice={ownerProperties[0]?.priceValue || 2800}
-        currency={ownerProperties[0]?.currency || 'EGP'}
-        propertyTitle={ownerProperties[0]?.title || (language === 'en' ? 'My Properties' : 'عقاراتي')}
-        propertyId={ownerProperties[0]?.id}
-        bookings={ownerBookings}
-      />
       </section>
 
       <section
@@ -2536,7 +2531,7 @@ function App() {
         className="owner-tab-panel"
         role="tabpanel"
         aria-labelledby="owner-tab-properties"
-        hidden={activeOwnerTab !== 'properties'}
+        hidden={activeOwnerTab !== 'properties' || Boolean(ownerDetailProperty)}
       >
       <div className="owner-leading-listings">
         <div className="owner-overview-header">
@@ -2663,6 +2658,147 @@ function App() {
         aria-labelledby="owner-tab-properties"
         hidden={activeOwnerTab !== 'properties'}
       >
+      {ownerDetailProperty ? (
+        <div className="owner-property-detail">
+          <div className="owner-property-detail-heading">
+            <button
+              type="button"
+              className="secondary-button small-button owner-property-back"
+              onClick={() => {
+                setOwnerDetailPropertyId(null)
+                setActiveOwnerPropertyTab('overview')
+              }}
+            >
+              <span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+              <span>{t('ownerPropertyDetails.backToProperties')}</span>
+            </button>
+            <div>
+              <h3>{ownerDetailProperty.title}</h3>
+              <p>{ownerDetailProperty.location}</p>
+            </div>
+          </div>
+
+          <div
+            className="owner-property-tabs"
+            role="tablist"
+            aria-label={t('ownerPropertyDetails.ariaLabel')}
+          >
+            {ownerPropertyTabs.map((tab) => {
+              const isActive = activeOwnerPropertyTab === tab.key
+              return (
+                <button
+                  key={tab.key}
+                  id={`owner-property-tab-${tab.key}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-controls="owner-property-detail-panel"
+                  className={isActive ? 'owner-property-tab active' : 'owner-property-tab'}
+                  onClick={() => setActiveOwnerPropertyTab(tab.key)}
+                >
+                  <span className="material-symbols-outlined" aria-hidden="true">{tab.icon}</span>
+                  <span>{tab.label}</span>
+                </button>
+              )
+            })}
+          </div>
+
+          <div
+            id="owner-property-detail-panel"
+            className="owner-property-detail-content"
+            role="tabpanel"
+            aria-labelledby={`owner-property-tab-${activeOwnerPropertyTab}`}
+          >
+            {activeOwnerPropertyTab === 'overview' && (
+              <div className="owner-property-overview">
+                <img
+                  src={ownerDetailProperty.image}
+                  alt={ownerDetailProperty.title}
+                  onError={handleStayImageError}
+                />
+                <div className="owner-property-overview-copy">
+                  <PropertyRating
+                    rating={ownerDetailProperty.rating}
+                    reviews={ownerDetailProperty.reviews}
+                    language={language}
+                  />
+                  <div className="owner-property-detail-price">
+                    <strong>{formatCurrency(ownerDetailProperty.priceValue, ownerDetailProperty.currency, language)}</strong>
+                    <span>{t('ownerPropertyDetails.pricePerNight')}</span>
+                  </div>
+                  {ownerDetailProperty.description && <p>{ownerDetailProperty.description}</p>}
+                  {Array.isArray(ownerDetailProperty.amenities) && ownerDetailProperty.amenities.length > 0 && (
+                    <ul className="owner-property-amenities">
+                      {ownerDetailProperty.amenities.map((amenity) => (
+                        <li key={amenity}>{amenity}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeOwnerPropertyTab === 'ratings' && (
+              <div className="owner-property-reviews">
+                <div className="owner-property-reviews-summary">
+                  <div>
+                    <h4>{t('ownerPropertyDetails.ratings')}</h4>
+                    <p>{ownerDetailProperty.title}</p>
+                  </div>
+                  <PropertyRating
+                    rating={ownerDetailProperty.rating}
+                    reviews={ownerDetailProperty.reviews}
+                    language={language}
+                  />
+                </div>
+
+                {ownerPropertyReviewsStatus === 'loading' ? (
+                  <Skeleton count={2} />
+                ) : ownerPropertyReviewsStatus === 'error' ? (
+                  <div className="owner-property-reviews-error" role="alert">
+                    <span>{t('ownerPropertyDetails.reviewsError')}</span>
+                    <button
+                      type="button"
+                      className="secondary-button small-button"
+                      onClick={() => setOwnerPropertyReviewsRetry((retry) => retry + 1)}
+                    >
+                      {t('ownerPropertyDetails.retry')}
+                    </button>
+                  </div>
+                ) : ownerPropertyReviews.length > 0 ? (
+                  <div className="review-list">
+                    {ownerPropertyReviews.map((review) => (
+                      <ReviewCard key={review.id} review={review} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="owner-empty-state">
+                    <span className="material-symbols-outlined" aria-hidden="true">star</span>
+                    <p>{t('ownerPropertyDetails.noReviews')}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <HostCalendar
+              language={language}
+              basePrice={ownerDetailProperty.priceValue ?? 0}
+              currency={ownerDetailProperty.currency || 'EGP'}
+              propertyTitle={ownerDetailProperty.title}
+              propertyId={ownerDetailProperty.id}
+              bookings={ownerDetailPropertyBookings}
+              activeSection={
+                activeOwnerPropertyTab === 'availability'
+                  ? 'availability'
+                  : activeOwnerPropertyTab === 'smart-lock'
+                    ? 'smart-lock'
+                    : null
+              }
+            />
+          </div>
+        </div>
+      ) : (
+        <>
       <form id="owner-form" className="owner-form" onSubmit={handleOwnerAddProperty}>
         <div className="owner-form-head">
           <div>
@@ -2893,6 +3029,13 @@ function App() {
                   <button
                     type="button"
                     className="secondary-button small-button"
+                    onClick={() => handleOpenOwnerPropertyDetails(property)}
+                  >
+                    {t('ownerPropertyDetails.viewDetails')}
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-button small-button"
                     onClick={() => handleOwnerEditProperty(property)}
                   >
                     {language === 'en' ? 'Edit' : 'تعديل'}
@@ -2910,6 +3053,8 @@ function App() {
           ))
         )}
       </div>
+        </>
+      )}
       </section>
 
       <section
@@ -6297,6 +6442,12 @@ function App() {
     { key: 'properties', label: t('ownerNavigation.properties'), icon: 'apartment' },
     { key: 'bookings', label: t('ownerNavigation.bookings'), icon: 'calendar_month' },
     { key: 'earnings', label: t('ownerNavigation.earnings'), icon: 'payments' },
+  ]
+  const ownerPropertyTabs = [
+    { key: 'overview', label: t('ownerPropertyDetails.overview'), icon: 'info' },
+    { key: 'availability', label: t('ownerPropertyDetails.availabilityPricing'), icon: 'calendar_month' },
+    { key: 'smart-lock', label: t('ownerPropertyDetails.smartLock'), icon: 'lock' },
+    { key: 'ratings', label: t('ownerPropertyDetails.ratings'), icon: 'star' },
   ]
 
   const renderDealModal = () => {

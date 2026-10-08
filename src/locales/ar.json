@@ -69,6 +69,19 @@
     "bookings": "الحجوزات",
     "earnings": "الأرباح"
   },
+  "ownerPropertyDetails": {
+    "ariaLabel": "أقسام تفاصيل العقار",
+    "backToProperties": "العودة إلى العقارات",
+    "viewDetails": "تفاصيل العقار",
+    "overview": "نظرة عامة",
+    "availabilityPricing": "التقويم والأسعار",
+    "smartLock": "القفل الذكي",
+    "ratings": "التقييمات",
+    "pricePerNight": "لليلة",
+    "reviewsError": "تعذر تحميل تقييمات هذا العقار.",
+    "retry": "إعادة المحاولة",
+    "noReviews": "لا توجد مراجعات لهذا العقار حتى الآن."
+  },
   "ownerDashboard": {
     "addNewProperty": "إضافة عقار جديد",
     "editProperty": "تعديل العقار",

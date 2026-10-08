@@ -125,11 +125,9 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
     'الأرباح',
   ])
   await expect(ownerDashboard.locator('#owner-overview-panel')).toBeVisible()
-  await expect(ownerDashboard.locator('#owner-calendar-panel')).toBeHidden()
 
   await ownerNavigation.getByRole('tab', { name: 'العقارات' }).click()
   await expect(ownerDashboard.locator('#owner-overview-panel')).toBeHidden()
-  await expect(ownerDashboard.locator('#owner-calendar-panel')).toBeVisible()
   await expect(ownerDashboard.locator('#owner-properties-panel')).toBeVisible()
   const propertySection = ownerDashboard.locator('.owner-listings').first()
   await expect(propertySection).toContainText('15 عقارًا')
@@ -137,18 +135,51 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
   const firstPropertyTitle = (await propertySection.locator('.owner-card h4').first().textContent())?.trim()
   await expect(ownerDashboard.locator('.owner-form')).toContainText('عنوان العقار')
   await expect(ownerDashboard.locator('.owner-form').getByRole('button', { name: 'إضافة عقار' })).toBeVisible()
-  await expect(ownerDashboard.locator('.host-calendar-manager-card')).toContainText(
-    `إدارة مواعيد الحجز وأسعار العقار: ${firstPropertyTitle}`,
-  )
-  await expect(ownerDashboard.locator('.host-calendar-manager-card')).toContainText('غير مرتبط بحجز')
-  await expect(ownerDashboard.locator('.host-calendar-manager-card')).toContainText('لا يوجد كود نشط')
-  await expect(ownerDashboard.locator('.host-calendar-manager-card')).not.toContainText('8492')
-  await expect(ownerDashboard.locator('.host-calendar-manager-card').getByRole('button', { name: 'توليد جديد' })).toHaveCount(0)
-  await expect(ownerDashboard.locator('.calendar-day-cell.booked')).toHaveCount(0)
+  await expect(ownerDashboard.locator('.host-calendar-manager-card')).toHaveCount(0)
   await ownerDashboard.locator('.owner-form').getByRole('button', { name: 'إضافة عقار' }).click()
   await expect(ownerDashboard.locator('.owner-form')).toContainText(
     'يرجى تعبئة عنوان العقار والموقع والسعر قبل الحفظ',
   )
+
+  await propertySection.locator('.owner-card').first().getByRole('button', { name: 'تفاصيل العقار' }).click()
+  await expect(ownerDashboard.locator('.owner-property-detail-heading h3')).toHaveText(firstPropertyTitle)
+  await expect(ownerDashboard.locator('.owner-dashboard-header')).toHaveCount(0)
+  await expect(ownerDashboard.locator('#owner-leading-properties-panel')).toBeHidden()
+  const propertyTabs = ownerDashboard.getByRole('tablist', { name: 'أقسام تفاصيل العقار' })
+  await expect(propertyTabs.getByRole('tab')).toHaveCount(4)
+  await expect(ownerDashboard.locator('.owner-property-overview')).toBeVisible()
+
+  await propertyTabs.getByRole('tab', { name: 'التقويم والأسعار' }).click()
+  await expect(ownerDashboard.locator('.host-calendar-manager-card')).toContainText(
+    `إدارة مواعيد الحجز وأسعار العقار: ${firstPropertyTitle}`,
+  )
+  await expect(ownerDashboard.locator('.calendar-day-cell.booked')).toHaveCount(0)
+  await expect(ownerDashboard.locator('.passcode-display')).toHaveCount(0)
+
+  await propertyTabs.getByRole('tab', { name: 'القفل الذكي' }).click()
+  await expect(ownerDashboard.locator('.host-calendar-manager-card')).toContainText('غير مرتبط بحجز')
+  await expect(ownerDashboard.locator('.host-calendar-manager-card')).toContainText('لا يوجد كود نشط')
+  await expect(ownerDashboard.locator('.host-calendar-manager-card')).not.toContainText('8492')
+  await expect(ownerDashboard.locator('.host-calendar-manager-card').getByRole('button', { name: 'توليد جديد' })).toHaveCount(0)
+  await expect(ownerDashboard.locator('.calendar-day-cell')).toHaveCount(0)
+
+  await propertyTabs.getByRole('tab', { name: 'التقييمات' }).click()
+  await expect(ownerDashboard.locator('.owner-property-reviews-summary')).toContainText(firstPropertyTitle)
+  await expect(ownerDashboard.locator('.owner-property-reviews')).toBeVisible()
+  await ownerDashboard.getByRole('button', { name: 'العودة إلى العقارات' }).click()
+  await expect(propertySection).toBeVisible()
+  await expect(ownerDashboard.locator('.owner-dashboard-header')).toBeVisible()
+  await expect(ownerDashboard.locator('#owner-leading-properties-panel')).toBeVisible()
+
+  const secondPropertyCard = propertySection.locator('.owner-card').nth(1)
+  const secondPropertyTitle = (await secondPropertyCard.locator('h4').textContent())?.trim()
+  await secondPropertyCard.getByRole('button', { name: 'تفاصيل العقار' }).click()
+  await expect(ownerDashboard.locator('.owner-property-detail-heading h3')).toHaveText(secondPropertyTitle)
+  await propertyTabs.getByRole('tab', { name: 'التقويم والأسعار' }).click()
+  await expect(ownerDashboard.locator('.host-calendar-manager-card')).toContainText(
+    `إدارة مواعيد الحجز وأسعار العقار: ${secondPropertyTitle}`,
+  )
+  await ownerDashboard.getByRole('button', { name: 'العودة إلى العقارات' }).click()
 
   await ownerNavigation.getByRole('tab', { name: 'الحجوزات' }).click()
   await expect(ownerDashboard.locator('#owner-bookings-panel')).toBeVisible()

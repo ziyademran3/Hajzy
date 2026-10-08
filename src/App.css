@@ -7049,6 +7049,235 @@ html[dir='rtl'] .settings-switch[aria-checked='true'] .settings-switch-thumb {
   transition: all 0.2s ease;
 }
 
+.owner-property-detail {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.owner-property-detail-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.owner-property-detail-heading h3,
+.owner-property-detail-heading p {
+  margin: 0;
+}
+
+.owner-property-detail-heading h3 {
+  color: var(--text);
+  font-size: var(--type-20);
+  font-weight: 800;
+}
+
+.owner-property-detail-heading p {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: var(--type-12);
+}
+
+.owner-property-back {
+  min-height: 44px;
+  flex-shrink: 0;
+}
+
+.owner-property-tabs {
+  display: flex;
+  gap: var(--space-1);
+  overflow-x: auto;
+  padding: var(--space-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg-card-alt);
+  scrollbar-width: thin;
+}
+
+.owner-property-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--type-12);
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.owner-property-tab:hover {
+  color: var(--text);
+}
+
+.owner-property-tab:focus-visible {
+  outline: 2px solid var(--primary-strong);
+  outline-offset: 2px;
+}
+
+.owner-property-tab.active {
+  border-color: var(--line);
+  background: var(--bg-card);
+  color: var(--primary-strong);
+}
+
+.owner-property-tab .material-symbols-outlined {
+  font-size: var(--type-16);
+}
+
+.owner-property-detail-content {
+  min-width: 0;
+}
+
+.owner-property-overview {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.8fr) minmax(0, 1.2fr);
+  gap: var(--space-5);
+  align-items: start;
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+}
+
+.owner-property-overview > img {
+  display: block;
+  width: 100%;
+  min-height: 180px;
+  max-height: 280px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card-alt);
+}
+
+.owner-property-overview-copy {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.owner-property-detail-price {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.owner-property-detail-price strong {
+  color: var(--text);
+  font-size: var(--type-24);
+  font-variant-numeric: tabular-nums;
+}
+
+.owner-property-detail-price span,
+.owner-property-overview-copy > p {
+  color: var(--muted);
+  font-size: var(--type-14);
+}
+
+.owner-property-overview-copy > p {
+  margin: 0;
+  line-height: 1.7;
+}
+
+.owner-property-amenities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.owner-property-amenities li {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: var(--type-12);
+}
+
+.owner-property-reviews {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.owner-property-reviews-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+}
+
+.owner-property-reviews-summary h4,
+.owner-property-reviews-summary p {
+  margin: 0;
+}
+
+.owner-property-reviews-summary h4 {
+  color: var(--text);
+  font-size: var(--type-16);
+  font-weight: 800;
+}
+
+.owner-property-reviews-summary p {
+  margin-top: var(--space-1);
+  color: var(--muted);
+  font-size: var(--type-12);
+}
+
+.owner-property-reviews-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  background: var(--bg-card);
+}
+
+@media (max-width: 640px) {
+  .owner-property-detail-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .owner-property-tab {
+    padding-inline: var(--space-3);
+  }
+
+  .owner-property-overview {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+    padding: var(--space-3);
+  }
+
+  .owner-property-overview > img {
+    min-height: 160px;
+    max-height: 220px;
+  }
+
+  .owner-property-reviews-summary,
+  .owner-property-reviews-error {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
 .owner-card:hover {
   border-color: rgba(0, 67, 63, 0.16);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);

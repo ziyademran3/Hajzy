@@ -69,6 +69,19 @@
     "bookings": "Bookings",
     "earnings": "Earnings"
   },
+  "ownerPropertyDetails": {
+    "ariaLabel": "Property details sections",
+    "backToProperties": "Back to properties",
+    "viewDetails": "Property details",
+    "overview": "Overview",
+    "availabilityPricing": "Calendar & pricing",
+    "smartLock": "Smart lock",
+    "ratings": "Reviews",
+    "pricePerNight": "per night",
+    "reviewsError": "Unable to load reviews for this property.",
+    "retry": "Try again",
+    "noReviews": "This property has no reviews yet."
+  },
   "ownerDashboard": {
     "addNewProperty": "Add New Property",
     "editProperty": "Edit Property",

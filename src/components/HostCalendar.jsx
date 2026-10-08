@@ -10,6 +10,7 @@ export default function HostCalendar({
   propertyTitle = 'Luxury Sea View Stay',
   propertyId,
   bookings = [],
+  activeSection,
 }) {
   const isArabic = language === 'ar'
   const { t } = useTranslation()
@@ -59,8 +60,12 @@ export default function HostCalendar({
     setTimeout(() => setCopiedCode(false), 2000)
   }
 
+  if (!['availability', 'smart-lock'].includes(activeSection)) return null
+
   return (
     <div className="host-calendar-manager-card">
+      {activeSection === 'availability' && (
+        <>
       <div className="calendar-manager-header">
         <div>
           <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 m-0">
@@ -143,9 +148,12 @@ export default function HostCalendar({
           </div>
         </div>
       </div>
+        </>
+      )}
 
-      <div className="calendar-controls-row mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className={`calendar-controls-row mt-5 grid grid-cols-1 ${activeSection === 'availability' ? 'md:grid-cols-2' : ''} gap-4`}>
         {/* Weekend surge slider with clear min/max bounds and dynamic price breakdown */}
+        {activeSection === 'availability' && (
         <div className="control-tile p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
           <div className="flex items-center justify-between mb-1.5">
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -188,8 +196,10 @@ export default function HostCalendar({
             </strong>
           </div>
         </div>
+        )}
 
         {/* Smart lock passcode with clear validity and status pill */}
+        {activeSection === 'smart-lock' && (
         <div className="control-tile p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
           <div className="flex items-center justify-between mb-1.5">
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -269,6 +279,7 @@ export default function HostCalendar({
             </div>
           )}
         </div>
+        )}
       </div>
     </div>
   )
