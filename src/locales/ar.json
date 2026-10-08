@@ -42,19 +42,12 @@
     "discount": "خصم"
   },
   "ownerRevenue": {
-    "vsLastWeek": "مقارنة بالأسبوع الماضي",
     "period": "الفترة",
     "earliestPeriod": "← الأقدم",
     "tapForDetails": "اضغط على عمود لمعرفة المبلغ",
     "today": "اليوم →",
     "topCity": "أعلى مدينة إيرادًا (الإجمالي)",
-    "chartPeriodLabel": "فترة عرض الإيرادات",
-    "filterLast30Days": "آخر 30 يومًا",
-    "filterMonth": "هذا الشهر",
-    "chartPeriodLast30Days": "الإيرادات خلال آخر 30 يومًا",
-    "chartPeriodMonth": "الإيرادات خلال هذا الشهر",
-    "empty": "لا توجد إيرادات مدفوعة ومؤكدة خلال آخر 30 يومًا.",
-    "emptyMonth": "لا توجد إيرادات مدفوعة ومؤكدة خلال هذا الشهر."
+    "emptyPeriod": "لا توجد إيرادات مدفوعة ومؤكدة خلال {{period}}."
   },
   "smartLock": {
     "status": {
@@ -118,17 +111,21 @@
     "confirmed": "المؤكدة",
     "averageOccupancy": "متوسط الإشغال",
     "confirmedRequests": "الطلبات المؤكدة",
-    "monthlyOccupancy": "الإشغال هذا الشهر",
-    "monthlyOccupancyChange": "{{change}} نقطة مئوية عن الشهر الماضي",
+    "periodOccupancyChange": "{{change}} نقطة مئوية عن الفترة السابقة",
     "bookingConversion": "تحويل الطلبات إلى حجوزات",
     "requestsRatio": "الحجوزات غير الملغاة ÷ إجمالي الطلبات",
-    "currentMonth": "هذا الشهر",
-    "lastSevenDays": "آخر 7 أيام",
-    "weeklyOccupancyDescription": "نسبة الليالي المحجوزة يوميًا خلال آخر 7 أيام",
-    "monthlyOccupancyDescription": "نسبة الليالي المحجوزة يوميًا خلال هذا الشهر",
-    "occupancyPeriodLabel": "فترة عرض الإشغال",
-    "filterLastSevenDays": "آخر 7 أيام",
-    "filterMonth": "هذا الشهر"
+    "periodSelector": "فترة المؤشرات",
+    "periodRevenue": "إيرادات الفترة",
+    "vsPreviousPeriod": "مقارنة بالفترة السابقة",
+    "periodAppliedToRevenue": "الإيرادات خلال {{period}}",
+    "periodOccupancyDescription": "نسبة الليالي المحجوزة يوميًا خلال {{period}}",
+    "topCityInPeriod": "أعلى مدينة إيرادًا خلال {{period}}",
+    "periods": {
+      "thisWeek": "هذا الأسبوع",
+      "lastSevenDays": "آخر 7 أيام",
+      "lastThirtyDays": "آخر 30 يومًا",
+      "thisMonth": "هذا الشهر"
+    }
   },
   "quickActions": {
     "savedHomes": "المنازل المحفوظة",

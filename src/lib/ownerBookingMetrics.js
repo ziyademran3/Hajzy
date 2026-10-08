@@ -1,3 +1,5 @@
+import { getOwnerMetricsPeriodRange } from './ownerMetricsPeriod.js'
+
 const getStatus = (booking) => String(booking?.status || '').trim().toLowerCase()
 
 const isCancelled = (booking) => getStatus(booking) === 'cancelled'
@@ -40,6 +42,21 @@ const getBookingInterval = (booking) => ({
   checkIn: parseBookingDate(booking.checkIn || booking.check_in || booking.startDate || booking.start_date),
   checkOut: parseBookingDate(booking.checkOut || booking.check_out || booking.endDate || booking.end_date),
 })
+
+const getRequestDate = (booking) => parseBookingDate(
+  booking.createdAt
+  || booking.created_at
+  || booking.requestedAt
+  || booking.requested_at
+  || booking.checkIn
+  || booking.check_in
+  || booking.startDate
+  || booking.start_date,
+)
+
+const isWithinPeriod = (date, startDate, endDate) => (
+  date && date >= startDate && date < endDate
+)
 
 export const getSmartLockCodeStatus = (bookings = [], propertyId, now = new Date()) => {
   if (propertyId === null || propertyId === undefined || !Array.isArray(bookings)) {
@@ -118,14 +135,24 @@ export const getBookedDaysForProperty = (bookings, propertyId, year, monthIndex)
     .sort((a, b) => a - b)
 }
 
-export const getOwnerBookingMetrics = (bookings = [], properties = [], now = new Date()) => {
+export const getOwnerBookingMetrics = (
+  bookings = [],
+  properties = [],
+  now = new Date(),
+  period = 'thisMonth',
+) => {
   const safeBookings = Array.isArray(bookings) ? bookings.filter(Boolean) : []
   const safeProperties = Array.isArray(properties)
     ? properties.filter((property) => property?.id !== null && property?.id !== undefined)
     : []
-  const totalRequests = safeBookings.length
-  const activeBookings = safeBookings.filter((booking) => !isCancelled(booking))
-  const confirmedBookings = safeBookings.filter(isConfirmed)
+  const { startDate, endDate, previousStartDate, previousEndDate, days } = getOwnerMetricsPeriodRange(period, now)
+  const periodBookings = safeBookings.filter((booking) => (
+    isWithinPeriod(getRequestDate(booking), startDate, endDate)
+  ))
+  const allActiveBookings = safeBookings.filter((booking) => !isCancelled(booking))
+  const totalRequests = periodBookings.length
+  const activeBookings = periodBookings.filter((booking) => !isCancelled(booking))
+  const confirmedBookings = periodBookings.filter(isConfirmed)
   const bookingConversionPercent = totalRequests
     ? (activeBookings.length / totalRequests) * 100
     : null
@@ -138,13 +165,13 @@ export const getOwnerBookingMetrics = (bookings = [], properties = [], now = new
   const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
   const propertyIds = new Set(safeProperties.map((property) => String(property.id)))
   const monthlyOccupancyPercent = calculateOccupancyPercent(
-    activeBookings,
+    allActiveBookings,
     propertyIds,
     currentMonthStart,
     nextMonthStart,
   )
   const previousMonthOccupancyPercent = calculateOccupancyPercent(
-    activeBookings,
+    allActiveBookings,
     propertyIds,
     previousMonthStart,
     currentMonthStart,
@@ -160,7 +187,7 @@ export const getOwnerBookingMetrics = (bookings = [], properties = [], now = new
     const nextDate = addDays(date, 1)
     return {
       date,
-      occupancyPercent: calculateOccupancyPercent(activeBookings, propertyIds, date, nextDate),
+      occupancyPercent: calculateOccupancyPercent(allActiveBookings, propertyIds, date, nextDate),
     }
   })
   const currentMonthDays = Array.from(
@@ -169,22 +196,49 @@ export const getOwnerBookingMetrics = (bookings = [], properties = [], now = new
       const date = addDays(currentMonthStart, index)
       return {
         date,
-        occupancyPercent: calculateOccupancyPercent(activeBookings, propertyIds, date, addDays(date, 1)),
+        occupancyPercent: calculateOccupancyPercent(allActiveBookings, propertyIds, date, addDays(date, 1)),
       }
     },
   )
+  const occupancyPercent = calculateOccupancyPercent(
+    allActiveBookings,
+    propertyIds,
+    startDate,
+    endDate,
+  )
+  const previousOccupancyPercent = calculateOccupancyPercent(
+    allActiveBookings,
+    propertyIds,
+    previousStartDate,
+    previousEndDate,
+  )
+  const occupancyChangePoints = occupancyPercent === null || previousOccupancyPercent === null
+    ? null
+    : occupancyPercent - previousOccupancyPercent
+  const dailyOccupancy = Array.from({ length: days }, (_, index) => {
+    const date = addDays(startDate, index)
+    return {
+      date,
+      occupancyPercent: calculateOccupancyPercent(allActiveBookings, propertyIds, date, addDays(date, 1)),
+    }
+  })
 
   return {
     totalRequests,
     activeBookingsCount: activeBookings.length,
     confirmedBookingsCount: confirmedBookings.length,
     pendingRequestsCount: safeBookings.filter((booking) => getStatus(booking) === 'pending').length,
+    periodPendingRequestsCount: periodBookings.filter((booking) => getStatus(booking) === 'pending').length,
     bookingConversionPercent,
     confirmedRequestPercent,
+    occupancyPercent,
+    previousOccupancyPercent,
+    occupancyChangePoints,
     monthlyOccupancyPercent,
     previousMonthOccupancyPercent,
     monthlyOccupancyChangePoints,
     lastSevenDays,
     currentMonthDays,
+    dailyOccupancy,
   }
 }

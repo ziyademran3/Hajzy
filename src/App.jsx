@@ -8,6 +8,7 @@ import { useOfflineBooking } from './hooks/useOfflineBooking'
 import { useNativeShare } from './hooks/useNativeShare'
 import { getOwnerRevenueMetrics } from './lib/ownerRevenue'
 import { getOwnerBookingMetrics } from './lib/ownerBookingMetrics'
+import { OWNER_METRICS_PERIODS, isOwnerMetricsPeriod } from './lib/ownerMetricsPeriod'
 import Skeleton from './components/Skeleton'
 import LuxuryPageSkeleton from './components/LuxuryPageSkeleton'
 import LoginPage from './pages/LoginPage'
@@ -359,6 +360,16 @@ function App() {
   const [bookingFilter, setBookingFilter] = useState('upcoming')
   const [ownerBookingFilter, setOwnerBookingFilter] = useState('all')
   const [activeOwnerTab, setActiveOwnerTab] = useState('overview')
+  const [ownerMetricsPeriod, setOwnerMetricsPeriod] = useState(() => {
+    if (!user?.id) return 'lastThirtyDays'
+    try {
+      const storedPeriod = localStorage.getItem(`hajzy_owner_metrics_period_${user.id}`)
+      return isOwnerMetricsPeriod(storedPeriod) ? storedPeriod : 'lastThirtyDays'
+    } catch (error) {
+      console.error('Failed to load owner reporting period', error)
+      return 'lastThirtyDays'
+    }
+  })
   const [notifFilter, setNotifFilter] = useState('all')
   const [ownerNotifPrefs, setOwnerNotifPrefs] = useState(() => getNotificationPreferences(null))
   const [language, setLanguage] = useState(() => {
@@ -460,8 +471,6 @@ function App() {
     bookingInfo: '',
   })
   const [activeRevenueBar, setActiveRevenueBar] = useState(null)
-  const [ownerRevenueChartPeriod, setOwnerRevenueChartPeriod] = useState('last30Days')
-  const [ownerOccupancyChartPeriod, setOwnerOccupancyChartPeriod] = useState('lastSevenDays')
   const propertyFileInputRef = useRef(null)
 
   const handlePropertyImageUpload = (e) => {
@@ -1596,11 +1605,27 @@ function App() {
     }
   }, [ownerDetailPropertyId, ownerPropertyReviewsRetry])
 
-  const ownerBookingMetrics = getOwnerBookingMetrics(ownerBookings, ownerProperties)
-  const occupancyChangePoints = ownerBookingMetrics.monthlyOccupancyChangePoints
+  useEffect(() => {
+    if (!isOwner || user?.id === null || user?.id === undefined) return
+    try {
+      const storedPeriod = localStorage.getItem(`hajzy_owner_metrics_period_${user.id}`)
+      setOwnerMetricsPeriod(isOwnerMetricsPeriod(storedPeriod) ? storedPeriod : 'lastThirtyDays')
+    } catch (error) {
+      console.error('Failed to load owner reporting period', error)
+    }
+  }, [isOwner, user?.id])
+
+  const ownerMetricsNow = new Date()
+  const ownerBookingMetrics = getOwnerBookingMetrics(
+    ownerBookings,
+    ownerProperties,
+    ownerMetricsNow,
+    ownerMetricsPeriod,
+  )
+  const occupancyChangePoints = ownerBookingMetrics.occupancyChangePoints
   const occupancyChangeLabel = occupancyChangePoints === null
     ? null
-    : t('ownerMetrics.monthlyOccupancyChange', {
+    : t('ownerMetrics.periodOccupancyChange', {
       change: `${occupancyChangePoints > 0 ? '+' : ''}${formatNumber(occupancyChangePoints, { maximumFractionDigits: 1 })}`,
     })
   const pendingOwnerBookingsCount = ownerBookingMetrics.pendingRequestsCount
@@ -1669,11 +1694,40 @@ function App() {
 
   const ownerRevenueMetrics = getOwnerRevenueMetrics(
     ownerBookings,
-    new Date(),
+    ownerMetricsNow,
     ownerProperties,
-    ownerRevenueChartPeriod,
+    ownerMetricsPeriod,
   )
-  const ownerRevenue = ownerRevenueMetrics.totalRevenue
+  const ownerRevenue = ownerRevenueMetrics.periodRevenue
+  const ownerMetricsPeriodLabel = t(`ownerMetrics.periods.${ownerMetricsPeriod}`)
+  const handleOwnerMetricsPeriodChange = (period) => {
+    if (!isOwnerMetricsPeriod(period)) return
+    setOwnerMetricsPeriod(period)
+    setActiveRevenueBar(null)
+    if (user?.id === null || user?.id === undefined) return
+    try {
+      localStorage.setItem(`hajzy_owner_metrics_period_${user.id}`, period)
+    } catch (error) {
+      console.error('Failed to save owner reporting period', error)
+    }
+  }
+  const renderOwnerMetricsPeriodFilter = () => (
+    <div className="owner-period-toolbar">
+      <span className="owner-period-toolbar-label">{t('ownerMetrics.periodSelector')}</span>
+      <div className="owner-period-filter" role="group" aria-label={t('ownerMetrics.periodSelector')}>
+        {OWNER_METRICS_PERIODS.map((period) => (
+          <button
+            key={period}
+            type="button"
+            aria-pressed={ownerMetricsPeriod === period}
+            onClick={() => handleOwnerMetricsPeriodChange(period)}
+          >
+            {t(`ownerMetrics.periods.${period}`)}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
   const formatRevenuePeriod = (period) => {
     const locale = language === 'en' ? 'en-US' : 'ar-EG-u-nu-latn'
     const options = { day: 'numeric', month: 'short' }
@@ -2168,6 +2222,7 @@ function App() {
         aria-labelledby="owner-tab-overview"
         hidden={activeOwnerTab !== 'overview'}
       >
+      {renderOwnerMetricsPeriodFilter()}
       <div className="owner-summary-grid-wrap">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
           <div className="owner-summary-card accent">
@@ -2186,17 +2241,17 @@ function App() {
               <p>{language === 'en' ? 'Pending Requests' : 'الطلبات المعلقة'}</p>
               <span className="owner-stat-icon material-symbols-outlined">pending_actions</span>
             </div>
-            <strong>{formatNumber(pendingOwnerBookingsCount)}</strong>
-            <small>{pendingOwnerBookingsCount
+            <strong>{formatNumber(ownerBookingMetrics.periodPendingRequestsCount)}</strong>
+            <small>{ownerBookingMetrics.periodPendingRequestsCount
               ? t('ownerDashboard.requestsAwaitingReview', {
-                requests: pluralize(pendingOwnerBookingsCount, 'bookingRequest', language),
+                requests: pluralize(ownerBookingMetrics.periodPendingRequestsCount, 'bookingRequest', language),
               })
-              : t('ownerDashboard.noPendingRequests')}</small>
+              : t('ownerDashboard.noPendingRequests')} · {ownerMetricsPeriodLabel}</small>
           </div>
 
           <div className="owner-summary-card success">
             <div className="owner-card-topline">
-              <p>{language === 'en' ? 'Total Revenue' : 'إجمالي الإيرادات'}</p>
+              <p>{t('ownerMetrics.periodRevenue')}</p>
               <span className="owner-stat-icon material-symbols-outlined">payments</span>
             </div>
             <strong>{formatCurrency(ownerRevenue, 'EGP', language)}</strong>
@@ -2204,7 +2259,7 @@ function App() {
               <small>
                 {ownerRevenueMetrics.growthPercent > 0 ? '+' : ''}
                 {formatNumber(ownerRevenueMetrics.growthPercent, { maximumFractionDigits: 1 })}%
-                {' '}{t('ownerRevenue.vsLastWeek')}
+                {' '}{t('ownerMetrics.vsPreviousPeriod')}
               </small>
             )}
           </div>
@@ -2381,6 +2436,7 @@ function App() {
         aria-labelledby="owner-tab-earnings"
         hidden={activeOwnerTab !== 'earnings'}
       >
+      {renderOwnerMetricsPeriodFilter()}
       <div className="owner-analytics-surface relative">
         <div className="owner-insights-header flex items-center justify-between mb-3">
           <div>
@@ -2388,24 +2444,9 @@ function App() {
               {language === 'en' ? 'Property Revenue' : 'إيرادات العقارات'}
             </h3>
             <span className="text-[11px] text-slate-500 block mt-0.5">
-              {t(ownerRevenueChartPeriod === 'thisMonth' ? 'ownerRevenue.chartPeriodMonth' : 'ownerRevenue.chartPeriodLast30Days')}
+              {t('ownerMetrics.periodAppliedToRevenue', { period: ownerMetricsPeriodLabel })}
             </span>
           </div>
-        </div>
-        <div className="owner-period-filter" role="group" aria-label={t('ownerRevenue.chartPeriodLabel')}>
-          {['last30Days', 'thisMonth'].map((period) => (
-            <button
-              key={period}
-              type="button"
-              aria-pressed={ownerRevenueChartPeriod === period}
-              onClick={() => {
-                setOwnerRevenueChartPeriod(period)
-                setActiveRevenueBar(null)
-              }}
-            >
-              {t(period === 'thisMonth' ? 'ownerRevenue.filterMonth' : 'ownerRevenue.filterLast30Days')}
-            </button>
-          ))}
         </div>
 
         {ownerRevenueMetrics.hasChartRevenue && activeRevenueBar !== null && (
@@ -2469,12 +2510,12 @@ function App() {
         ) : (
           <div className="owner-revenue-empty-state" role="status">
             <span className="material-symbols-outlined" aria-hidden="true">bar_chart</span>
-            <p>{t(ownerRevenueChartPeriod === 'thisMonth' ? 'ownerRevenue.emptyMonth' : 'ownerRevenue.empty')}</p>
+            <p>{t('ownerRevenue.emptyPeriod', { period: ownerMetricsPeriodLabel })}</p>
           </div>
         )}
         {ownerRevenueMetrics.topRevenueCity && (
           <div className="owner-revenue-city-insight">
-            <span>{t('ownerRevenue.topCity')}</span>
+            <span>{t('ownerMetrics.topCityInPeriod', { period: ownerMetricsPeriodLabel })}</span>
             <strong>{ownerRevenueMetrics.topRevenueCity.city}</strong>
             <span>
               {formatCurrency(ownerRevenueMetrics.topRevenueCity.amount, 'EGP', language)}
@@ -2530,8 +2571,8 @@ function App() {
       >
       <div className="owner-summary-grid">
         <div className="owner-summary-card">
-          <span>{t('ownerMetrics.monthlyOccupancy')}</span>
-          <strong>{formatPercent(ownerBookingMetrics.monthlyOccupancyPercent)}</strong>
+          <span>{t('ownerMetrics.occupancy')}</span>
+          <strong>{formatPercent(ownerBookingMetrics.occupancyPercent)}</strong>
           {occupancyChangeLabel && <small className="owner-metric-comparison">{occupancyChangeLabel}</small>}
         </div>
         <div className="owner-summary-card">
@@ -2553,27 +2594,12 @@ function App() {
               {language === 'en' ? 'Occupancy Rate' : 'نسبة الإشغال'}
             </h3>
             <span className="text-[11px] text-slate-500 block mt-0.5">
-              {t(ownerOccupancyChartPeriod === 'thisMonth' ? 'ownerMetrics.monthlyOccupancyDescription' : 'ownerMetrics.weeklyOccupancyDescription')}
+              {t('ownerMetrics.periodOccupancyDescription', { period: ownerMetricsPeriodLabel })}
             </span>
-          </div>
-          <div className="owner-period-filter" role="group" aria-label={t('ownerMetrics.occupancyPeriodLabel')}>
-            {['lastSevenDays', 'thisMonth'].map((period) => (
-              <button
-                key={period}
-                type="button"
-                aria-pressed={ownerOccupancyChartPeriod === period}
-                onClick={() => setOwnerOccupancyChartPeriod(period)}
-              >
-                {t(period === 'thisMonth' ? 'ownerMetrics.filterMonth' : 'ownerMetrics.filterLastSevenDays')}
-              </button>
-            ))}
           </div>
         </div>
         <div className="owner-chart">
-          {(ownerOccupancyChartPeriod === 'thisMonth'
-            ? ownerBookingMetrics.currentMonthDays
-            : ownerBookingMetrics.lastSevenDays
-          ).map((item) => {
+          {ownerBookingMetrics.dailyOccupancy.map((item) => {
             const dayLabel = new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'ar-EG', {
               weekday: 'short',
             }).format(item.date)

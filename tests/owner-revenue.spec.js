@@ -15,14 +15,14 @@ test('owner revenue includes only paid confirmed bookings and supports database 
   expect(metrics.bars.reduce((sum, bar) => sum + bar.amount, 0)).toBe(4000)
 })
 
-test('monthly revenue and weekly growth use the paid date', () => {
+test('selected-period growth and monthly revenue use the paid date', () => {
   const metrics = getOwnerRevenueMetrics([
-    { status: 'confirmed', paidAt: '2026-09-27T12:00:00', total: 1000 },
-    { status: 'confirmed', paidAt: '2026-10-03T12:00:00', total: 1500 },
-  ], new Date(2026, 9, 4, 12))
+    { status: 'confirmed', paidAt: '2026-10-03T12:00:00', total: 1000 },
+    { status: 'confirmed', paidAt: '2026-10-05T12:00:00', total: 1500 },
+  ], new Date(2026, 9, 6, 12), [], 'thisWeek')
 
   expect(metrics.totalRevenue).toBe(2500)
-  expect(metrics.thisMonthRevenue).toBe(1500)
+  expect(metrics.thisMonthRevenue).toBe(2500)
   expect(metrics.growthPercent).toBe(50)
 })
 
@@ -41,11 +41,11 @@ test('no paid revenue produces zero totals, no growth, and empty chart values', 
 
 test('top revenue city uses eligible paid bookings linked to owner properties', () => {
   const metrics = getOwnerRevenueMetrics([
-    { status: 'paid', total: 2500, property_id: 1 },
-    { status: 'confirmed', paymentStatus: 'succeeded', totalPrice: 4000, propertyId: 2 },
+    { status: 'paid', paidAt: '2026-10-02T10:00:00', total: 2500, property_id: 1 },
+    { status: 'confirmed', paidAt: '2026-10-03T10:00:00', paymentStatus: 'succeeded', totalPrice: 4000, propertyId: 2 },
     { status: 'pending', paidAt: '2026-10-04T10:00:00', total: 10000, propertyId: 2 },
-    { status: 'paid', total: 0, propertyId: 3 },
-    { status: 'paid', total: 9000, propertyId: 4 },
+    { status: 'paid', paidAt: '2026-10-02T10:00:00', total: 0, propertyId: 3 },
+    { status: 'paid', paidAt: '2026-10-02T10:00:00', total: 9000, propertyId: 4 },
   ], new Date(2026, 9, 4, 12), [
     { id: 1, city: 'القاهرة' },
     { id: 2, city: 'الإسكندرية' },
@@ -63,17 +63,27 @@ test('top revenue city is empty when there is no eligible linked revenue', () =>
   expect(metrics.topRevenueCity).toBeNull()
 })
 
-test('revenue chart period switches between the last 30 days and current month', () => {
+test('revenue totals, growth, city and chart use the shared selected period', () => {
   const bookings = [
-    { status: 'paid', paidAt: '2026-09-30T12:00:00', total: 500 },
-    { status: 'paid', paidAt: '2026-10-03T12:00:00', total: 1200 },
+    { status: 'paid', paidAt: '2026-09-05T12:00:00', total: 500, propertyId: 1 },
+    { status: 'paid', paidAt: '2026-10-01T12:00:00', total: 300, propertyId: 1 },
+    { status: 'paid', paidAt: '2026-10-03T12:00:00', total: 1200, propertyId: 1 },
+    { status: 'paid', paidAt: '2026-10-08T12:00:00', total: 1600, propertyId: 2 },
   ]
   const now = new Date(2026, 9, 8, 12)
-  const last30Days = getOwnerRevenueMetrics(bookings, now, [], 'last30Days')
-  const thisMonth = getOwnerRevenueMetrics(bookings, now, [], 'thisMonth')
+  const lastSevenDays = getOwnerRevenueMetrics(bookings, now, [], 'lastSevenDays')
+  const thisMonth = getOwnerRevenueMetrics(bookings, now, [
+    { id: 1, city: 'القاهرة' },
+    { id: 2, city: 'الإسكندرية' },
+  ], 'thisMonth')
 
-  expect(last30Days.bars.reduce((sum, bar) => sum + bar.amount, 0)).toBe(1700)
-  expect(thisMonth.bars.reduce((sum, bar) => sum + bar.amount, 0)).toBe(1200)
-  expect(thisMonth.bars).toHaveLength(9)
+  expect(lastSevenDays.periodRevenue).toBe(2800)
+  expect(lastSevenDays.bars.reduce((sum, bar) => sum + bar.amount, 0)).toBe(2800)
+  expect(thisMonth.periodRevenue).toBe(3100)
+  expect(thisMonth.previousPeriodRevenue).toBe(500)
+  expect(thisMonth.growthPercent).toBe(520)
+  expect(thisMonth.topRevenueCity).toEqual({ city: 'الإسكندرية', amount: 1600 })
+  expect(thisMonth.bars.reduce((sum, bar) => sum + bar.amount, 0)).toBe(3100)
+  expect(thisMonth.bars).toHaveLength(8)
   expect(thisMonth.hasChartRevenue).toBe(true)
 })

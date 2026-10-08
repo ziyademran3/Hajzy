@@ -42,19 +42,12 @@
     "discount": "discount"
   },
   "ownerRevenue": {
-    "vsLastWeek": "vs last week",
     "period": "Period",
     "earliestPeriod": "← Earliest",
     "tapForDetails": "Tap a bar for the exact amount",
     "today": "Today →",
     "topCity": "Top earning city (all time)",
-    "chartPeriodLabel": "Revenue chart period",
-    "filterLast30Days": "Last 30 days",
-    "filterMonth": "This month",
-    "chartPeriodLast30Days": "Revenue over the last 30 days",
-    "chartPeriodMonth": "Revenue this month",
-    "empty": "No paid and confirmed revenue in the last 30 days.",
-    "emptyMonth": "No paid and confirmed revenue this month."
+    "emptyPeriod": "No paid and confirmed revenue during {{period}}."
   },
   "smartLock": {
     "status": {
@@ -118,17 +111,21 @@
     "confirmed": "Confirmed",
     "averageOccupancy": "Average occupancy",
     "confirmedRequests": "Confirmed requests",
-    "monthlyOccupancy": "Occupancy this month",
-    "monthlyOccupancyChange": "{{change}} percentage points vs last month",
+    "periodOccupancyChange": "{{change}} percentage points vs the previous period",
     "bookingConversion": "Request-to-booking conversion",
     "requestsRatio": "Non-cancelled bookings ÷ total requests",
-    "currentMonth": "This month",
-    "lastSevenDays": "Last 7 days",
-    "weeklyOccupancyDescription": "Daily booked-night occupancy over the last 7 days",
-    "monthlyOccupancyDescription": "Daily booked-night occupancy this month",
-    "occupancyPeriodLabel": "Occupancy chart period",
-    "filterLastSevenDays": "Last 7 days",
-    "filterMonth": "This month"
+    "periodSelector": "Metrics period",
+    "periodRevenue": "Period revenue",
+    "vsPreviousPeriod": "vs previous period",
+    "periodAppliedToRevenue": "Revenue during {{period}}",
+    "periodOccupancyDescription": "Daily booked-night occupancy during {{period}}",
+    "topCityInPeriod": "Top earning city during {{period}}",
+    "periods": {
+      "thisWeek": "This week",
+      "lastSevenDays": "Last 7 days",
+      "lastThirtyDays": "Last 30 days",
+      "thisMonth": "This month"
+    }
   },
   "quickActions": {
     "savedHomes": "Saved homes",
