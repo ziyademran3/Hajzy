@@ -276,6 +276,16 @@ test('owner overview shows three latest bookings and the bookings tab is the onl
   await expect(recentBookingItems.locator('strong').nth(2)).toHaveText('Recent test booking 3')
   await expect(recentBookingItems.locator('strong').nth(4)).toHaveText('Recent test booking 2')
 
+  const quickTasks = ownerDashboard.locator('.owner-task-list')
+  await expect(quickTasks).toContainText('مراجعة الطلبات المعلقة')
+  await expect(quickTasks).toContainText('2')
+  await expect(quickTasks).toContainText('بانتظار المراجعة')
+  await expect(quickTasks).not.toContainText('تحديث وصف العقار الرئيسي')
+  await expect(quickTasks).not.toContainText('إرسال رسالة ترحيب')
+  await quickTasks.getByRole('button', { name: /مراجعة الطلبات المعلقة/ }).click()
+  await expect(ownerDashboard.locator('#owner-bookings-panel')).toBeVisible()
+  await ownerNavigation.getByRole('tab', { name: 'نظرة عامة' }).click()
+
   await ownerDashboard.locator('.owner-recent-bookings-panel').getByRole('button', { name: 'عرض الكل' }).click()
   await expect(ownerDashboard.locator('#owner-bookings-panel')).toBeVisible()
   await expect(ownerDashboard.locator('.owner-booking-card')).toHaveCount(4)
@@ -286,4 +296,37 @@ test('owner overview shows three latest bookings and the bookings tab is the onl
   await expect(ownerDashboard.locator('#owner-bookings-panel').getByRole('tab', { name: /قيد المراجعة/ })).toHaveAttribute('aria-selected', 'true')
   await expect(ownerNavigation.getByRole('tab', { name: /الحجوزات.*عدد الطلبات المعلقة/ })).toBeVisible()
   await expect(ownerNavigation.locator('#owner-tab-bookings .owner-nav-pending-badge')).toHaveText('2')
+})
+
+test('owner quick task opens editing for a property with fewer than three photos', async ({ page }) => {
+  await page.addInitScript(() => {
+    const ownerId = 'owner-property-photo-task-test'
+    localStorage.clear()
+    localStorage.setItem('hajzy_user', JSON.stringify({ id: ownerId, role: 'owner', name: 'Test Owner' }))
+    localStorage.setItem('hajzy_properties', JSON.stringify([{
+      id: 'photo-task-property',
+      ownerId,
+      title: 'Photo task property',
+      city: 'القاهرة',
+      location: 'Test location',
+      priceValue: 1200,
+      image: 'https://example.com/property.jpg',
+      images: ['https://example.com/property.jpg'],
+    }]))
+  })
+  await page.route('**/rest/v1/**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: '[]',
+  }))
+  await page.goto('/')
+
+  const ownerDashboard = page.locator('.owner-shell')
+  const photoTask = ownerDashboard.locator('.owner-task-list').getByRole('button', {
+    name: /أكمل صور العقار.*Photo task property.*1 من 3 صور/,
+  })
+  await expect(photoTask).toBeVisible()
+  await photoTask.click()
+  await expect(ownerDashboard.locator('#owner-properties-panel .owner-form')).toBeVisible()
+  await expect(ownerDashboard.locator('#owner-properties-panel .owner-form .owner-form-head h3')).toHaveText('تعديل العقار')
 })

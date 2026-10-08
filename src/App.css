@@ -6846,20 +6846,63 @@ html[dir='rtl'] .settings-switch[aria-checked='true'] .settings-switch-thumb {
 
 .owner-task-list li {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  align-items: stretch;
   border-radius: 12px;
   background: rgba(0, 67, 63, 0.03);
   border: 1px solid rgba(0, 67, 63, 0.08);
   color: var(--text);
+}
+
+.owner-task-list button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.owner-task-list button:focus-visible {
+  outline: 2px solid var(--primary-700);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+
+.owner-task-copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.owner-task-copy strong {
+  color: var(--text);
   font-size: var(--type-12);
-  font-weight: 600;
+  font-weight: 700;
+}
+
+.owner-task-copy small {
+  color: var(--muted);
+  font-size: var(--type-12);
 }
 
 .owner-task-list .material-symbols-outlined {
   color: var(--primary);
   font-size: var(--type-16);
+}
+
+.owner-task-list .owner-task-arrow {
+  color: var(--muted);
+  font-size: var(--type-14);
+}
+
+html[dir='rtl'] .owner-task-list .owner-task-arrow {
+  transform: rotate(180deg);
 }
 
 .rating-score-box {

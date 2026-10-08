@@ -1772,6 +1772,38 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  const minimumOwnerPropertyPhotos = 3
+  const ownerQuickTasks = [
+    ...(pendingOwnerBookingsCount > 0 ? [{
+      id: 'pending-bookings',
+      icon: 'event_available',
+      title: t('ownerDashboard.reviewPendingRequests'),
+      detail: t('ownerDashboard.requestsAwaitingReview', {
+        requests: pluralize(pendingOwnerBookingsCount, 'bookingRequest', language),
+      }),
+      onSelect: handleViewAllOwnerBookings,
+    }] : []),
+    ...ownerProperties
+      .map((property) => ({
+        property,
+        photoCount: (Array.isArray(property.images) ? property.images : [property.image])
+          .filter(Boolean)
+          .length,
+      }))
+      .filter(({ photoCount }) => photoCount < minimumOwnerPropertyPhotos)
+      .slice(0, 3)
+      .map(({ property, photoCount }) => ({
+        id: `property-photos-${property.id}`,
+        icon: 'add_photo_alternate',
+        title: t('ownerDashboard.addPropertyPhotos'),
+        detail: `${language === 'en' ? property.titleEn || property.title : property.title} · ${t('ownerDashboard.propertyPhotoProgress', { count: formatNumber(photoCount) })}`,
+        onSelect: () => {
+          handleOwnerTabChange('properties')
+          handleOwnerEditProperty(property)
+        },
+      })),
+  ]
+
   const handleViewAllProperties = () => {
     setSearchTerm('')
     setActiveFilter('all')
@@ -2222,18 +2254,29 @@ function App() {
             </div>
           </div>
 
-          <div className="owner-analytics-card">
-            <div className="owner-overview-header">
-              <h3>{language === 'en' ? 'Quick Tasks' : 'مهام سريعة'}</h3>
-              <span className="status-pill neutral">{language === 'en' ? 'Today' : 'اليوم'}</span>
+          {ownerQuickTasks.length > 0 && (
+            <div className="owner-analytics-card">
+              <div className="owner-overview-header">
+                <h3>{t('ownerDashboard.quickTasks')}</h3>
+              </div>
+              <ul className="owner-task-list">
+                {ownerQuickTasks.map((task) => (
+                  <li key={task.id}>
+                    <button type="button" onClick={task.onSelect}>
+                      <span className="material-symbols-outlined" aria-hidden="true">{task.icon}</span>
+                      <span className="owner-task-copy">
+                        <strong>{task.title}</strong>
+                        <small>{task.detail}</small>
+                      </span>
+                      <span className="material-symbols-outlined owner-task-arrow" aria-hidden="true">
+                        arrow_forward
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <ul className="owner-task-list">
-              <li>{language === 'en' ? 'Review new booking requests' : 'متابعة طلبات الحجز الجديدة'}</li>
-              <li><span className="material-symbols-outlined">inventory_2</span>{t('ownerDashboard.updateMainPropertyDescription')}</li>
-              <li><span className="material-symbols-outlined">campaign</span>{language === 'en' ? 'Send welcome message to guests' : 'إرسال رسالة ترحيب للضيوف'}</li>
-              <li><span className="material-symbols-outlined">payments</span>{language === 'en' ? 'Audit monthly revenue statements' : 'مراجعة الإيرادات الشهرية'}</li>
-            </ul>
-          </div>
+          )}
       </div>
 
       </section>
