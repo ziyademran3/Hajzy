@@ -106,16 +106,14 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
 
   const ownerDashboard = page.locator('.owner-shell')
   await expect(ownerDashboard).toBeVisible()
-  await expect(ownerDashboard.locator('.owner-feature-pills')).toContainText('الإشغال هذا الشهر')
   await expect(ownerDashboard.locator('.owner-summary-grid .owner-summary-card').first()).toContainText('نقطة مئوية عن الشهر الماضي')
   await expect(ownerDashboard.locator('.owner-dashboard-header')).not.toContainText('Owner Portal')
   await expect(ownerDashboard.locator('.owner-dashboard-header')).not.toContainText('إضافة عقار')
   await expect(ownerDashboard.locator('.owner-summary-grid .owner-summary-card').nth(2).locator('strong')).toContainText('ساعة')
   await expect(ownerDashboard.locator('.owner-action-rail')).not.toContainText('مراجعة الطلبات')
-  await expect(ownerDashboard.locator('.owner-feature-banner')).not.toContainText('مراجعة الطلبات والحجوزات')
+  await expect(ownerDashboard.locator('.owner-feature-banner')).toHaveCount(0)
   await expect(ownerDashboard.locator('.owner-action-rail .secondary-button')).toHaveCount(2)
   await expect(ownerDashboard.locator('.owner-summary-grid .owner-summary-card').nth(1).locator('strong')).toHaveText('—')
-  await expect(ownerDashboard.locator('.owner-feature-pills')).toContainText('0%')
   await expect(page.locator('.notification-button .notification-badge')).toHaveText('2')
 
   const ownerNavigation = page.getByRole('tablist', { name: 'التنقل في لوحة المالك' })

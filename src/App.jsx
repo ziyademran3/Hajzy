@@ -2196,30 +2196,6 @@ function App() {
         </button>
       </div>
 
-      <div className="owner-feature-banner">
-        <div className="owner-feature-main">
-          <span className="owner-feature-kicker">{language === 'en' ? 'Weekly High Demand' : 'أعلى طلب هذا الأسبوع'}</span>
-          <h3 className="m-0 text-lg sm:text-xl font-bold">{language === 'en' ? 'Top demand in your properties' : 'إقبال قياسي على وحداتك هذا الأسبوع'}</h3>
-          <p className="text-xs text-emerald-100/80 m-0 mt-1">
-            {language === 'en'
-              ? 'Peak booking demand detected in your stays. Review new requests and adjust weekend rates.'
-              : 'تم رصد زيادة في معدل الحجوزات لوحداتك — راجع الطلبات الجديدة واستفد من تعديل أسعار الويك إند.'}
-          </p>
-        </div>
-        <div className="owner-feature-actions-wrap flex flex-col sm:flex-row sm:items-center gap-3">
-          <div className="owner-feature-pills">
-            <span>{t('ownerMetrics.monthlyOccupancy')}: {formatPercent(ownerBookingMetrics.monthlyOccupancyPercent)}</span>
-            <span>{t('ownerMetrics.confirmed')} {formatPercent(ownerBookingMetrics.confirmedRequestPercent)}</span>
-            <span>
-              {language === 'en' ? 'Rating' : 'التقييم'}{' '}
-              {ownerAverageRating === null
-                ? '—'
-                : `${formatNumber(ownerAverageRating, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} ★`}
-            </span>
-          </div>
-        </div>
-      </div>
-
       <div className="owner-analytics-grid owner-recent-bookings-panel">
           <div className="owner-analytics-card">
             <div className="owner-overview-header">
