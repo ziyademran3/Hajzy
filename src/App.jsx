@@ -1606,6 +1606,16 @@ function App() {
     if (ownerBookingFilter === 'all') return true
     return booking.status === ownerBookingFilter
   })
+  const recentOwnerBookings = [...ownerBookings]
+    .sort((bookingA, bookingB) => {
+      const createdAtA = Date.parse(bookingA.createdAt || '')
+      const createdAtB = Date.parse(bookingB.createdAt || '')
+      if (Number.isFinite(createdAtA) && Number.isFinite(createdAtB)) return createdAtB - createdAtA
+      if (Number.isFinite(createdAtA)) return -1
+      if (Number.isFinite(createdAtB)) return 1
+      return 0
+    })
+    .slice(0, 3)
 
   const handleOwnerAcceptBooking = async (bookingId) => {
     const booking = bookings.find((b) => String(b.id) === String(bookingId))
@@ -1743,7 +1753,7 @@ function App() {
   }
 
   const handleViewAllOwnerBookings = () => {
-    setActiveOwnerTab('bookings')
+    handleOwnerTabChange('bookings')
     setOwnerBookingFilter('all')
   }
 
@@ -2296,6 +2306,46 @@ function App() {
 
       </div>
 
+      <div className="owner-analytics-grid owner-recent-bookings-panel">
+          <div className="owner-analytics-card">
+            <div className="owner-overview-header">
+              <h3>{language === 'en' ? 'Recent Bookings' : 'أحدث الحجوزات'}</h3>
+              <button type="button" className="text-button" onClick={handleViewAllOwnerBookings}>
+                {language === 'en' ? 'View All' : 'عرض الكل'}
+              </button>
+            </div>
+            <div className="mini-booking-list">
+              {recentOwnerBookings.length ? recentOwnerBookings.map((booking) => (
+                <div key={booking.id} className="mini-booking-item">
+                  <div>
+                    <strong>{booking.title}</strong>
+                    <span>{booking.location}</span>
+                  </div>
+                  <div>
+                    <strong>{formatCurrency(booking.total, booking.currency, language)}</strong>
+                    <span>{booking.status === 'confirmed' ? (language === 'en' ? 'Confirmed' : 'مؤكد') : (language === 'en' ? 'Pending' : 'قيد المراجعة')}</span>
+                  </div>
+                </div>
+              )) : (
+                <div className="empty-inline">{language === 'en' ? 'No bookings yet.' : 'لا توجد حجوزات حتى الآن.'}</div>
+              )}
+            </div>
+          </div>
+
+          <div className="owner-analytics-card">
+            <div className="owner-overview-header">
+              <h3>{language === 'en' ? 'Quick Tasks' : 'مهام سريعة'}</h3>
+              <span className="status-pill neutral">{language === 'en' ? 'Today' : 'اليوم'}</span>
+            </div>
+            <ul className="owner-task-list">
+              <li>{language === 'en' ? 'Review new booking requests' : 'متابعة طلبات الحجز الجديدة'}</li>
+              <li><span className="material-symbols-outlined">inventory_2</span>{t('ownerDashboard.updateMainPropertyDescription')}</li>
+              <li><span className="material-symbols-outlined">campaign</span>{language === 'en' ? 'Send welcome message to guests' : 'إرسال رسالة ترحيب للضيوف'}</li>
+              <li><span className="material-symbols-outlined">payments</span>{language === 'en' ? 'Audit monthly revenue statements' : 'مراجعة الإيرادات الشهرية'}</li>
+            </ul>
+          </div>
+      </div>
+
       </section>
 
       <section
@@ -2492,54 +2542,6 @@ function App() {
       </section>
 
       <section
-        id="owner-booking-overview-panel"
-        className="owner-tab-panel"
-        role="tabpanel"
-        aria-labelledby="owner-tab-bookings"
-        hidden={activeOwnerTab !== 'bookings'}
-      >
-      <div className="owner-analytics-grid">
-        <div className="owner-analytics-card">
-          <div className="owner-overview-header">
-            <h3>{language === 'en' ? 'Recent Bookings' : 'أحدث الحجوزات'}</h3>
-            <button type="button" className="text-button" onClick={handleViewAllOwnerBookings}>
-              {language === 'en' ? 'View All' : 'عرض الكل'}
-            </button>
-          </div>
-          <div className="mini-booking-list">
-            {ownerBookings.length ? ownerBookings.slice(0, 5).map((booking) => (
-              <div key={booking.id} className="mini-booking-item">
-                <div>
-                  <strong>{booking.title}</strong>
-                  <span>{booking.location}</span>
-                </div>
-                <div>
-                  <strong>{formatCurrency(booking.total, booking.currency, language)}</strong>
-                  <span>{booking.status === 'confirmed' ? (language === 'en' ? 'Confirmed' : 'مؤكد') : (language === 'en' ? 'Pending' : 'قيد المراجعة')}</span>
-                </div>
-              </div>
-            )) : (
-              <div className="empty-inline">{language === 'en' ? 'No bookings yet.' : 'لا توجد حجوزات حتى الآن.'}</div>
-            )}
-          </div>
-        </div>
-
-        <div className="owner-analytics-card">
-          <div className="owner-overview-header">
-            <h3>{language === 'en' ? 'Quick Tasks' : 'مهام سريعة'}</h3>
-            <span className="status-pill neutral">{language === 'en' ? 'Today' : 'اليوم'}</span>
-          </div>
-          <ul className="owner-task-list">
-            <li>{language === 'en' ? 'Review new booking requests' : 'متابعة طلبات الحجز الجديدة'}</li>
-            <li><span className="material-symbols-outlined">inventory_2</span>{t('ownerDashboard.updateMainPropertyDescription')}</li>
-            <li><span className="material-symbols-outlined">campaign</span>{language === 'en' ? 'Send welcome message to guests' : 'إرسال رسالة ترحيب للضيوف'}</li>
-            <li><span className="material-symbols-outlined">payments</span>{language === 'en' ? 'Audit monthly revenue statements' : 'مراجعة الإيرادات الشهرية'}</li>
-          </ul>
-        </div>
-      </div>
-      </section>
-
-      <section
         id="owner-leading-properties-panel"
         className="owner-tab-panel"
         role="tabpanel"
@@ -2625,43 +2627,6 @@ function App() {
         </div>
       </div>
 
-      <div className="owner-table-card">
-        <div className="owner-overview-header">
-          <h3>{language === 'en' ? 'Bookings List' : 'قائمة الحجوزات'}</h3>
-        </div>
-        <div className="owner-table-wrap">
-          <table className="owner-table">
-            <thead>
-              <tr>
-                <th>{language === 'en' ? 'Guest / Property' : 'العميل'}</th>
-                <th>{language === 'en' ? 'Location' : 'العقار'}</th>
-                <th>{language === 'en' ? 'Dates' : 'التواريخ'}</th>
-                <th>{language === 'en' ? 'Total' : 'الإجمالي'}</th>
-                <th>{language === 'en' ? 'Status' : 'الحالة'}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ownerBookings.length ? ownerBookings.slice(0, 5).map((booking) => (
-                <tr key={booking.id}>
-                  <td>{booking.title || (language === 'en' ? 'Guest' : 'زائر')}</td>
-                  <td>{booking.location || (language === 'en' ? 'Location' : 'موقع العقار')}</td>
-                  <td>{formatDate(booking.checkIn, language)} - {formatDate(booking.checkOut, language)}</td>
-                  <td>{formatCurrency(booking.total, booking.currency, language)}</td>
-                  <td>
-                    <span className={booking.status === 'confirmed' ? 'status-badge confirmed' : 'status-badge pending'}>
-                      {booking.status === 'confirmed' ? (language === 'en' ? 'Confirmed' : 'مؤكد') : (language === 'en' ? 'Pending Review' : 'قيد المراجعة')}
-                    </span>
-                  </td>
-                </tr>
-              )) : (
-                <tr>
-                  <td colSpan="5" className="empty-table">{language === 'en' ? 'No bookings yet.' : 'لا توجد حجوزات حتى الآن.'}</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
       </section>
 
       <section

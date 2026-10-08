@@ -211,11 +211,57 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
 
   await ownerNavigation.getByRole('tab', { name: 'الحجوزات' }).click()
   await expect(ownerDashboard.locator('#owner-bookings-panel')).toBeVisible()
-  await expect(ownerDashboard.locator('#owner-booking-overview-panel')).toBeVisible()
+  await expect(ownerDashboard.locator('#owner-booking-overview-panel')).toHaveCount(0)
+  await expect(ownerDashboard.locator('.owner-table-card')).toHaveCount(0)
+  await expect(ownerDashboard.locator('.owner-booking-card')).toHaveCount(0)
   await expect(ownerDashboard.locator('#owner-properties-panel')).toBeHidden()
 
   await ownerNavigation.getByRole('tab', { name: 'الأرباح' }).click()
   await expect(ownerDashboard.locator('#owner-revenue-panel')).toBeVisible()
   await expect(ownerDashboard.locator('#owner-revenue-panel').getByRole('button', { name: 'تصدير التقرير' })).toBeVisible()
   await expect(ownerDashboard.locator('#owner-bookings-panel')).toBeHidden()
+})
+
+test('owner overview shows three latest bookings and the bookings tab is the only full list', async ({ page }) => {
+  await page.addInitScript(() => {
+    const ownerId = 'owner-recent-bookings-test'
+    const createdAtDates = [
+      '2026-10-01T10:00:00.000Z',
+      '2026-10-04T10:00:00.000Z',
+      '2026-10-07T10:00:00.000Z',
+      '2026-10-08T10:00:00.000Z',
+    ]
+    localStorage.clear()
+    localStorage.setItem('hajzy_user', JSON.stringify({ id: ownerId, role: 'owner', name: 'Test Owner' }))
+    localStorage.setItem('hajzy_bookings', JSON.stringify(createdAtDates.map((createdAt, index) => ({
+      id: `recent-booking-${index + 1}`,
+      propertyId: 'alex-vista',
+      title: `Recent test booking ${index + 1}`,
+      location: 'Test location',
+      status: index % 2 ? 'pending' : 'confirmed',
+      createdAt,
+      checkIn: '2026-10-20',
+      checkOut: '2026-10-22',
+      total: 1000 + index,
+    }))))
+  })
+  await page.route('**/rest/v1/**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: '[]',
+  }))
+  await page.goto('/')
+
+  const ownerDashboard = page.locator('.owner-shell')
+  const recentBookingItems = ownerDashboard.locator('.owner-recent-bookings-panel .mini-booking-item')
+  await expect(recentBookingItems).toHaveCount(3)
+  await expect(recentBookingItems.locator('strong').nth(0)).toHaveText('Recent test booking 4')
+  await expect(recentBookingItems.locator('strong').nth(2)).toHaveText('Recent test booking 3')
+  await expect(recentBookingItems.locator('strong').nth(4)).toHaveText('Recent test booking 2')
+
+  await ownerDashboard.locator('.owner-recent-bookings-panel').getByRole('button', { name: 'عرض الكل' }).click()
+  await expect(ownerDashboard.locator('#owner-bookings-panel')).toBeVisible()
+  await expect(ownerDashboard.locator('.owner-booking-card')).toHaveCount(4)
+  await expect(ownerDashboard.locator('#owner-bookings-panel')).not.toContainText('أحدث الحجوزات')
+  await expect(ownerDashboard.locator('#owner-bookings-panel')).not.toContainText('قائمة الحجوزات')
 })
