@@ -43,6 +43,7 @@
   },
   "ownerRevenue": {
     "period": "Period",
+    "closeDetails": "Close details",
     "earliestPeriod": "← Earliest",
     "tapForDetails": "Tap a bar for the exact amount",
     "today": "Today →",

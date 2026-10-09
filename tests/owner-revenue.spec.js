@@ -87,3 +87,67 @@ test('revenue totals, growth, city and chart use the shared selected period', ()
   expect(thisMonth.bars).toHaveLength(8)
   expect(thisMonth.hasChartRevenue).toBe(true)
 })
+
+test('owner revenue chart starts at zero, scales bars to the largest amount, and reveals details on click', async ({ page }) => {
+  const now = new Date()
+  const paymentDate = (daysAgo) => {
+    const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysAgo, 12)
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T12:00:00`
+  }
+  await page.addInitScript((bookings) => {
+    localStorage.setItem('hajzy_user', JSON.stringify({
+      id: 'owner-revenue-chart-test',
+      role: 'owner',
+      name: 'Test Owner',
+    }))
+    localStorage.setItem('hajzy_bookings', JSON.stringify(bookings))
+  }, [
+    { status: 'paid', propertyId: 'alex-vista', paidAt: paymentDate(5), total: 42000 },
+    { status: 'paid', propertyId: 'alex-vista', paidAt: paymentDate(0), total: 96000 },
+  ])
+  await page.route('**/rest/v1/**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: '[]',
+  }))
+  await page.setViewportSize({ width: 360, height: 800 })
+  await page.goto('/')
+
+  const dashboard = page.locator('.owner-shell')
+  await expect(dashboard).toBeVisible()
+  await page.getByRole('tablist', { name: 'التنقل في لوحة المالك' })
+    .getByRole('tab', { name: 'الأرباح' }).click()
+  const revenueChart = dashboard.locator('.owner-revenue-chart')
+  await expect(revenueChart).toBeVisible()
+  await expect(revenueChart.getByTestId('revenue-axis-maximum')).toContainText('96')
+  await expect(revenueChart.getByTestId('revenue-axis-zero')).toHaveText('0')
+
+  const fullHeightBar = revenueChart.locator('.owner-analytics-bar[style*="height: 100%"]')
+  await expect(fullHeightBar).toHaveCount(1)
+  await expect(revenueChart.locator('.owner-analytics-bar[style*="height: 43.75%"]')).toHaveCount(1)
+  const visiblePeriodLabels = await revenueChart.locator('.owner-analytics-x-label')
+    .evaluateAll((labels) => labels
+      .filter((label) => label.textContent.trim())
+      .map((label) => {
+        const { left, right } = label.getBoundingClientRect()
+        return { left, right }
+      }))
+  visiblePeriodLabels.sort((first, second) => first.left - second.left)
+  expect(visiblePeriodLabels.every((label, index) => (
+    index === 0 || visiblePeriodLabels[index - 1].right <= label.left
+  ))).toBe(true)
+
+  const lowerRevenueButton = revenueChart.getByRole('button', { name: /42,000/ })
+  await lowerRevenueButton.click()
+  await expect(dashboard.locator('#owner-revenue-tooltip')).toContainText('42,000')
+  await expect(lowerRevenueButton).toHaveAttribute('aria-pressed', 'true')
+  await dashboard.getByRole('button', { name: 'إغلاق التفاصيل' }).click()
+  await expect(dashboard.locator('#owner-revenue-tooltip')).toHaveCount(0)
+
+  await page.getByRole('tablist', { name: 'التنقل في لوحة المالك' })
+    .getByRole('tab', { name: 'الحجوزات' }).click()
+  const occupancyChart = dashboard.locator('.owner-chart')
+  await expect(occupancyChart.locator('.owner-chart-day-label').first()).toBeVisible()
+  await expect(occupancyChart.locator('.owner-chart-day-label')).toHaveCount(30)
+  await expect(occupancyChart.locator('.owner-chart-bar-track').first()).toBeVisible()
+})

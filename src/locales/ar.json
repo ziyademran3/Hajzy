@@ -43,6 +43,7 @@
   },
   "ownerRevenue": {
     "period": "الفترة",
+    "closeDetails": "إغلاق التفاصيل",
     "earliestPeriod": "← الأقدم",
     "tapForDetails": "اضغط على عمود لمعرفة المبلغ",
     "today": "اليوم →",

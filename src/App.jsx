@@ -1722,6 +1722,11 @@ function App() {
     ownerMetricsPeriod,
   )
   const ownerRevenue = ownerRevenueMetrics.periodRevenue
+  const ownerRevenueAxisMaximum = Math.max(...ownerRevenueMetrics.bars.map(({ amount }) => amount), 0)
+  const ownerRevenueAxisTicks = Array.from(
+    { length: 5 },
+    (_, index) => ownerRevenueAxisMaximum * (1 - index / 4),
+  )
   const ownerMetricsPeriodLabel = t(`ownerMetrics.periods.${ownerMetricsPeriod}`)
   const handleOwnerMetricsPeriodChange = (period) => {
     if (!isOwnerMetricsPeriod(period)) return
@@ -1757,6 +1762,13 @@ function App() {
     const start = new Intl.DateTimeFormat(locale, options).format(period.startDate)
     const end = new Intl.DateTimeFormat(locale, options).format(period.endDate)
     return `${start} - ${end}`
+  }
+  const formatRevenuePeriodShort = (period) => {
+    const locale = language === 'en' ? 'en-US' : 'ar-EG-u-nu-latn'
+    const options = { day: 'numeric' }
+    const start = new Intl.DateTimeFormat(locale, options).format(period.startDate)
+    const end = new Intl.DateTimeFormat(locale, options).format(period.endDate)
+    return `${start}–${end}`
   }
 
   const resetOwnerForm = () => {
@@ -2473,7 +2485,12 @@ function App() {
         </div>
 
         {ownerRevenueMetrics.hasChartRevenue && activeRevenueBar !== null && (
-          <div className="mb-2 p-2.5 rounded-xl bg-slate-900 text-white text-xs flex items-center justify-between border border-slate-700 animate-fadeIn shadow-lg">
+          <div
+            id="owner-revenue-tooltip"
+            className="owner-revenue-tooltip mb-2 p-2.5 rounded-xl bg-slate-900 text-white text-xs flex items-center justify-between border border-slate-700 animate-fadeIn shadow-lg"
+            role="status"
+            aria-live="polite"
+          >
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
               <span>
@@ -2489,6 +2506,7 @@ function App() {
                 type="button"
                 className="text-slate-400 hover:text-white"
                 onClick={() => setActiveRevenueBar(null)}
+                aria-label={t('ownerRevenue.closeDetails')}
               >
                 <span className="material-symbols-outlined text-xs">close</span>
               </button>
@@ -2498,31 +2516,73 @@ function App() {
 
         {ownerRevenueMetrics.hasChartRevenue ? (
           <>
-            <div className="owner-analytics-graph">
-              {ownerRevenueMetrics.bars.map((bar, index) => {
-                const isSelected = activeRevenueBar === index
-                const periodLabel = formatRevenuePeriod(bar)
-                return (
-                  <div
-                    key={bar.startDate.toISOString()}
-                    className={`owner-analytics-bar-wrap cursor-pointer group ${isSelected ? 'active' : ''}`}
-                    onClick={() => setActiveRevenueBar(isSelected ? null : index)}
-                    onMouseEnter={() => setActiveRevenueBar(index)}
-                    title={`${periodLabel}: ${formatCurrency(bar.amount, 'EGP', language)}`}
+            <div className="owner-revenue-chart">
+              <div className="owner-revenue-y-axis" aria-hidden="true">
+                {ownerRevenueAxisTicks.map((tick, index) => (
+                  <span
+                    key={index}
+                    data-testid={
+                      index === 0
+                        ? 'revenue-axis-maximum'
+                        : index === ownerRevenueAxisTicks.length - 1
+                          ? 'revenue-axis-zero'
+                          : undefined
+                    }
                   >
-                    <span className={`text-[10px] font-bold ${isSelected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}`}>
-                      {formatNumber(bar.amount, { notation: 'compact', maximumFractionDigits: 1 })}
-                    </span>
-                    <div
-                      className={`owner-analytics-bar transition-all duration-200 ${isSelected ? 'brightness-125 shadow-md ring-2 ring-emerald-400' : 'group-hover:brightness-110'}`}
-                      style={{ height: `${bar.height}%`, minHeight: bar.amount ? undefined : 0 }}
-                    />
-                    <span className={`owner-analytics-x-label text-[9px] font-semibold tracking-tighter mt-1 whitespace-nowrap ${isSelected ? 'text-emerald-700 dark:text-emerald-300 font-bold' : 'text-slate-400'}`}>
-                      {periodLabel}
-                    </span>
-                  </div>
-                )
-              })}
+                    {formatNumber(tick, {
+                      notation: 'compact',
+                      maximumFractionDigits: 1,
+                      minimumFractionDigits: 0,
+                    })}
+                  </span>
+                ))}
+              </div>
+              <div
+                className="owner-analytics-graph"
+                style={{
+                  gridTemplateColumns: `repeat(${ownerRevenueMetrics.bars.length}, minmax(0, 1fr))`,
+                }}
+              >
+                <div className="owner-revenue-gridlines" aria-hidden="true">
+                  {ownerRevenueAxisTicks.map((_, index) => (
+                    <span key={index} style={{ top: `${index * 25}%` }} />
+                  ))}
+                </div>
+                {ownerRevenueMetrics.bars.map((bar, index) => {
+                  const isSelected = activeRevenueBar === index
+                  const periodLabel = formatRevenuePeriod(bar)
+                  return (
+                    <div key={bar.startDate.toISOString()} className="owner-revenue-bar-column">
+                      <button
+                        type="button"
+                        className={`owner-analytics-bar-wrap group ${isSelected ? 'active' : ''}`}
+                        onClick={() => setActiveRevenueBar(isSelected ? null : index)}
+                        aria-pressed={isSelected}
+                        aria-label={`${periodLabel}: ${formatCurrency(bar.amount, 'EGP', language)}`}
+                        aria-describedby={isSelected ? 'owner-revenue-tooltip' : undefined}
+                      >
+                        <div
+                          className={`owner-analytics-bar ${isSelected ? 'selected' : ''}`}
+                          style={{
+                            height: `${bar.height}%`,
+                            minHeight: bar.amount
+                              ? 'var(--owner-revenue-bar-min-height)'
+                              : 0,
+                          }}
+                        />
+                      </button>
+                      <span
+                        className={`owner-analytics-x-label ${isSelected ? 'selected' : ''}`}
+                        aria-hidden={index % 2 !== 0 && index !== ownerRevenueMetrics.bars.length - 1}
+                      >
+                        {index % 2 === 0 || index === ownerRevenueMetrics.bars.length - 1
+                          ? formatRevenuePeriodShort(bar)
+                          : ''}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
             <div className="flex justify-between items-center text-[10px] text-slate-400 mt-2 px-1 border-t border-slate-100 dark:border-slate-800 pt-1.5">
               <span>{t('ownerRevenue.earliestPeriod')}</span>
@@ -2621,7 +2681,16 @@ function App() {
             </span>
           </div>
         </div>
-        <div className="owner-chart">
+        <div className="owner-chart-scroll">
+        <div
+          className="owner-chart"
+          style={{
+            gridTemplateColumns: `repeat(${ownerBookingMetrics.dailyOccupancy.length}, minmax(0, 1fr))`,
+            minWidth: ownerBookingMetrics.dailyOccupancy.length > 7
+              ? `calc(${ownerBookingMetrics.dailyOccupancy.length} * var(--owner-chart-min-column-width))`
+              : undefined,
+          }}
+        >
           {ownerBookingMetrics.dailyOccupancy.map((item) => {
             const dayLabel = new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'ar-EG', {
               weekday: 'short',
@@ -2630,13 +2699,24 @@ function App() {
             return (
               <div key={item.date.toISOString()} className="owner-chart-bar-wrap" title={`${dayLabel}: ${occupancyLabel}`}>
                 <span className="owner-chart-val text-[11px] font-bold text-slate-600 dark:text-slate-400">{occupancyLabel}</span>
-                <div className="owner-chart-bar" style={{ height: `${item.occupancyPercent ?? 0}%` }}></div>
+                <div className="owner-chart-bar-track">
+                  <div
+                    className="owner-chart-bar"
+                    style={{
+                      height: `${item.occupancyPercent ?? 0}%`,
+                      minHeight: item.occupancyPercent
+                        ? 'var(--owner-occupancy-bar-min-height)'
+                        : 0,
+                    }}
+                  />
+                </div>
                 <span className="owner-chart-day-label text-[10px] font-bold text-slate-500 mt-1">
                   {dayLabel}
                 </span>
               </div>
             )
           })}
+        </div>
         </div>
       </div>
 
