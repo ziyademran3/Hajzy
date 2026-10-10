@@ -116,6 +116,33 @@ test('empty requests show no conversion rates while occupancy uses available inv
   expect(noInventory.monthlyOccupancyChangePoints).toBeNull()
 })
 
+test('owner booking tab shows the confirmed-request acceptance rate for the selected period', async ({ page }) => {
+  await page.addInitScript(() => {
+    const ownerId = 'owner-acceptance-rate-test'
+    const createdAt = new Date().toISOString()
+    localStorage.setItem('hajzy_user', JSON.stringify({ id: ownerId, role: 'owner', name: 'Test Owner' }))
+    localStorage.setItem('hajzy_bookings', JSON.stringify([
+      { id: 'confirmed-request', propertyId: 'alex-vista', status: 'confirmed', createdAt },
+      { id: 'pending-request', propertyId: 'alex-vista', status: 'pending', createdAt },
+    ]))
+  })
+  await page.route('**/rest/v1/**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: '[]',
+  }))
+  await page.goto('/')
+
+  const ownerDashboard = page.locator('.owner-shell')
+  await expect(ownerDashboard).toBeVisible()
+  await page.getByRole('tab', { name: 'الحجوزات' }).click()
+
+  const acceptanceMetric = ownerDashboard.locator('#owner-booking-metrics-panel .owner-summary-card').nth(1)
+  await expect(acceptanceMetric.locator('span')).toHaveText('نسبة قبول الطلبات')
+  await expect(acceptanceMetric.locator('strong')).toHaveText('50%')
+  await expect(acceptanceMetric.locator('small')).toHaveText('الطلبات المؤكدة ÷ إجمالي الطلبات خلال الفترة')
+})
+
 test('owner occupancy metrics expose selectable seven-day and current-month daily series', () => {
   const metrics = getOwnerBookingMetrics([], [{ id: 'property-1' }], new Date(2026, 9, 8, 12))
 

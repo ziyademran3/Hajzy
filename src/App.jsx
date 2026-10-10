@@ -2690,9 +2690,9 @@ function App() {
           {occupancyChangeLabel && <small className="owner-metric-comparison">{occupancyChangeLabel}</small>}
         </div>
         <div className="owner-summary-card">
-          <span>{t('ownerMetrics.bookingConversion')}</span>
-          <strong>{formatPercent(ownerBookingMetrics.bookingConversionPercent)}</strong>
-          <small>{t('ownerMetrics.requestsRatio')}</small>
+          <span>{t('ownerMetrics.requestAcceptance')}</span>
+          <strong>{formatPercent(ownerBookingMetrics.confirmedRequestPercent)}</strong>
+          <small>{t('ownerMetrics.requestAcceptanceRatio')}</small>
         </div>
         <div className="owner-summary-card">
           <span>{language === 'en' ? 'Host Response' : 'استجابة المالك'}</span>
