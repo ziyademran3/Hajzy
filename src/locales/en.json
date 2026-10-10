@@ -137,7 +137,7 @@
     "comparisonLoadError": "Unable to load rating data",
     "comparisonNew": "New vs",
     "comparisonPeriods": {
-      "lastSevenDays": "vs last 7 days",
+      "lastSevenDays": "vs previous 7 days",
       "lastThirtyDays": "vs previous 30 days",
       "lastNinetyDays": "vs previous 90 days"
     },

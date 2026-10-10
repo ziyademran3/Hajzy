@@ -137,7 +137,7 @@
     "comparisonLoadError": "تعذر تحميل بيانات التقييم",
     "comparisonNew": "جديد عن",
     "comparisonPeriods": {
-      "lastSevenDays": "مقارنة بآخر 7 أيام",
+      "lastSevenDays": "مقارنة بالـ7 أيام السابقة",
       "lastThirtyDays": "مقارنة بالفترة السابقة (آخر 30 يومًا)",
       "lastNinetyDays": "مقارنة بالفترة السابقة (آخر 90 يومًا)"
     },
