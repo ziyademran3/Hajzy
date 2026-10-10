@@ -8,6 +8,7 @@ import { useOfflineBooking } from './hooks/useOfflineBooking'
 import { useNativeShare } from './hooks/useNativeShare'
 import { getOwnerPropertyPerformance, getOwnerRevenueMetrics } from './lib/ownerRevenue'
 import { getOwnerBookingMetrics } from './lib/ownerBookingMetrics'
+import { getOwnerOperationalAlerts } from './lib/ownerOperationalAlerts'
 import { getOwnerReviewMetrics } from './lib/ownerReviewMetrics'
 import { OWNER_METRICS_PERIODS, isOwnerMetricsPeriod } from './lib/ownerMetricsPeriod'
 import Skeleton from './components/Skeleton'
@@ -1668,6 +1669,12 @@ function App() {
     ownerMetricsNow,
     ownerMetricsPeriod,
   )
+  const ownerOperationalAlerts = getOwnerOperationalAlerts(
+    ownerBookings,
+    ownerProperties,
+    ownerDashboardReviews,
+    ownerMetricsNow,
+  )
   const occupancyDaysWithData = ownerBookingMetrics.dailyOccupancy
     .filter((item) => Number.isFinite(item.occupancyPercent))
   const highestOccupancyDay = occupancyDaysWithData.reduce(
@@ -1966,15 +1973,32 @@ function App() {
     }
   }
 
-  const handleOwnerAlertDetails = () => {
-    setActiveOwnerTab('bookings')
-    setOwnerBookingFilter('all')
-    showToast(language === 'en' ? 'Showing all bookings on screen' : 'تم تحديث عرض الحجوزات على الشاشة.')
-  }
-
   const handleViewAllOwnerBookings = () => {
     handleOwnerTabChange('bookings')
     setOwnerBookingFilter('all')
+  }
+
+  const handleOwnerOperationalAlert = (alert) => {
+    if (alert.type === 'pendingRequest') {
+      handleViewAllOwnerBookings()
+      return
+    }
+
+    const property = ownerProperties.find(
+      (item) => String(item.id) === String(alert.propertyId),
+    )
+    if (!property) return
+
+    setActiveOwnerTab('properties')
+    setOwnerDetailPropertyId(property.id)
+    setActiveOwnerPropertyTab(
+      alert.type === 'smartLockExpiry'
+        ? 'smart-lock'
+        : alert.type === 'lowReview'
+          ? 'ratings'
+          : 'availability',
+    )
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const handleOwnerTabChange = (tab) => {
@@ -2511,53 +2535,107 @@ function App() {
       >
       <div className="owner-operational-panel">
         <div className="owner-overview-header">
-          <h3>{language === 'en' ? 'Operational Alerts' : 'تنبيهات التشغيل'}</h3>
+          <h3>{t('ownerDashboard.operationalAlerts')}</h3>
         </div>
 
-        {pendingOwnerBookingsCount > 0 ? (
-          <div className="owner-alert-row urgent-alert">
-            <div>
-              <span className="material-symbols-outlined text-amber-600">notifications_active</span>
-              <div>
-                <strong>
-                  {pluralize(pendingOwnerBookingsCount, 'bookingRequest', language)}
-                </strong>
-                <small>
-                  {language === 'en' ? 'Awaiting your review and approval' : 'تحتاج إلى مراجعة وتأكيد من المالك'}
-                </small>
-              </div>
-            </div>
-          </div>
+        {ownerOperationalAlerts.length > 0 ? (
+          <ul className="owner-operational-alert-list">
+            {ownerOperationalAlerts.map((alert) => {
+              const property = ownerProperties.find(
+                (item) => String(item.id) === String(alert.propertyId),
+              )
+              const propertyName = language === 'en'
+                ? property?.titleEn || property?.title || t('ownerDashboard.unknownProperty')
+                : property?.title || t('ownerDashboard.unknownProperty')
+              const dateTimeFormatter = new Intl.DateTimeFormat(
+                language === 'en' ? 'en-US' : 'ar-EG',
+                { dateStyle: 'medium', timeStyle: 'short' },
+              )
+              const dateFormatter = new Intl.DateTimeFormat(
+                language === 'en' ? 'en-US' : 'ar-EG',
+                { dateStyle: 'medium' },
+              )
+              const alertContent = alert.type === 'pendingRequest'
+                ? {
+                  icon: alert.overdue ? 'notification_important' : 'schedule',
+                  title: t(alert.overdue
+                    ? 'ownerDashboard.replyDeadlinePassed'
+                    : alert.dueAt
+                      ? 'ownerDashboard.replyDeadlineSoon'
+                      : 'ownerDashboard.requestNeedsReply'),
+                  detail: alert.dueAt
+                    ? t('ownerDashboard.replyDeadlineAt', { time: dateTimeFormatter.format(alert.dueAt) })
+                    : t('ownerDashboard.replyTimeUnavailable'),
+                }
+                : alert.type === 'smartLockExpiry'
+                  ? {
+                    icon: 'lock_clock',
+                    title: t('ownerDashboard.smartLockExpiring'),
+                    detail: t('ownerDashboard.smartLockExpiryAt', {
+                      property: propertyName,
+                      time: dateTimeFormatter.format(alert.expiresAt),
+                    }),
+                  }
+                  : alert.type === 'calendarGap'
+                    ? {
+                      icon: 'calendar_month',
+                      title: t('ownerDashboard.calendarGap'),
+                      detail: t('ownerDashboard.calendarGapAt', {
+                        property: propertyName,
+                        date: dateFormatter.format(alert.date),
+                      }),
+                    }
+                    : {
+                      icon: 'star',
+                      title: t('ownerDashboard.newLowReview'),
+                      detail: t('ownerDashboard.lowReviewFor', {
+                        property: propertyName,
+                        rating: formatNumber(alert.rating, { maximumFractionDigits: 1 }),
+                      }),
+                    }
+
+              return (
+                <li key={alert.id} className="owner-operational-alert-item">
+                  <button
+                    type="button"
+                    className={`owner-alert-row operational-alert${alert.type === 'pendingRequest' ? ' urgent-alert' : ''}`}
+                    onClick={() => handleOwnerOperationalAlert(alert)}
+                    aria-label={`${alertContent.title}. ${alertContent.detail}`}
+                  >
+                    <span
+                      className="material-symbols-outlined operational-alert-icon"
+                      aria-hidden="true"
+                    >
+                      {alertContent.icon}
+                    </span>
+                    <span className="owner-operational-alert-copy">
+                      <strong>{alertContent.title}</strong>
+                      <small>{alertContent.detail}</small>
+                    </span>
+                    <span className="material-symbols-outlined owner-operational-alert-arrow" aria-hidden="true">
+                      arrow_forward
+                    </span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        ) : ownerProperties.length > 0 && ownerDashboardReviewsStatus === 'loading' ? (
+          <p className="owner-alert-empty" role="status">
+            <span className="material-symbols-outlined" aria-hidden="true">sync</span>
+            <span>{t('ownerDashboard.alertsChecking')}</span>
+          </p>
+        ) : ownerProperties.length > 0 && ownerDashboardReviewsStatus === 'error' ? (
+          <p className="owner-alert-empty" role="status">
+            <span className="material-symbols-outlined" aria-hidden="true">error</span>
+            <span>{t('ownerDashboard.alertsUnavailable')}</span>
+          </p>
         ) : (
-          <div className="owner-alert-row success-alert">
-            <div>
-              <span className="material-symbols-outlined text-emerald-600">check_circle</span>
-              <div>
-                <strong>{language === 'en' ? 'All operations up to date' : 'لا توجد طلبات معلقة'}</strong>
-                <small>
-                  {pluralize(ownerBookings.length, 'confirmedBooking', language)}
-                </small>
-              </div>
-            </div>
-          </div>
+          <p className="owner-alert-empty" role="status">
+            <span className="material-symbols-outlined" aria-hidden="true">check_circle</span>
+            <span>{t('ownerDashboard.allClear')}</span>
+          </p>
         )}
-
-        <div className="owner-alert-row">
-          <div>
-            <span className="material-symbols-outlined">trending_up</span>
-            <div>
-              <strong>{language === 'en' ? 'Weekend Pricing Optimization' : 'تحديث أسعار السكن'}</strong>
-              <small>
-                {language === 'en'
-                  ? 'Recommended weekend surge based on current city occupancy'
-                  : 'توصية بزيادة 15% في عطلة نهاية الأسبوع وفق نسب الإقبال'}
-              </small>
-            </div>
-          </div>
-          <button type="button" className="text-button" onClick={handleOwnerAlertDetails}>
-            {language === 'en' ? 'Details' : 'تفاصيل'}
-          </button>
-        </div>
       </div>
       </section>
 

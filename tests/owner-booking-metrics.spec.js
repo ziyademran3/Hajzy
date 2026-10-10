@@ -5,6 +5,7 @@ import {
   getSmartLockCodeStatus,
 } from '../src/lib/ownerBookingMetrics.js'
 import { getOwnerMetricsPeriodRange } from '../src/lib/ownerMetricsPeriod.js'
+import { getOwnerOperationalAlerts } from '../src/lib/ownerOperationalAlerts.js'
 import { getOwnerReviewMetrics } from '../src/lib/ownerReviewMetrics.js'
 
 test('shared reporting periods expose consistent current and comparison date ranges', () => {
@@ -91,6 +92,92 @@ test('owner rating comparison uses reviews dated in the selected and previous pe
     averageRating: null,
     previousAverageRating: null,
   })
+})
+
+test('owner operational alerts only include time-sensitive or actionable items', () => {
+  const now = new Date(2026, 9, 10, 10)
+  const properties = [{ id: 'lock-property' }, { id: 'gap-property' }]
+  const alerts = getOwnerOperationalAlerts([
+    {
+      id: 'reply-soon',
+      propertyId: 'lock-property',
+      status: 'pending',
+      createdAt: new Date(now.getTime() - 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'reply-later',
+      propertyId: 'lock-property',
+      status: 'pending',
+      createdAt: new Date(now.getTime() + 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'lock-expiring',
+      propertyId: 'lock-property',
+      status: 'confirmed',
+      checkIn: '2026-10-08',
+      checkOut: '2026-10-10',
+    },
+    {
+      id: 'gap-before',
+      propertyId: 'gap-property',
+      status: 'confirmed',
+      checkIn: '2026-10-15',
+      checkOut: '2026-10-16',
+    },
+    {
+      id: 'gap-after',
+      propertyId: 'gap-property',
+      status: 'confirmed',
+      checkIn: '2026-10-17',
+      checkOut: '2026-10-18',
+    },
+  ], properties, [
+    { id: 'low-review', propertyId: 'gap-property', rating: 2, date: '2026-10-08' },
+    { id: 'good-review', propertyId: 'gap-property', rating: 4, date: '2026-10-08' },
+    { id: 'old-review', propertyId: 'gap-property', rating: 1, date: '2026-09-30' },
+  ], now)
+
+  expect(alerts.map(({ type }) => type)).toEqual([
+    'pendingRequest',
+    'smartLockExpiry',
+    'calendarGap',
+    'lowReview',
+  ])
+  expect(alerts[0].bookingId).toBe('reply-soon')
+  expect(alerts[0].dueAt).toEqual(new Date(now.getTime() + 60 * 60 * 1000))
+  expect(alerts[2].date).toEqual(new Date(2026, 9, 16))
+  expect(alerts[3].rating).toBe(2)
+})
+
+test('owner operational alerts return no routine items when there is nothing actionable', () => {
+  const alerts = getOwnerOperationalAlerts([
+    {
+      id: 'future-booking',
+      propertyId: 'property-1',
+      status: 'confirmed',
+      checkIn: '2026-10-12',
+      checkOut: '2026-10-14',
+    },
+  ], [{ id: 'property-1' }], [
+    { propertyId: 'property-1', rating: 4, date: '2026-10-08' },
+  ], new Date(2026, 9, 10, 10))
+
+  expect(alerts).toEqual([])
+})
+
+test('owner pending requests without a request timestamp remain actionable without an invented deadline', () => {
+  const alerts = getOwnerOperationalAlerts([{
+    id: 'request-without-time',
+    propertyId: 'property-1',
+    status: 'pending',
+    createdAt: '2026-10-10',
+  }], [{ id: 'property-1' }], [], new Date(2026, 9, 10, 10))
+
+  expect(alerts).toMatchObject([{
+    type: 'pendingRequest',
+    dueAt: null,
+    overdue: false,
+  }])
 })
 
 test('owner dashboard compares bookings, occupancy, revenue and ratings against the previous period', async ({ page }) => {
@@ -334,6 +421,10 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
   await expect(ownerDashboard.locator('#owner-overview-panel .owner-progress-list')).toHaveCount(0)
   await expect(ownerDashboard.locator('#owner-alerts-panel .status-pill.neutral')).toHaveCount(0)
   await expect(ownerDashboard.locator('#owner-alerts-panel .status-pill.success')).toHaveCount(0)
+  const ownerAlerts = ownerDashboard.locator('#owner-alerts-panel')
+  await expect(ownerAlerts.locator('.owner-alert-empty span').last()).toHaveText('كل شيء على ما يرام')
+  await expect(ownerAlerts.locator('.owner-alert-row')).toHaveCount(0)
+  await expect(ownerAlerts).not.toContainText('لا توجد طلبات معلقة')
   const ownerPeriodFilter = ownerDashboard.locator('.owner-period-toolbar')
   await expect(ownerDashboard.locator('.owner-period-toolbar')).toHaveCount(1)
   await expect(ownerPeriodFilter.getByRole('button')).toHaveCount(3)
