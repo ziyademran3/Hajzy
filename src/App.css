@@ -44,6 +44,8 @@ html[dir='ltr'] .nav-label {
   --property-price-color: #00433f;
   --text: #101b1a;
   --muted: #3f4947;
+  --metric-positive: #15803d;
+  --metric-negative: #b91c1c;
   --line: rgba(15, 118, 110, 0.12);
   --shadow-soft: 0 14px 34px rgba(15, 23, 42, 0.06);
   --shadow-strong: 0 20px 42px rgba(13, 93, 88, 0.14);
@@ -128,6 +130,8 @@ html[dir='ltr'] .nav-label {
   --button-ghost-hover: rgba(45, 212, 191, 0.1);
   --text: #f8fafc;
   --muted: #b7beca;
+  --metric-positive: #4ade80;
+  --metric-negative: #f87171;
   --line: rgba(255, 255, 255, 0.08);
   --shadow-soft: 0 18px 42px rgba(0, 0, 0, 0.38);
   --shadow-strong: 0 24px 54px rgba(0, 0, 0, 0.45);
@@ -6938,6 +6942,30 @@ html[dir='rtl'] .settings-switch[aria-checked='true'] .settings-switch-thumb {
   color: var(--muted);
   font-size: var(--type-12);
   font-weight: var(--font-weight-subheading);
+}
+
+.owner-summary-card .owner-metric-comparison {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+  overflow: visible;
+  margin-block-start: var(--space-2);
+  white-space: normal;
+  text-overflow: unset;
+  line-height: 1.4;
+}
+
+.owner-metric-comparison.positive {
+  color: var(--metric-positive);
+}
+
+.owner-metric-comparison.negative {
+  color: var(--metric-negative);
+}
+
+.owner-metric-comparison.neutral,
+.owner-metric-comparison.unavailable {
+  color: var(--muted);
 }
 
 .mini-booking-list {

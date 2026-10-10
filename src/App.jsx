@@ -8,6 +8,7 @@ import { useOfflineBooking } from './hooks/useOfflineBooking'
 import { useNativeShare } from './hooks/useNativeShare'
 import { getOwnerPropertyPerformance, getOwnerRevenueMetrics } from './lib/ownerRevenue'
 import { getOwnerBookingMetrics } from './lib/ownerBookingMetrics'
+import { getOwnerReviewMetrics } from './lib/ownerReviewMetrics'
 import { OWNER_METRICS_PERIODS, isOwnerMetricsPeriod } from './lib/ownerMetricsPeriod'
 import Skeleton from './components/Skeleton'
 import LuxuryPageSkeleton from './components/LuxuryPageSkeleton'
@@ -357,6 +358,8 @@ function App() {
   const [ownerPropertyReviews, setOwnerPropertyReviews] = useState([])
   const [ownerPropertyReviewsStatus, setOwnerPropertyReviewsStatus] = useState('idle')
   const [ownerPropertyReviewsRetry, setOwnerPropertyReviewsRetry] = useState(0)
+  const [ownerDashboardReviews, setOwnerDashboardReviews] = useState([])
+  const [ownerDashboardReviewsStatus, setOwnerDashboardReviewsStatus] = useState('idle')
   const [bookingFilter, setBookingFilter] = useState('upcoming')
   const [ownerBookingFilter, setOwnerBookingFilter] = useState('all')
   const [activeOwnerTab, setActiveOwnerTab] = useState('overview')
@@ -1586,15 +1589,41 @@ function App() {
   const ownerDetailPropertyBookings = ownerDetailProperty
     ? ownerBookings.filter((booking) => String(booking.propertyId) === String(ownerDetailProperty.id))
     : []
-  const ratedOwnerProperties = ownerProperties.filter(
-    (property) => property.rating !== null
-      && property.rating !== undefined
-      && property.rating !== ''
-      && Number.isFinite(Number(property.rating)),
-  )
-  const ownerAverageRating = ratedOwnerProperties.length
-    ? ratedOwnerProperties.reduce((total, property) => total + Number(property.rating), 0) / ratedOwnerProperties.length
-    : null
+  const ownerPropertyIds = ownerProperties.map((property) => String(property.id))
+  const ownerPropertyIdsKey = JSON.stringify(ownerPropertyIds)
+
+  useEffect(() => {
+    const propertyIds = JSON.parse(ownerPropertyIdsKey)
+    if (!isOwner || !propertyIds.length) {
+      setOwnerDashboardReviews([])
+      setOwnerDashboardReviewsStatus('idle')
+      return undefined
+    }
+
+    let isCurrent = true
+    setOwnerDashboardReviewsStatus('loading')
+    Promise.all(propertyIds.map(async (propertyId) => {
+      const reviews = await fetchPropertyReviews(propertyId)
+      return reviews.map((review) => ({
+        ...review,
+        propertyId: review.propertyId || propertyId,
+      }))
+    }))
+      .then((reviewsByProperty) => {
+        if (!isCurrent) return
+        setOwnerDashboardReviews(reviewsByProperty.flat())
+        setOwnerDashboardReviewsStatus('ready')
+      })
+      .catch((error) => {
+        if (!isCurrent) return
+        console.error('Failed to load owner dashboard reviews', error)
+        setOwnerDashboardReviewsStatus('error')
+      })
+
+    return () => {
+      isCurrent = false
+    }
+  }, [isOwner, ownerPropertyIdsKey])
 
   useEffect(() => {
     if (!ownerDetailPropertyId) {
@@ -1639,12 +1668,13 @@ function App() {
     ownerMetricsNow,
     ownerMetricsPeriod,
   )
-  const occupancyChangePoints = ownerBookingMetrics.occupancyChangePoints
-  const ownerPeriodComparisonLabel = t(
-    ownerMetricsPeriod === 'thisWeek'
-      ? 'ownerMetrics.vsPreviousWeek'
-      : 'ownerMetrics.vsPreviousPeriod',
+  const ownerReviewMetrics = getOwnerReviewMetrics(
+    ownerDashboardReviews,
+    ownerMetricsNow,
+    ownerMetricsPeriod,
   )
+  const occupancyChangePoints = ownerBookingMetrics.occupancyChangePoints
+  const ownerPeriodComparisonLabel = t('ownerMetrics.vsPreviousPeriod')
   const occupancyChangeLabel = occupancyChangePoints === null
     ? null
     : t('ownerMetrics.periodOccupancyChange', {
@@ -1734,6 +1764,69 @@ function App() {
     (_, index) => ownerRevenueAxisMaximum * (1 - index / 4),
   )
   const ownerMetricsPeriodLabel = t(`ownerMetrics.periods.${ownerMetricsPeriod}`)
+  const ownerMetricPreviousPeriodLabel = t(`ownerMetrics.previousPeriods.${ownerMetricsPeriod}`)
+  const renderOwnerMetricComparison = (current, previous, status = 'ready') => {
+    if (status === 'loading') {
+      return (
+        <small className="owner-metric-comparison unavailable" role="status">
+          {t('ownerMetrics.comparisonLoading')}
+        </small>
+      )
+    }
+    if (status === 'error') {
+      return (
+        <small className="owner-metric-comparison unavailable" role="status">
+          {t('ownerMetrics.comparisonLoadError')}
+        </small>
+      )
+    }
+    if (
+      current === null
+      || current === undefined
+      || previous === null
+      || previous === undefined
+      || !Number.isFinite(Number(current))
+      || !Number.isFinite(Number(previous))
+    ) {
+      return (
+        <small className="owner-metric-comparison unavailable">
+          {t('ownerMetrics.comparisonUnavailable')}
+        </small>
+      )
+    }
+
+    const currentValue = Number(current)
+    const previousValue = Number(previous)
+    if (previousValue === 0 && currentValue === 0) {
+      return (
+        <small className="owner-metric-comparison unavailable">
+          {t('ownerMetrics.comparisonUnavailable')}
+        </small>
+      )
+    }
+    if (previousValue === 0 && currentValue > 0) {
+      return (
+        <small className="owner-metric-comparison positive">
+          <span aria-hidden="true">▲</span>
+          {' '}{t('ownerMetrics.comparisonNew')} {ownerMetricPreviousPeriodLabel}
+        </small>
+      )
+    }
+
+    const change = previousValue === 0
+      ? 0
+      : ((currentValue - previousValue) / previousValue) * 100
+    const direction = change > 0 ? 'positive' : change < 0 ? 'negative' : 'neutral'
+    const arrow = change > 0 ? '▲' : change < 0 ? '▼' : '→'
+
+    return (
+      <small className={`owner-metric-comparison ${direction}`}>
+        <span aria-hidden="true">{arrow}</span>
+        {' '}{formatNumber(Math.abs(change), { maximumFractionDigits: 1 })}%
+        {' '}{t('ownerMetrics.comparisonPrefix')} {ownerMetricPreviousPeriodLabel}
+      </small>
+    )
+  }
   const handleOwnerMetricsPeriodChange = (period) => {
     if (!isOwnerMetricsPeriod(period)) return
     setOwnerMetricsPeriod(period)
@@ -2256,6 +2349,8 @@ function App() {
         </div>
       )}
 
+      {!ownerDetailProperty && renderOwnerMetricsPeriodFilter()}
+
       <section
         id="owner-overview-panel"
         className="owner-tab-panel"
@@ -2263,31 +2358,30 @@ function App() {
         aria-labelledby="owner-tab-overview"
         hidden={activeOwnerTab !== 'overview'}
       >
-      {renderOwnerMetricsPeriodFilter()}
       <div className="owner-summary-grid-wrap">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
           <div className="owner-summary-card accent">
             <div className="owner-card-topline">
-              <p>{language === 'en' ? 'Total Properties' : 'إجمالي العقارات'}</p>
-              <span className="owner-stat-icon material-symbols-outlined">apartment</span>
+              <p>{t('ownerMetrics.confirmedBookings')}</p>
+              <span className="owner-stat-icon material-symbols-outlined">book_online</span>
             </div>
-            <strong>{formatNumber(ownerProperties.length)}</strong>
-            <small>{t('ownerDashboard.propertyGrowth', {
-              count: pluralize(Math.max(1, Math.round(ownerProperties.length * 0.3)), 'property', language),
-            })}</small>
+            <strong>{formatNumber(ownerBookingMetrics.confirmedBookingsCount)}</strong>
+            {renderOwnerMetricComparison(
+              ownerBookingMetrics.confirmedBookingsCount,
+              ownerBookingMetrics.previousConfirmedBookingsCount,
+            )}
           </div>
 
-          <div className="owner-summary-card warn">
+          <div className="owner-summary-card accent">
             <div className="owner-card-topline">
-              <p>{language === 'en' ? 'Pending Requests' : 'الطلبات المعلقة'}</p>
-              <span className="owner-stat-icon material-symbols-outlined">pending_actions</span>
+              <p>{t('ownerMetrics.occupancy')}</p>
+              <span className="owner-stat-icon material-symbols-outlined">event_available</span>
             </div>
-            <strong>{formatNumber(ownerBookingMetrics.periodPendingRequestsCount)}</strong>
-            <small>{ownerBookingMetrics.periodPendingRequestsCount
-              ? t('ownerDashboard.requestsAwaitingReview', {
-                requests: pluralize(ownerBookingMetrics.periodPendingRequestsCount, 'bookingRequest', language),
-              })
-              : t('ownerDashboard.noPendingRequests')} · {ownerMetricsPeriodLabel}</small>
+            <strong>{formatPercent(ownerBookingMetrics.occupancyPercent)}</strong>
+            {renderOwnerMetricComparison(
+              ownerBookingMetrics.occupancyPercent,
+              ownerBookingMetrics.previousOccupancyPercent,
+            )}
           </div>
 
           <div className="owner-summary-card success">
@@ -2296,12 +2390,9 @@ function App() {
               <span className="owner-stat-icon material-symbols-outlined">payments</span>
             </div>
             <strong>{formatCurrency(ownerRevenue, 'EGP', language)}</strong>
-            {ownerRevenueMetrics.growthPercent !== null && (
-              <small>
-                {ownerRevenueMetrics.growthPercent > 0 ? '+' : ''}
-                {formatNumber(ownerRevenueMetrics.growthPercent, { maximumFractionDigits: 1 })}%
-                {' '}{ownerPeriodComparisonLabel}
-              </small>
+            {renderOwnerMetricComparison(
+              ownerRevenueMetrics.periodRevenue,
+              ownerRevenueMetrics.previousPeriodRevenue,
             )}
           </div>
 
@@ -2311,11 +2402,15 @@ function App() {
               <span className="owner-stat-icon material-symbols-outlined text-amber-500">star</span>
             </div>
             <strong>
-              {ownerAverageRating === null
+              {ownerReviewMetrics.averageRating === null
                 ? '—'
-                : `${formatNumber(ownerAverageRating, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} ★`}
+                : `${formatNumber(ownerReviewMetrics.averageRating, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} ★`}
             </strong>
-            <small>{language === 'en' ? 'Guest satisfaction' : 'متوسط رضا الضيوف'}</small>
+            {renderOwnerMetricComparison(
+              ownerReviewMetrics.averageRating,
+              ownerReviewMetrics.previousAverageRating,
+              ownerDashboardReviewsStatus,
+            )}
           </div>
         </div>
       </div>
@@ -2477,7 +2572,6 @@ function App() {
         aria-labelledby="owner-tab-earnings"
         hidden={activeOwnerTab !== 'earnings'}
       >
-      {renderOwnerMetricsPeriodFilter()}
       <div className="owner-analytics-surface relative">
         <div className="owner-insights-header flex items-center justify-between mb-3">
           <div>
@@ -2633,7 +2727,6 @@ function App() {
         <div className="owner-overview-header">
           <h3>{t('ownerMetrics.topProperties')}</h3>
         </div>
-        {renderOwnerMetricsPeriodFilter()}
         <div className="owner-listing-strip">
           {ownerPropertyPerformance.length > 0 ? ownerPropertyPerformance.slice(0, 3).map(({
             property,

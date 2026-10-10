@@ -120,6 +120,8 @@
   "ownerMetrics": {
     "occupancy": "الإشغال",
     "confirmed": "المؤكدة",
+    "confirmedBookings": "الحجوزات المؤكدة",
+    "rating": "متوسط التقييم",
     "averageOccupancy": "متوسط الإشغال",
     "confirmedRequests": "الطلبات المؤكدة",
     "periodOccupancyChange": "{{change}} نقطة مئوية {{comparison}}",
@@ -130,6 +132,16 @@
     "vsPreviousPeriod": "مقارنة بالفترة السابقة",
     "vsPreviousWeek": "مقارنة بالأسبوع الماضي",
     "periodAppliedToRevenue": "الإيرادات خلال {{period}}",
+    "comparisonUnavailable": "لا تتوفر بيانات كافية للمقارنة",
+    "comparisonLoading": "جارٍ تحميل بيانات التقييم",
+    "comparisonLoadError": "تعذر تحميل بيانات التقييم",
+    "comparisonPrefix": "عن",
+    "comparisonNew": "جديد عن",
+    "previousPeriods": {
+      "lastSevenDays": "الـ7 أيام السابقة",
+      "lastThirtyDays": "الـ30 يومًا السابقة",
+      "lastNinetyDays": "الـ90 يومًا السابقة"
+    },
     "periodOccupancyDescription": "نسبة الليالي المحجوزة يوميًا خلال {{period}}",
     "topCityInPeriod": "أعلى مدينة إيرادًا خلال {{period}}",
     "topProperties": "أفضل العقارات أداءً",
@@ -139,10 +151,9 @@
     "propertyRating": "التقييم",
     "noProperties": "لا توجد عقارات لعرض أدائها.",
     "periods": {
-      "thisWeek": "هذا الأسبوع",
       "lastSevenDays": "آخر 7 أيام",
       "lastThirtyDays": "آخر 30 يومًا",
-      "thisMonth": "هذا الشهر"
+      "lastNinetyDays": "آخر 90 يومًا"
     }
   },
   "quickActions": {

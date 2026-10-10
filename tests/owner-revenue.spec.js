@@ -263,7 +263,7 @@ test('top owner properties show period performance sorted by revenue', async ({ 
   await expect(cards.nth(1)).toContainText('42,000')
   await expect(cards.first().locator('.owner-listing-performance > div')).toHaveCount(3)
 
-  await performance.getByRole('button', { name: 'آخر 7 أيام' }).click()
+  await page.locator('.owner-period-toolbar').getByRole('button', { name: 'آخر 7 أيام' }).click()
   await expect(cards.first()).toContainText('فندق كورنيش الإسكندرية')
   const olderProperty = cards.filter({ hasText: 'شقة فيستا الإسكندرية' })
   await expect(olderProperty).toContainText('0 ج.م')

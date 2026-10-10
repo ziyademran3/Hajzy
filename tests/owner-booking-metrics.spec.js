@@ -5,6 +5,7 @@ import {
   getSmartLockCodeStatus,
 } from '../src/lib/ownerBookingMetrics.js'
 import { getOwnerMetricsPeriodRange } from '../src/lib/ownerMetricsPeriod.js'
+import { getOwnerReviewMetrics } from '../src/lib/ownerReviewMetrics.js'
 
 test('shared reporting periods expose consistent current and comparison date ranges', () => {
   const now = new Date(2026, 9, 9, 12)
@@ -25,6 +26,13 @@ test('shared reporting periods expose consistent current and comparison date ran
     startDate: new Date(2026, 8, 10),
     endDate: new Date(2026, 9, 10),
     days: 30,
+  })
+  expect(getOwnerMetricsPeriodRange('lastNinetyDays', now)).toMatchObject({
+    startDate: new Date(2026, 6, 12),
+    endDate: new Date(2026, 9, 10),
+    previousStartDate: new Date(2026, 3, 13),
+    previousEndDate: new Date(2026, 6, 12),
+    days: 90,
   })
   expect(getOwnerMetricsPeriodRange('thisMonth', now)).toMatchObject({
     startDate: new Date(2026, 9, 1),
@@ -67,6 +75,111 @@ test('occupancy comparison uses the same booking-night formula for this month an
   expect(metrics.previousMonthOccupancyPercent).toBeCloseTo((1 / 30) * 100)
   expect(metrics.monthlyOccupancyPercent).toBeCloseTo((2 / 31) * 100)
   expect(metrics.monthlyOccupancyChangePoints).toBeCloseTo(((2 / 31) - (1 / 30)) * 100)
+})
+
+test('owner rating comparison uses reviews dated in the selected and previous periods', () => {
+  const metrics = getOwnerReviewMetrics([
+    { rating: 4, date: '2026-10-04' },
+    { rating: 5, date: '2026-10-08' },
+    { rating: 3, date: '2026-09-27' },
+    { rating: 1, date: '2026-09-20' },
+  ], new Date(2026, 9, 10, 12), 'lastSevenDays')
+
+  expect(metrics.averageRating).toBe(4.5)
+  expect(metrics.previousAverageRating).toBe(3)
+  expect(getOwnerReviewMetrics([], new Date(2026, 9, 10), 'lastSevenDays')).toEqual({
+    averageRating: null,
+    previousAverageRating: null,
+  })
+})
+
+test('owner dashboard compares bookings, occupancy, revenue and ratings against the previous period', async ({ page }) => {
+  await page.addInitScript(() => {
+    const ownerId = 'owner-period-comparison-test'
+    const propertyId = 'period-comparison-property'
+    const dateAtOffset = (days) => {
+      const date = new Date()
+      date.setDate(date.getDate() + days)
+      date.setHours(12, 0, 0, 0)
+      return date
+    }
+    const isoDate = (date) => (
+      `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+    )
+    const isoDateTime = (days) => dateAtOffset(days).toISOString()
+
+    localStorage.clear()
+    localStorage.setItem('hajzy_user', JSON.stringify({ id: ownerId, role: 'owner', name: 'Test Owner' }))
+    localStorage.setItem('hajzy_properties', JSON.stringify([{
+      id: propertyId,
+      ownerId,
+      title: 'Period comparison property',
+      city: 'القاهرة',
+      location: 'Test location',
+      priceValue: 1000,
+      rating: 4,
+      reviews: 2,
+      images: [],
+    }]))
+    localStorage.setItem('hajzy_bookings', JSON.stringify([
+      {
+        id: 'current-booking-1',
+        propertyId,
+        status: 'confirmed',
+        createdAt: isoDateTime(-2),
+        paidAt: isoDateTime(-2),
+        checkIn: isoDate(dateAtOffset(-4)),
+        checkOut: isoDate(dateAtOffset(-3)),
+        total: 1200,
+      },
+      {
+        id: 'current-booking-2',
+        propertyId,
+        status: 'confirmed',
+        createdAt: isoDateTime(-3),
+        paidAt: isoDateTime(-3),
+        checkIn: isoDate(dateAtOffset(-8)),
+        checkOut: isoDate(dateAtOffset(-7)),
+        total: 800,
+      },
+      {
+        id: 'previous-booking',
+        propertyId,
+        status: 'confirmed',
+        createdAt: isoDateTime(-35),
+        paidAt: isoDateTime(-35),
+        checkIn: isoDate(dateAtOffset(-36)),
+        checkOut: isoDate(dateAtOffset(-35)),
+        total: 1000,
+      },
+    ]))
+    localStorage.setItem('hajzy_reviews', JSON.stringify({
+      [propertyId]: [
+        { id: 'current-review-1', rating: 4, date: isoDate(dateAtOffset(-2)) },
+        { id: 'current-review-2', rating: 5, date: isoDate(dateAtOffset(-3)) },
+        { id: 'previous-review', rating: 3, date: isoDate(dateAtOffset(-35)) },
+      ],
+    }))
+  })
+  await page.route('**/rest/v1/**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: '[]',
+  }))
+  await page.goto('/')
+
+  const ownerDashboard = page.locator('.owner-shell')
+  await expect(ownerDashboard).toBeVisible()
+  const metrics = ownerDashboard.locator('#owner-overview-panel .owner-summary-card')
+  await expect(metrics).toHaveCount(4)
+  await expect(metrics.nth(0).locator('small')).toContainText('▲ 100%')
+  await expect(metrics.nth(0).locator('small')).toHaveClass(/positive/)
+  await expect(metrics.nth(1).locator('small')).toContainText('▲ 100%')
+  await expect(metrics.nth(1).locator('small')).toHaveClass(/positive/)
+  await expect(metrics.nth(2).locator('small')).toContainText('▲ 100%')
+  await expect(metrics.nth(2).locator('small')).toHaveClass(/positive/)
+  await expect(metrics.nth(3).locator('small')).toContainText('الـ30 يومًا السابقة')
+  await expect(metrics.nth(3).locator('small')).toContainText(/[▲▼→]/)
 })
 
 test('calendar booked days match active bookings and exclude checkout dates and cancellations', () => {
@@ -220,12 +333,18 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
   await expect(ownerDashboard.locator('#owner-overview-panel .owner-progress-list')).toHaveCount(0)
   await expect(ownerDashboard.locator('#owner-alerts-panel .status-pill.neutral')).toHaveCount(0)
   await expect(ownerDashboard.locator('#owner-alerts-panel .status-pill.success')).toHaveCount(0)
-  const overviewPeriodFilter = ownerDashboard.locator('#owner-overview-panel .owner-period-toolbar')
-  await expect(overviewPeriodFilter.getByRole('button')).toHaveCount(4)
-  await overviewPeriodFilter.getByRole('button', { name: 'آخر 7 أيام' }).click()
+  const ownerPeriodFilter = ownerDashboard.locator('.owner-period-toolbar')
+  await expect(ownerDashboard.locator('.owner-period-toolbar')).toHaveCount(1)
+  await expect(ownerPeriodFilter.getByRole('button')).toHaveCount(3)
+  await expect(ownerPeriodFilter.getByRole('button')).toHaveText([
+    'آخر 7 أيام',
+    'آخر 30 يومًا',
+    'آخر 90 يومًا',
+  ])
+  await ownerPeriodFilter.getByRole('button', { name: 'آخر 7 أيام' }).click()
   expect(await page.evaluate(() => localStorage.getItem('hajzy_owner_metrics_period_owner-metrics-test'))).toBe('lastSevenDays')
   await page.reload()
-  await expect(ownerDashboard.locator('#owner-overview-panel .owner-period-toolbar').getByRole('button', { name: 'آخر 7 أيام' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(ownerDashboard.locator('.owner-period-toolbar').getByRole('button', { name: 'آخر 7 أيام' })).toHaveAttribute('aria-pressed', 'true')
   const quickActions = ownerDashboard.locator('.owner-quick-actions')
   await expect(quickActions.getByRole('button')).toHaveCount(4)
   await expect(quickActions).toHaveCSS('grid-template-columns', /.+/)
@@ -234,18 +353,18 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
 
   await quickActions.getByRole('button', { name: 'تصدير تقرير' }).click()
   await expect(ownerDashboard.locator('#owner-revenue-panel')).toBeVisible()
-  const revenuePeriodFilter = ownerDashboard.locator('#owner-revenue-panel .owner-period-toolbar')
-  await expect(revenuePeriodFilter.getByRole('button', { name: 'آخر 7 أيام' })).toHaveAttribute('aria-pressed', 'true')
-  await revenuePeriodFilter.getByRole('button', { name: 'هذا الأسبوع' }).click()
-  await expect(ownerDashboard.locator('#owner-revenue-panel')).toContainText('لا توجد إيرادات مدفوعة ومؤكدة خلال هذا الأسبوع.')
-  expect(await page.evaluate(() => localStorage.getItem('hajzy_owner_metrics_period_owner-metrics-test'))).toBe('thisWeek')
+  const sharedPeriodFilter = ownerDashboard.locator('.owner-period-toolbar')
+  await expect(sharedPeriodFilter.getByRole('button', { name: 'آخر 7 أيام' })).toHaveAttribute('aria-pressed', 'true')
+  await sharedPeriodFilter.getByRole('button', { name: 'آخر 30 يومًا' }).click()
+  await expect(ownerDashboard.locator('#owner-revenue-panel')).toContainText('لا توجد إيرادات مدفوعة ومؤكدة خلال آخر 30 يومًا.')
+  expect(await page.evaluate(() => localStorage.getItem('hajzy_owner_metrics_period_owner-metrics-test'))).toBe('lastThirtyDays')
   const reportDownload = page.waitForEvent('download')
   await ownerDashboard.locator('#owner-revenue-panel').getByRole('button', { name: 'تصدير التقرير' }).click()
   expect((await reportDownload).suggestedFilename()).toBe('owner-report.csv')
   await ownerNavigation.getByRole('tab', { name: 'نظرة عامة' }).click()
-  await expect(ownerDashboard.locator('#owner-overview-panel .owner-period-toolbar').getByRole('button', { name: 'هذا الأسبوع' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(ownerDashboard.locator('.owner-period-toolbar').getByRole('button', { name: 'آخر 30 يومًا' })).toHaveAttribute('aria-pressed', 'true')
   await ownerNavigation.getByRole('tab', { name: 'الحجوزات' }).click()
-  await expect(ownerDashboard.locator('#owner-booking-metrics-panel .owner-summary-card').first()).toContainText('مقارنة بالأسبوع الماضي')
+  await expect(ownerDashboard.locator('#owner-booking-metrics-panel .owner-summary-card').first()).toContainText('مقارنة بالفترة السابقة')
   await ownerNavigation.getByRole('tab', { name: 'نظرة عامة' }).click()
 
   await quickActions.getByRole('button', { name: 'إرسال رسالة' }).click()
@@ -485,15 +604,14 @@ test('owner overview shows three latest bookings and the bookings tab is the onl
   await expect(ownerNavigation.getByRole('tab', { name: /الحجوزات.*عدد الطلبات المعلقة/ })).toBeVisible()
   await expect(ownerNavigation.locator('#owner-tab-bookings .owner-nav-pending-badge')).toHaveText('2')
   await ownerNavigation.getByRole('tab', { name: 'نظرة عامة' }).click()
-  const occupancyPeriodFilter = ownerDashboard.locator('#owner-overview-panel .owner-period-toolbar')
+  const occupancyPeriodFilter = ownerDashboard.locator('.owner-period-toolbar')
   await occupancyPeriodFilter.getByRole('button', { name: 'آخر 7 أيام' }).click()
   await ownerNavigation.getByRole('tab', { name: 'الحجوزات' }).click()
   await expect(ownerDashboard.locator('#owner-booking-metrics-panel .owner-chart-bar-wrap')).toHaveCount(7)
-  await ownerNavigation.getByRole('tab', { name: 'نظرة عامة' }).click()
-  await ownerDashboard.locator('#owner-overview-panel .owner-period-toolbar').getByRole('button', { name: 'هذا الشهر' }).click()
-  const currentMonthDay = await page.evaluate(() => new Date().getDate())
+  await occupancyPeriodFilter.getByRole('button', { name: 'آخر 90 يومًا' }).click()
+  await expect(ownerDashboard.locator('.owner-period-toolbar').getByRole('button', { name: 'آخر 90 يومًا' })).toHaveAttribute('aria-pressed', 'true')
   await ownerNavigation.getByRole('tab', { name: 'الحجوزات' }).click()
-  await expect(ownerDashboard.locator('#owner-booking-metrics-panel .owner-chart-bar-wrap')).toHaveCount(currentMonthDay)
+  await expect(ownerDashboard.locator('#owner-booking-metrics-panel .owner-chart-bar-wrap')).toHaveCount(90)
 })
 
 test('owner quick task opens editing for a property with fewer than three photos', async ({ page }) => {

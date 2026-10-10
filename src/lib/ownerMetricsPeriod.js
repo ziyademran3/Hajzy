@@ -1,8 +1,7 @@
 export const OWNER_METRICS_PERIODS = [
-  'thisWeek',
   'lastSevenDays',
   'lastThirtyDays',
-  'thisMonth',
+  'lastNinetyDays',
 ]
 
 export const isOwnerMetricsPeriod = (period) => OWNER_METRICS_PERIODS.includes(period)
@@ -32,6 +31,9 @@ export const getOwnerMetricsPeriodRange = (period = 'lastThirtyDays', now = new 
     }
     case 'lastSevenDays':
       startDate = addDays(today, -6)
+      break
+    case 'lastNinetyDays':
+      startDate = addDays(today, -89)
       break
     case 'thisMonth':
       startDate = new Date(today.getFullYear(), today.getMonth(), 1)

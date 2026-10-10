@@ -149,6 +149,9 @@ export const getOwnerBookingMetrics = (
   const periodBookings = safeBookings.filter((booking) => (
     isWithinPeriod(getRequestDate(booking), startDate, endDate)
   ))
+  const previousPeriodBookings = safeBookings.filter((booking) => (
+    isWithinPeriod(getRequestDate(booking), previousStartDate, previousEndDate)
+  ))
   const allActiveBookings = safeBookings.filter((booking) => !isCancelled(booking))
   const totalRequests = periodBookings.length
   const activeBookings = periodBookings.filter((booking) => !isCancelled(booking))
@@ -227,6 +230,7 @@ export const getOwnerBookingMetrics = (
     totalRequests,
     activeBookingsCount: activeBookings.length,
     confirmedBookingsCount: confirmedBookings.length,
+    previousConfirmedBookingsCount: previousPeriodBookings.filter(isConfirmed).length,
     pendingRequestsCount: safeBookings.filter((booking) => getStatus(booking) === 'pending').length,
     periodPendingRequestsCount: periodBookings.filter((booking) => getStatus(booking) === 'pending').length,
     bookingConversionPercent,

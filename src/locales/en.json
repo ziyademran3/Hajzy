@@ -120,6 +120,8 @@
   "ownerMetrics": {
     "occupancy": "Occupancy",
     "confirmed": "Confirmed",
+    "confirmedBookings": "Confirmed bookings",
+    "rating": "Average rating",
     "averageOccupancy": "Average occupancy",
     "confirmedRequests": "Confirmed requests",
     "periodOccupancyChange": "{{change}} percentage points {{comparison}}",
@@ -130,6 +132,16 @@
     "vsPreviousPeriod": "vs previous period",
     "vsPreviousWeek": "vs last week",
     "periodAppliedToRevenue": "Revenue during {{period}}",
+    "comparisonUnavailable": "Not enough data to compare",
+    "comparisonLoading": "Loading rating data",
+    "comparisonLoadError": "Unable to load rating data",
+    "comparisonPrefix": "vs",
+    "comparisonNew": "New vs",
+    "previousPeriods": {
+      "lastSevenDays": "previous 7 days",
+      "lastThirtyDays": "previous 30 days",
+      "lastNinetyDays": "previous 90 days"
+    },
     "periodOccupancyDescription": "Daily booked-night occupancy during {{period}}",
     "topCityInPeriod": "Top earning city during {{period}}",
     "topProperties": "Top Performing Properties",
@@ -139,10 +151,9 @@
     "propertyRating": "Rating",
     "noProperties": "No properties to show performance for.",
     "periods": {
-      "thisWeek": "This week",
       "lastSevenDays": "Last 7 days",
       "lastThirtyDays": "Last 30 days",
-      "thisMonth": "This month"
+      "lastNinetyDays": "Last 90 days"
     }
   },
   "quickActions": {
