@@ -7624,6 +7624,97 @@ html[dir='rtl'] .owner-task-list .owner-task-arrow {
   font-size: var(--type-12);
 }
 
+.owner-reviews-filter,
+.owner-review-reply-form {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.owner-reviews-filter {
+  max-width: 420px;
+  color: var(--muted);
+  font-size: var(--type-12);
+}
+
+.owner-reviews-filter select,
+.owner-review-reply-form textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text);
+}
+
+.owner-reviews-filter select {
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+}
+
+.owner-review-item {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+}
+
+.owner-review-property {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--type-12);
+  font-weight: 700;
+}
+
+.owner-review-item .review-card {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.owner-review-reply {
+  padding: var(--space-3);
+  border-inline-start: 3px solid var(--primary);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+
+.owner-review-reply strong,
+.owner-review-reply p {
+  margin: 0;
+}
+
+.owner-review-reply strong {
+  color: var(--text);
+  font-size: var(--type-12);
+}
+
+.owner-review-reply p {
+  margin-top: var(--space-1);
+  color: var(--muted);
+  font-size: var(--type-14);
+}
+
+.owner-review-reply-form textarea {
+  min-height: 96px;
+  padding: var(--space-3);
+  resize: vertical;
+}
+
+.owner-review-reply-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.owner-review-reply-trigger {
+  justify-self: start;
+}
+
 .owner-property-reviews-error {
   display: flex;
   align-items: center;

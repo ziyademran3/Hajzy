@@ -79,10 +79,21 @@
     "availabilityPricing": "Calendar & pricing",
     "smartLock": "Smart lock",
     "ratings": "Reviews",
+    "latestReviews": "Latest comments",
+    "filterByProperty": "Filter by property",
+    "allProperties": "All properties",
     "pricePerNight": "per night",
     "reviewsError": "Unable to load reviews for this property.",
     "retry": "Try again",
-    "noReviews": "This property has no reviews yet."
+    "noReviews": "This property has no reviews yet.",
+    "noLatestReviews": "There are no comments for this property yet.",
+    "reply": "Reply",
+    "editReply": "Edit reply",
+    "yourReply": "Your reply",
+    "saveReply": "Save reply",
+    "cancelReply": "Cancel",
+    "replySaved": "Your reply was saved on this device.",
+    "replyError": "Unable to save the reply. Please try again."
   },
   "ownerDashboard": {
     "addNewProperty": "Add New Property",

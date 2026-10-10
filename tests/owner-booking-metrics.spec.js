@@ -379,6 +379,7 @@ test('booking ratios and pending counts use the selected reporting period', () =
 })
 
 test('owner dashboard shows empty booking metrics while the bell counts unread notifications', async ({ page }) => {
+  test.setTimeout(45000)
   await page.addInitScript(() => {
     const ownerId = 'owner-metrics-test'
     localStorage.setItem('hajzy_user', JSON.stringify({ id: ownerId, role: 'owner', name: 'Test Owner' }))
@@ -534,6 +535,7 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
   const propertyTabs = ownerDashboard.getByRole('tablist', { name: 'أقسام تفاصيل العقار' })
   await expect(propertyTabs.getByRole('tab')).toHaveCount(4)
   await expect(ownerDashboard.locator('.owner-property-overview')).toBeVisible()
+  await expect(ownerDashboard.locator('.owner-property-overview .property-rating-badge')).toHaveCount(0)
 
   await propertyTabs.getByRole('tab', { name: 'التقويم والأسعار' }).click()
   await expect(ownerDashboard.locator('.host-calendar-manager-card')).toContainText(
@@ -552,6 +554,18 @@ test('owner dashboard shows empty booking metrics while the bell counts unread n
   await propertyTabs.getByRole('tab', { name: 'التقييمات' }).click()
   await expect(ownerDashboard.locator('.owner-property-reviews-summary')).toContainText(firstPropertyTitle)
   await expect(ownerDashboard.locator('.owner-property-reviews')).toBeVisible()
+  const reviewsFilter = ownerDashboard.locator('.owner-reviews-filter select')
+  await expect(reviewsFilter.locator('option:checked')).toHaveText(firstPropertyTitle)
+  await reviewsFilter.selectOption('all')
+  await expect(ownerDashboard.locator('.owner-review-item').first()).toBeVisible()
+  await reviewsFilter.selectOption({ label: firstPropertyTitle })
+  const firstReview = ownerDashboard.locator('.owner-review-item').first()
+  await firstReview.getByRole('button', { name: 'رد' }).click()
+  await firstReview.locator('textarea').fill('شكرًا لمشاركتك تجربتك، سعداء باستضافتك.')
+  await firstReview.getByRole('button', { name: 'حفظ الرد' }).click()
+  await expect(firstReview.locator('.owner-review-reply')).toContainText(
+    'شكرًا لمشاركتك تجربتك، سعداء باستضافتك.',
+  )
   await ownerDashboard.getByRole('button', { name: 'العودة إلى العقارات' }).click()
   await expect(propertySection).toBeVisible()
   await expect(ownerDashboard.locator('.owner-dashboard-header')).toBeVisible()

@@ -79,10 +79,21 @@
     "availabilityPricing": "التقويم والأسعار",
     "smartLock": "القفل الذكي",
     "ratings": "التقييمات",
+    "latestReviews": "أحدث التعليقات",
+    "filterByProperty": "تصفية حسب العقار",
+    "allProperties": "كل العقارات",
     "pricePerNight": "لليلة",
     "reviewsError": "تعذر تحميل تقييمات هذا العقار.",
     "retry": "إعادة المحاولة",
-    "noReviews": "لا توجد مراجعات لهذا العقار حتى الآن."
+    "noReviews": "لا توجد مراجعات لهذا العقار حتى الآن.",
+    "noLatestReviews": "لا توجد تعليقات لهذا العقار حتى الآن.",
+    "reply": "رد",
+    "editReply": "تعديل الرد",
+    "yourReply": "ردك",
+    "saveReply": "حفظ الرد",
+    "cancelReply": "إلغاء",
+    "replySaved": "تم حفظ ردك على هذا الجهاز.",
+    "replyError": "تعذر حفظ الرد. حاول مرة أخرى."
   },
   "ownerDashboard": {
     "addNewProperty": "إضافة عقار جديد",

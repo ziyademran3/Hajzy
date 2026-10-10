@@ -92,6 +92,7 @@ import {
   fetchBookings,
   fetchChatMessages,
   fetchPropertyReviews,
+  replyToPropertyReview,
   fetchProperties,
   getCitySlug,
   getSafeBookings,
@@ -356,11 +357,12 @@ function App() {
   const [showOwnerPropertyForm, setShowOwnerPropertyForm] = useState(false)
   const [ownerDetailPropertyId, setOwnerDetailPropertyId] = useState(null)
   const [activeOwnerPropertyTab, setActiveOwnerPropertyTab] = useState('overview')
-  const [ownerPropertyReviews, setOwnerPropertyReviews] = useState([])
-  const [ownerPropertyReviewsStatus, setOwnerPropertyReviewsStatus] = useState('idle')
-  const [ownerPropertyReviewsRetry, setOwnerPropertyReviewsRetry] = useState(0)
   const [ownerDashboardReviews, setOwnerDashboardReviews] = useState([])
   const [ownerDashboardReviewsStatus, setOwnerDashboardReviewsStatus] = useState('idle')
+  const [ownerDashboardReviewsRetry, setOwnerDashboardReviewsRetry] = useState(0)
+  const [ownerReviewPropertyFilter, setOwnerReviewPropertyFilter] = useState('all')
+  const [activeOwnerReplyId, setActiveOwnerReplyId] = useState(null)
+  const [ownerReviewReplyDraft, setOwnerReviewReplyDraft] = useState('')
   const [bookingFilter, setBookingFilter] = useState('upcoming')
   const [ownerBookingFilter, setOwnerBookingFilter] = useState('all')
   const [activeOwnerTab, setActiveOwnerTab] = useState('overview')
@@ -1587,6 +1589,20 @@ function App() {
   const ownerDetailProperty = ownerProperties.find(
     (property) => String(property.id) === String(ownerDetailPropertyId),
   ) || null
+  const ownerReviewsForFilter = ownerDashboardReviews
+    .filter((review) => ownerReviewPropertyFilter === 'all'
+      || String(review.propertyId) === String(ownerReviewPropertyFilter))
+    .sort((left, right) => new Date(right.date || 0).getTime() - new Date(left.date || 0).getTime())
+  const ownerReviewsRating = ownerReviewsForFilter.length
+    ? Number((
+      ownerReviewsForFilter.reduce((total, review) => total + Number(review.rating || 0), 0)
+      / ownerReviewsForFilter.length
+    ).toFixed(1))
+    : null
+  const ownerReviewsPropertyName = ownerReviewPropertyFilter === 'all'
+    ? t('ownerPropertyDetails.allProperties')
+    : ownerProperties.find((property) => String(property.id) === String(ownerReviewPropertyFilter))?.title
+      || t('ownerDashboard.unknownProperty')
   const ownerDetailPropertyBookings = ownerDetailProperty
     ? ownerBookings.filter((booking) => String(booking.propertyId) === String(ownerDetailProperty.id))
     : []
@@ -1624,33 +1640,7 @@ function App() {
     return () => {
       isCurrent = false
     }
-  }, [isOwner, ownerPropertyIdsKey])
-
-  useEffect(() => {
-    if (!ownerDetailPropertyId) {
-      setOwnerPropertyReviews([])
-      setOwnerPropertyReviewsStatus('idle')
-      return undefined
-    }
-
-    let isCurrentProperty = true
-    setOwnerPropertyReviewsStatus('loading')
-    fetchPropertyReviews(ownerDetailPropertyId)
-      .then((reviews) => {
-        if (!isCurrentProperty) return
-        setOwnerPropertyReviews(reviews)
-        setOwnerPropertyReviewsStatus('ready')
-      })
-      .catch((error) => {
-        if (!isCurrentProperty) return
-        console.error('Failed to load owner property reviews', error)
-        setOwnerPropertyReviewsStatus('error')
-      })
-
-    return () => {
-      isCurrentProperty = false
-    }
-  }, [ownerDetailPropertyId, ownerPropertyReviewsRetry])
+  }, [isOwner, ownerPropertyIdsKey, ownerDashboardReviewsRetry])
 
   useEffect(() => {
     if (!isOwner || user?.id === null || user?.id === undefined) return
@@ -1747,6 +1737,31 @@ function App() {
       propertyId: booking.propertyId,
       status: 'confirmed',
     })
+  }
+
+  const handleOwnerReviewReply = async (review) => {
+    const replyText = ownerReviewReplyDraft.trim()
+    if (!replyText) return
+
+    try {
+      const updatedReview = await replyToPropertyReview(
+        review.propertyId,
+        review.id,
+        replyText,
+      )
+      setOwnerDashboardReviews((currentReviews) => currentReviews.map((item) => (
+        String(item.id) === String(updatedReview.id)
+          && String(item.propertyId) === String(updatedReview.propertyId)
+          ? updatedReview
+          : item
+      )))
+      setActiveOwnerReplyId(null)
+      setOwnerReviewReplyDraft('')
+      showToast(t('ownerPropertyDetails.replySaved'))
+    } catch (error) {
+      console.error('Failed to save owner review reply', error)
+      showToast(t('ownerPropertyDetails.replyError'))
+    }
   }
 
   const handleOwnerRejectBooking = async (bookingId) => {
@@ -1991,6 +2006,7 @@ function App() {
 
     setActiveOwnerTab('properties')
     setOwnerDetailPropertyId(property.id)
+    setOwnerReviewPropertyFilter(String(property.id))
     setActiveOwnerPropertyTab(
       alert.type === 'smartLockExpiry'
         ? 'smart-lock'
@@ -2010,6 +2026,7 @@ function App() {
   const handleOpenOwnerPropertyDetails = (property) => {
     setActiveOwnerTab('properties')
     setOwnerDetailPropertyId(property.id)
+    setOwnerReviewPropertyFilter(String(property.id))
     setActiveOwnerPropertyTab('overview')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -3048,11 +3065,6 @@ function App() {
                   onError={handleStayImageError}
                 />
                 <div className="owner-property-overview-copy">
-                  <PropertyRating
-                    rating={ownerDetailProperty.rating}
-                    reviews={ownerDetailProperty.reviews}
-                    language={language}
-                  />
                   <div className="owner-property-detail-price">
                     <strong>{formatCurrency(ownerDetailProperty.priceValue, ownerDetailProperty.currency, language)}</strong>
                     <span>{t('ownerPropertyDetails.pricePerNight')}</span>
@@ -3073,39 +3085,121 @@ function App() {
               <div className="owner-property-reviews">
                 <div className="owner-property-reviews-summary">
                   <div>
-                    <h4>{t('ownerPropertyDetails.ratings')}</h4>
-                    <p>{ownerDetailProperty.title}</p>
+                    <h4>{t('ownerPropertyDetails.latestReviews')}</h4>
+                    <p>{ownerReviewsPropertyName}</p>
                   </div>
                   <PropertyRating
-                    rating={ownerDetailProperty.rating}
-                    reviews={ownerDetailProperty.reviews}
+                    rating={ownerReviewsRating}
+                    reviews={ownerReviewsForFilter.length}
                     language={language}
                   />
                 </div>
 
-                {ownerPropertyReviewsStatus === 'loading' ? (
+                <label className="owner-reviews-filter">
+                  <span>{t('ownerPropertyDetails.filterByProperty')}</span>
+                  <select
+                    value={ownerReviewPropertyFilter}
+                    onChange={(event) => {
+                      setOwnerReviewPropertyFilter(event.target.value)
+                      setActiveOwnerReplyId(null)
+                      setOwnerReviewReplyDraft('')
+                    }}
+                  >
+                    <option value="all">{t('ownerPropertyDetails.allProperties')}</option>
+                    {ownerProperties.map((property) => (
+                      <option key={property.id} value={String(property.id)}>{property.title}</option>
+                    ))}
+                  </select>
+                </label>
+
+                {ownerDashboardReviewsStatus === 'loading' ? (
                   <Skeleton count={2} />
-                ) : ownerPropertyReviewsStatus === 'error' ? (
+                ) : ownerDashboardReviewsStatus === 'error' ? (
                   <div className="owner-property-reviews-error" role="alert">
                     <span>{t('ownerPropertyDetails.reviewsError')}</span>
                     <button
                       type="button"
                       className="secondary-button small-button"
-                      onClick={() => setOwnerPropertyReviewsRetry((retry) => retry + 1)}
+                      onClick={() => setOwnerDashboardReviewsRetry((retry) => retry + 1)}
                     >
                       {t('ownerPropertyDetails.retry')}
                     </button>
                   </div>
-                ) : ownerPropertyReviews.length > 0 ? (
+                ) : ownerReviewsForFilter.length > 0 ? (
                   <div className="review-list">
-                    {ownerPropertyReviews.map((review) => (
-                      <ReviewCard key={review.id} review={review} />
-                    ))}
+                    {ownerReviewsForFilter.map((review) => {
+                      const reviewId = String(review.id)
+                      const replyIsOpen = activeOwnerReplyId === reviewId
+                      const propertyName = ownerProperties.find(
+                        (property) => String(property.id) === String(review.propertyId),
+                      )?.title || t('ownerDashboard.unknownProperty')
+
+                      return (
+                        <div className="owner-review-item" key={`${review.propertyId}-${review.id}`}>
+                          <p className="owner-review-property">{propertyName}</p>
+                          <ReviewCard review={review} />
+                          {review.ownerReply?.text && (
+                            <div className="owner-review-reply">
+                              <strong>{t('ownerPropertyDetails.yourReply')}</strong>
+                              <p>{review.ownerReply.text}</p>
+                            </div>
+                          )}
+                          {replyIsOpen ? (
+                            <form
+                              className="owner-review-reply-form"
+                              onSubmit={(event) => {
+                                event.preventDefault()
+                                handleOwnerReviewReply(review)
+                              }}
+                            >
+                              <label htmlFor={`owner-review-reply-${reviewId}`}>
+                                {t('ownerPropertyDetails.reply')}
+                              </label>
+                              <textarea
+                                id={`owner-review-reply-${reviewId}`}
+                                value={ownerReviewReplyDraft}
+                                onChange={(event) => setOwnerReviewReplyDraft(event.target.value)}
+                                maxLength={500}
+                                required
+                              />
+                              <div className="owner-review-reply-actions">
+                                <button type="submit" className="primary-button small-button">
+                                  {t('ownerPropertyDetails.saveReply')}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="secondary-button small-button"
+                                  onClick={() => {
+                                    setActiveOwnerReplyId(null)
+                                    setOwnerReviewReplyDraft('')
+                                  }}
+                                >
+                                  {t('ownerPropertyDetails.cancelReply')}
+                                </button>
+                              </div>
+                            </form>
+                          ) : (
+                            <button
+                              type="button"
+                              className="text-button owner-review-reply-trigger"
+                              onClick={() => {
+                                setActiveOwnerReplyId(reviewId)
+                                setOwnerReviewReplyDraft(review.ownerReply?.text || '')
+                              }}
+                            >
+                              {review.ownerReply?.text
+                                ? t('ownerPropertyDetails.editReply')
+                                : t('ownerPropertyDetails.reply')}
+                            </button>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 ) : (
                   <div className="owner-empty-state">
                     <span className="material-symbols-outlined" aria-hidden="true">star</span>
-                    <p>{t('ownerPropertyDetails.noReviews')}</p>
+                    <p>{t('ownerPropertyDetails.noLatestReviews')}</p>
                   </div>
                 )}
               </div>

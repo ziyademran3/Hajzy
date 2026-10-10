@@ -1031,6 +1031,35 @@ export const addPropertyReview = async (review) => {
   }
 }
 
+export const replyToPropertyReview = async (propertyId, reviewId, text) => {
+  const replyText = String(text || '').trim()
+  if (!replyText) {
+    throw new Error('Review reply cannot be empty')
+  }
+
+  const key = 'hajzy_reviews'
+  const current = readStorage(key, {})
+  const propertyReviews = current[propertyId] || initialSeedReviews[propertyId] || []
+  const reviewExists = propertyReviews.some((review) => String(review.id) === String(reviewId))
+  if (!reviewExists) {
+    throw new Error(`Review ${reviewId} was not found for property ${propertyId}`)
+  }
+
+  const updatedReview = {
+    ...propertyReviews.find((review) => String(review.id) === String(reviewId)),
+    ownerReply: {
+      text: replyText,
+      date: new Date().toISOString(),
+    },
+  }
+  const updatedReviews = propertyReviews.map((review) => (
+    String(review.id) === String(reviewId) ? updatedReview : review
+  ))
+  writeStorage(key, { ...current, [propertyId]: updatedReviews })
+
+  return updatedReview
+}
+
 export const addChatMessage = async (message) => {
   const normalizedMessage = normalizeChatMessage({
     ...message,
