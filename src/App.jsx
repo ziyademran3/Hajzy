@@ -1668,6 +1668,28 @@ function App() {
     ownerMetricsNow,
     ownerMetricsPeriod,
   )
+  const occupancyDaysWithData = ownerBookingMetrics.dailyOccupancy
+    .filter((item) => Number.isFinite(item.occupancyPercent))
+  const highestOccupancyDay = occupancyDaysWithData.reduce(
+    (highest, item) => !highest || item.occupancyPercent > highest.occupancyPercent
+      ? item
+      : highest,
+    null,
+  )
+  const lowestOccupancyDay = occupancyDaysWithData.reduce(
+    (lowest, item) => !lowest || item.occupancyPercent < lowest.occupancyPercent
+      ? item
+      : lowest,
+    null,
+  )
+  const occupancyDayFormatter = new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'ar-EG', {
+    weekday: 'long',
+  })
+  const occupancyInsightDayFormatter = new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'ar-EG', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short',
+  })
   const ownerReviewMetrics = getOwnerReviewMetrics(
     ownerDashboardReviews,
     ownerMetricsNow,
@@ -1765,6 +1787,7 @@ function App() {
   )
   const ownerMetricsPeriodLabel = t(`ownerMetrics.periods.${ownerMetricsPeriod}`)
   const ownerMetricComparisonLabel = t(`ownerMetrics.comparisonPeriods.${ownerMetricsPeriod}`)
+  const ownerMetricPreviousPeriodLabel = t(`ownerMetrics.previousPeriods.${ownerMetricsPeriod}`)
   const renderOwnerMetricComparison = (current, previous, status = 'ready') => {
     if (status === 'loading') {
       return (
@@ -2805,6 +2828,36 @@ function App() {
             </span>
           </div>
         </div>
+        <div className="owner-chart-insights" aria-label={t('ownerMetrics.occupancyInsights')}>
+          {highestOccupancyDay && (
+            <p data-testid="occupancy-highest-day">
+              <span>{t('ownerMetrics.highestDay')}</span>
+              <strong>
+                {occupancyInsightDayFormatter.format(highestOccupancyDay.date)}
+                {' · '}{formatPercent(highestOccupancyDay.occupancyPercent)}
+              </strong>
+            </p>
+          )}
+          {lowestOccupancyDay && (
+            <p data-testid="occupancy-lowest-day">
+              <span>{t('ownerMetrics.lowestDay')}</span>
+              <strong>
+                {occupancyInsightDayFormatter.format(lowestOccupancyDay.date)}
+                {' · '}{formatPercent(lowestOccupancyDay.occupancyPercent)}
+              </strong>
+            </p>
+          )}
+        </div>
+        <div className="owner-chart-legend" aria-label={t('ownerMetrics.chartLegend')}>
+          <span>
+            <i className="owner-chart-legend-swatch" aria-hidden="true" />
+            {t('ownerMetrics.occupancyLegend')}
+          </span>
+          <span>
+            <i className="owner-chart-legend-swatch weekend" aria-hidden="true" />
+            {t('ownerMetrics.weekendLegend')}
+          </span>
+        </div>
         <div className="owner-chart-scroll">
         <div
           className="owner-chart"
@@ -2816,16 +2869,21 @@ function App() {
           }}
         >
           {ownerBookingMetrics.dailyOccupancy.map((item) => {
-            const dayLabel = new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'ar-EG', {
-              weekday: 'short',
-            }).format(item.date)
+            const dayLabel = occupancyDayFormatter.format(item.date)
+            const isWeekend = item.date.getDay() === 5 || item.date.getDay() === 6
             const occupancyLabel = formatPercent(item.occupancyPercent)
             return (
-              <div key={item.date.toISOString()} className="owner-chart-bar-wrap" title={`${dayLabel}: ${occupancyLabel}`}>
+              <div
+                key={item.date.toISOString()}
+                className={`owner-chart-bar-wrap${isWeekend ? ' weekend' : ''}`}
+                title={`${dayLabel}: ${occupancyLabel}${isWeekend ? ` · ${t('ownerMetrics.weekendLegend')}` : ''}`}
+                aria-label={`${dayLabel}: ${occupancyLabel}${isWeekend ? ` · ${t('ownerMetrics.weekendLegend')}` : ''}`}
+                role="group"
+              >
                 <span className="owner-chart-val text-[11px] font-bold text-slate-600 dark:text-slate-400">{occupancyLabel}</span>
                 <div className="owner-chart-bar-track">
                   <div
-                    className="owner-chart-bar"
+                    className={`owner-chart-bar${isWeekend ? ' weekend' : ''}`}
                     style={{
                       height: `${item.occupancyPercent ?? 0}%`,
                       minHeight: item.occupancyPercent

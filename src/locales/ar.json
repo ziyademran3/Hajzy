@@ -141,7 +141,18 @@
       "lastThirtyDays": "مقارنة بالفترة السابقة (آخر 30 يومًا)",
       "lastNinetyDays": "مقارنة بالفترة السابقة (آخر 90 يومًا)"
     },
+    "previousPeriods": {
+      "lastSevenDays": "الـ7 أيام السابقة",
+      "lastThirtyDays": "الـ30 يومًا السابقة",
+      "lastNinetyDays": "الـ90 يومًا السابقة"
+    },
     "periodOccupancyDescription": "نسبة الليالي المحجوزة يوميًا خلال {{period}}",
+    "occupancyInsights": "ملخص الإشغال",
+    "highestDay": "أعلى يوم:",
+    "lowestDay": "أقل يوم:",
+    "chartLegend": "مفتاح ألوان الرسم",
+    "occupancyLegend": "نسبة الإشغال",
+    "weekendLegend": "عطلة نهاية الأسبوع (الجمعة والسبت)",
     "topCityInPeriod": "أعلى مدينة إيرادًا خلال {{period}}",
     "topProperties": "أفضل العقارات أداءً",
     "propertyRevenue": "الإيراد",

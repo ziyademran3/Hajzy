@@ -6713,6 +6713,10 @@ html[dir='rtl'] .settings-switch[aria-checked='true'] .settings-switch-thumb {
   box-shadow: 0 8px 18px rgba(0, 67, 63, 0.15);
 }
 
+.owner-chart-bar.weekend {
+  background: var(--accent-gold);
+}
+
 .owner-chart-bar-track {
   display: flex;
   align-items: flex-end;
@@ -6725,7 +6729,44 @@ html[dir='rtl'] .settings-switch[aria-checked='true'] .settings-switch-thumb {
 .owner-chart-day-label {
   margin-top: 0;
   line-height: 1.2;
-  white-space: nowrap;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.owner-chart-insights,
+.owner-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-2);
+  color: var(--muted);
+  font-size: var(--type-12);
+}
+
+.owner-chart-insights p,
+.owner-chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.owner-chart-insights strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.owner-chart-legend-swatch {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-full);
+  background: var(--primary);
+}
+
+.owner-chart-legend-swatch.weekend {
+  background: var(--accent-gold);
 }
 
 .owner-analytics-card,

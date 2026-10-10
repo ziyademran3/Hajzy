@@ -141,7 +141,18 @@
       "lastThirtyDays": "vs previous 30 days",
       "lastNinetyDays": "vs previous 90 days"
     },
+    "previousPeriods": {
+      "lastSevenDays": "previous 7 days",
+      "lastThirtyDays": "previous 30 days",
+      "lastNinetyDays": "previous 90 days"
+    },
     "periodOccupancyDescription": "Daily booked-night occupancy during {{period}}",
+    "occupancyInsights": "Occupancy summary",
+    "highestDay": "Highest day:",
+    "lowestDay": "Lowest day:",
+    "chartLegend": "Chart legend",
+    "occupancyLegend": "Occupancy rate",
+    "weekendLegend": "Weekend (Friday and Saturday)",
     "topCityInPeriod": "Top earning city during {{period}}",
     "topProperties": "Top Performing Properties",
     "propertyRevenue": "Revenue",
