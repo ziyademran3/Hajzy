@@ -1,4 +1,5 @@
 import { getOwnerMetricsPeriodRange } from './ownerMetricsPeriod.js'
+import { getOwnerBookingMetrics } from './ownerBookingMetrics.js'
 
 const getBookingStatus = (booking) => String(booking?.status || '').trim().toLowerCase()
 
@@ -56,6 +57,51 @@ const getTopRevenueCity = (bookings, properties) => {
   return [...revenueByCity.entries()]
     .map(([city, amount]) => ({ city, amount }))
     .sort((cityA, cityB) => cityB.amount - cityA.amount)[0] || null
+}
+
+export const getOwnerPropertyPerformance = (
+  bookings = [],
+  properties = [],
+  now = new Date(),
+  period = 'lastThirtyDays',
+) => {
+  const safeBookings = Array.isArray(bookings) ? bookings.filter(Boolean) : []
+  const safeProperties = Array.isArray(properties)
+    ? properties.filter((property) => property?.id !== null && property?.id !== undefined)
+    : []
+  const { startDate, endDate } = getOwnerMetricsPeriodRange(period, now)
+  const revenueByProperty = new Map()
+
+  safeBookings.filter(isPaidBooking).forEach((booking) => {
+    const paymentDate = getPaymentDate(booking)
+    const propertyId = booking?.propertyId ?? booking?.property_id
+    if (
+      propertyId === null
+      || propertyId === undefined
+      || !paymentDate
+      || paymentDate < startDate
+      || paymentDate >= endDate
+    ) return
+
+    const key = String(propertyId)
+    const current = revenueByProperty.get(key) || { revenue: 0, bookingCount: 0 }
+    current.revenue += getBookingAmount(booking)
+    current.bookingCount += 1
+    revenueByProperty.set(key, current)
+  })
+
+  return safeProperties
+    .map((property) => {
+      const { revenue = 0, bookingCount = 0 } = revenueByProperty.get(String(property.id)) || {}
+      const occupancy = getOwnerBookingMetrics(safeBookings, [property], now, period)
+      return {
+        property,
+        revenue,
+        bookingCount,
+        occupancyPercent: occupancy.occupancyPercent,
+      }
+    })
+    .sort((propertyA, propertyB) => propertyB.revenue - propertyA.revenue)
 }
 
 export const getOwnerRevenueMetrics = (

@@ -6,7 +6,7 @@ import { useAuth } from './hooks/useAuth'
 import { useHaptics } from './hooks/useHaptics'
 import { useOfflineBooking } from './hooks/useOfflineBooking'
 import { useNativeShare } from './hooks/useNativeShare'
-import { getOwnerRevenueMetrics } from './lib/ownerRevenue'
+import { getOwnerPropertyPerformance, getOwnerRevenueMetrics } from './lib/ownerRevenue'
 import { getOwnerBookingMetrics } from './lib/ownerBookingMetrics'
 import { OWNER_METRICS_PERIODS, isOwnerMetricsPeriod } from './lib/ownerMetricsPeriod'
 import Skeleton from './components/Skeleton'
@@ -1722,6 +1722,12 @@ function App() {
     ownerMetricsPeriod,
   )
   const ownerRevenue = ownerRevenueMetrics.periodRevenue
+  const ownerPropertyPerformance = getOwnerPropertyPerformance(
+    ownerBookings,
+    ownerProperties,
+    ownerMetricsNow,
+    ownerMetricsPeriod,
+  )
   const ownerRevenueAxisMaximum = Math.max(...ownerRevenueMetrics.bars.map(({ amount }) => amount), 0)
   const ownerRevenueAxisTicks = Array.from(
     { length: 5 },
@@ -2625,22 +2631,47 @@ function App() {
       >
       <div className="owner-leading-listings">
         <div className="owner-overview-header">
-          <h3>{language === 'en' ? 'Top Performing Properties' : 'أفضل العقارات أداءً'}</h3>
+          <h3>{t('ownerMetrics.topProperties')}</h3>
         </div>
+        {renderOwnerMetricsPeriodFilter()}
         <div className="owner-listing-strip">
-          {properties.slice(0, 3).map((property) => (
-            <div key={property.id} className="owner-listing-card">
-              <img src={property.image} alt={property.title} onError={handleStayImageError} />
-              <div className="owner-listing-copy">
-                <strong>{property.title}</strong>
-                <span>{property.city}</span>
+          {ownerPropertyPerformance.length > 0 ? ownerPropertyPerformance.slice(0, 3).map(({
+            property,
+            revenue,
+            bookingCount,
+            occupancyPercent,
+          }) => (
+              <div key={property.id} className="owner-listing-card">
+                <img src={property.image} alt={property.title} onError={handleStayImageError} />
+                <div className="owner-listing-copy">
+                  <strong>{property.title}</strong>
+                  <span>{property.city}</span>
+                  {property.rating !== null && property.rating !== undefined && property.rating !== '' && (
+                    <span className="owner-listing-rating">
+                      {t('ownerMetrics.propertyRating')}: {formatNumber(property.rating, {
+                        minimumFractionDigits: 1,
+                        maximumFractionDigits: 1,
+                      })}★
+                    </span>
+                  )}
+                </div>
+                <div className="owner-listing-performance">
+                  <div className="owner-listing-revenue">
+                    <span>{t('ownerMetrics.propertyRevenue')}</span>
+                    <strong>{formatCurrency(revenue, 'EGP', language)}</strong>
+                  </div>
+                  <div className="owner-listing-stat">
+                    <span>{t('ownerMetrics.propertyBookings')}</span>
+                    <strong>{formatNumber(bookingCount)}</strong>
+                  </div>
+                  <div className="owner-listing-stat">
+                    <span>{t('ownerMetrics.propertyOccupancy')}</span>
+                    <strong>{formatPercent(occupancyPercent)}</strong>
+                  </div>
+                </div>
               </div>
-              <div className="owner-listing-meta">
-                <span>{formatNumber(property.rating, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}★</span>
-                <strong>{formatCurrency(property.priceValue, property.currency, language)}</strong>
-              </div>
-            </div>
-          ))}
+            ))
+            : <p className="owner-listing-empty">{t('ownerMetrics.noProperties')}</p>}
         </div>
       </div>
       </section>

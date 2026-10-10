@@ -132,6 +132,12 @@
     "periodAppliedToRevenue": "Revenue during {{period}}",
     "periodOccupancyDescription": "Daily booked-night occupancy during {{period}}",
     "topCityInPeriod": "Top earning city during {{period}}",
+    "topProperties": "Top Performing Properties",
+    "propertyRevenue": "Revenue",
+    "propertyBookings": "Bookings",
+    "propertyOccupancy": "Occupancy",
+    "propertyRating": "Rating",
+    "noProperties": "No properties to show performance for.",
     "periods": {
       "thisWeek": "This week",
       "lastSevenDays": "Last 7 days",

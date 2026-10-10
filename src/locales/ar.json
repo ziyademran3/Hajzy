@@ -132,6 +132,12 @@
     "periodAppliedToRevenue": "الإيرادات خلال {{period}}",
     "periodOccupancyDescription": "نسبة الليالي المحجوزة يوميًا خلال {{period}}",
     "topCityInPeriod": "أعلى مدينة إيرادًا خلال {{period}}",
+    "topProperties": "أفضل العقارات أداءً",
+    "propertyRevenue": "الإيراد",
+    "propertyBookings": "الحجوزات",
+    "propertyOccupancy": "الإشغال",
+    "propertyRating": "التقييم",
+    "noProperties": "لا توجد عقارات لعرض أدائها.",
     "periods": {
       "thisWeek": "هذا الأسبوع",
       "lastSevenDays": "آخر 7 أيام",

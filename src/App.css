@@ -3383,16 +3383,20 @@ body::-webkit-scrollbar,
 
 .owner-listing-card {
   display: grid;
-  grid-template-columns: 72px 1fr auto;
+  grid-template-columns: 72px minmax(0, 1fr);
+  grid-template-areas:
+    "image copy"
+    "performance performance";
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   padding: 10px;
-  border-radius: 16px;
+  border-radius: var(--radius-md);
   background: rgba(0, 67, 63, 0.03);
   border: 1px solid rgba(0, 67, 63, 0.06);
 }
 
 .owner-listing-card img {
+  grid-area: image;
   width: 72px;
   height: auto;
   aspect-ratio: 4 / 3;
@@ -3402,9 +3406,11 @@ body::-webkit-scrollbar,
 }
 
 .owner-listing-copy {
+  grid-area: copy;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--space-1);
+  min-width: 0;
 }
 
 .owner-listing-copy strong {
@@ -3412,21 +3418,49 @@ body::-webkit-scrollbar,
   font-size: var(--type-14);
 }
 
-.owner-listing-copy span,
-.owner-listing-meta span {
+.owner-listing-copy span {
   color: var(--muted);
   font-size: var(--type-12);
 }
 
-.owner-listing-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
+.owner-listing-copy .owner-listing-rating {
+  font-size: 0.75em;
 }
 
-.owner-listing-meta strong {
+.owner-listing-performance {
+  grid-area: performance;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.owner-listing-performance > div {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.owner-listing-performance span {
+  color: var(--muted);
+  font-size: var(--type-12);
+  line-height: 1.2;
+}
+
+.owner-listing-performance strong {
   color: var(--primary);
+  font-size: var(--type-12);
+  overflow-wrap: anywhere;
+}
+
+.owner-listing-revenue strong {
+  color: var(--primary-strong);
+}
+
+.owner-listing-empty {
+  margin: 0;
+  color: var(--muted);
   font-size: var(--type-12);
 }
 
@@ -10325,7 +10359,7 @@ html[data-theme='dark'] .owner-table td,
   }
 
   .owner-shell .owner-listing-card {
-    grid-template-columns: 64px minmax(0, 1fr) auto;
+    grid-template-columns: 64px minmax(0, 1fr);
     gap: var(--space-2);
     min-width: 0;
   }

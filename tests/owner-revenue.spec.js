@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test'
-import { getOwnerRevenueMetrics } from '../src/lib/ownerRevenue.js'
+import {
+  getOwnerPropertyPerformance,
+  getOwnerRevenueMetrics,
+} from '../src/lib/ownerRevenue.js'
 
 test('owner revenue includes only paid confirmed bookings and supports database amount fields', () => {
   const metrics = getOwnerRevenueMetrics([
@@ -88,6 +91,58 @@ test('revenue totals, growth, city and chart use the shared selected period', ()
   expect(thisMonth.hasChartRevenue).toBe(true)
 })
 
+test('owner property performance is period-filtered and ranked by paid revenue', () => {
+  const properties = [
+    { id: 'first', rating: 4.5 },
+    { id: 'second', rating: 4.8 },
+  ]
+  const bookings = [
+    {
+      propertyId: 'first',
+      status: 'paid',
+      paidAt: '2026-10-06T12:00:00',
+      total: 4200,
+      checkIn: '2026-10-06',
+      checkOut: '2026-10-08',
+    },
+    {
+      propertyId: 'second',
+      status: 'confirmed',
+      paidAt: '2026-10-07T12:00:00',
+      total: 9600,
+      checkIn: '2026-10-07',
+      checkOut: '2026-10-08',
+    },
+    {
+      propertyId: 'first',
+      status: 'paid',
+      paidAt: '2026-09-10T12:00:00',
+      total: 50000,
+      checkIn: '2026-09-10',
+      checkOut: '2026-09-11',
+    },
+    {
+      propertyId: 'second',
+      status: 'pending',
+      paidAt: '2026-10-07T12:00:00',
+      total: 90000,
+      checkIn: '2026-10-07',
+      checkOut: '2026-10-08',
+    },
+  ]
+  const now = new Date(2026, 9, 8, 12)
+
+  expect(getOwnerPropertyPerformance(bookings, properties, now, 'thisWeek')).toMatchObject([
+    { property: properties[1], revenue: 9600, bookingCount: 1, occupancyPercent: 25 },
+    { property: properties[0], revenue: 4200, bookingCount: 1, occupancyPercent: 50 },
+  ])
+  expect(getOwnerPropertyPerformance(bookings, properties, now, 'lastSevenDays'))
+    .toMatchObject([
+      { property: properties[1], revenue: 9600, bookingCount: 1 },
+      { property: properties[0], revenue: 4200, bookingCount: 1 },
+    ])
+})
+
 test('owner revenue chart starts at zero, scales bars to the largest amount, and reveals details on click', async ({ page }) => {
   const now = new Date()
   const paymentDate = (daysAgo) => {
@@ -150,4 +205,67 @@ test('owner revenue chart starts at zero, scales bars to the largest amount, and
   await expect(occupancyChart.locator('.owner-chart-day-label').first()).toBeVisible()
   await expect(occupancyChart.locator('.owner-chart-day-label')).toHaveCount(30)
   await expect(occupancyChart.locator('.owner-chart-bar-track').first()).toBeVisible()
+})
+
+test('top owner properties show period performance sorted by revenue', async ({ page }) => {
+  const now = new Date()
+  const dateOffset = (daysAgo) => {
+    const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysAgo, 12)
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  }
+  const bookings = [
+    {
+      id: 'property-performance-old',
+      propertyId: 'alex-vista',
+      status: 'paid',
+      paidAt: `${dateOffset(10)}T12:00:00`,
+      checkIn: dateOffset(10),
+      checkOut: dateOffset(8),
+      total: 96000,
+    },
+    {
+      id: 'property-performance-current',
+      propertyId: 'alex-corniche-hotel',
+      status: 'paid',
+      paidAt: `${dateOffset(2)}T12:00:00`,
+      checkIn: dateOffset(2),
+      checkOut: dateOffset(1),
+      total: 42000,
+    },
+  ]
+  await page.addInitScript((initialBookings) => {
+    localStorage.setItem('hajzy_user', JSON.stringify({
+      id: 'owner-property-performance-test',
+      role: 'owner',
+      name: 'Test Owner',
+    }))
+    localStorage.setItem('hajzy_bookings', JSON.stringify(initialBookings))
+  }, bookings)
+  await page.route('**/rest/v1/**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: '[]',
+  }))
+  await page.setViewportSize({ width: 360, height: 800 })
+  await page.goto('/')
+
+  const navigation = page.getByRole('tablist', { name: 'التنقل في لوحة المالك' })
+  await navigation.getByRole('tab', { name: 'العقارات' }).click()
+  const performance = page.locator('#owner-leading-properties-panel')
+  await expect(performance).toBeVisible()
+  await expect(performance.getByRole('heading', { name: 'أفضل العقارات أداءً' })).toBeVisible()
+  const cards = performance.locator('.owner-listing-card')
+  await expect(cards.first()).toContainText('شقة فيستا الإسكندرية')
+  await expect(cards.first()).toContainText('96,000')
+  await expect(cards.first()).toContainText('1')
+  await expect(cards.first()).toContainText('التقييم: 4.9')
+  await expect(cards.nth(1)).toContainText('فندق كورنيش الإسكندرية')
+  await expect(cards.nth(1)).toContainText('42,000')
+  await expect(cards.first().locator('.owner-listing-performance > div')).toHaveCount(3)
+
+  await performance.getByRole('button', { name: 'آخر 7 أيام' }).click()
+  await expect(cards.first()).toContainText('فندق كورنيش الإسكندرية')
+  const olderProperty = cards.filter({ hasText: 'شقة فيستا الإسكندرية' })
+  await expect(olderProperty).toContainText('0 ج.م')
+  await expect(olderProperty.locator('.owner-listing-performance')).toContainText('0')
 })
