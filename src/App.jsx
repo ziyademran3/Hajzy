@@ -1764,7 +1764,7 @@ function App() {
     (_, index) => ownerRevenueAxisMaximum * (1 - index / 4),
   )
   const ownerMetricsPeriodLabel = t(`ownerMetrics.periods.${ownerMetricsPeriod}`)
-  const ownerMetricPreviousPeriodLabel = t(`ownerMetrics.previousPeriods.${ownerMetricsPeriod}`)
+  const ownerMetricComparisonLabel = t(`ownerMetrics.comparisonPeriods.${ownerMetricsPeriod}`)
   const renderOwnerMetricComparison = (current, previous, status = 'ready') => {
     if (status === 'loading') {
       return (
@@ -1823,7 +1823,7 @@ function App() {
       <small className={`owner-metric-comparison ${direction}`}>
         <span aria-hidden="true">{arrow}</span>
         {' '}{formatNumber(Math.abs(change), { maximumFractionDigits: 1 })}%
-        {' '}{t('ownerMetrics.comparisonPrefix')} {ownerMetricPreviousPeriodLabel}
+        {' '}{ownerMetricComparisonLabel}
       </small>
     )
   }

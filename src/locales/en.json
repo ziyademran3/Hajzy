@@ -135,12 +135,11 @@
     "comparisonUnavailable": "Not enough data to compare",
     "comparisonLoading": "Loading rating data",
     "comparisonLoadError": "Unable to load rating data",
-    "comparisonPrefix": "vs",
     "comparisonNew": "New vs",
-    "previousPeriods": {
-      "lastSevenDays": "previous 7 days",
-      "lastThirtyDays": "previous 30 days",
-      "lastNinetyDays": "previous 90 days"
+    "comparisonPeriods": {
+      "lastSevenDays": "vs last 7 days",
+      "lastThirtyDays": "vs previous 30 days",
+      "lastNinetyDays": "vs previous 90 days"
     },
     "periodOccupancyDescription": "Daily booked-night occupancy during {{period}}",
     "topCityInPeriod": "Top earning city during {{period}}",

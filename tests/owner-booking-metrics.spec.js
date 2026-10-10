@@ -178,8 +178,9 @@ test('owner dashboard compares bookings, occupancy, revenue and ratings against 
   await expect(metrics.nth(1).locator('small')).toHaveClass(/positive/)
   await expect(metrics.nth(2).locator('small')).toContainText('▲ 100%')
   await expect(metrics.nth(2).locator('small')).toHaveClass(/positive/)
-  await expect(metrics.nth(3).locator('small')).toContainText('الـ30 يومًا السابقة')
+  await expect(metrics.nth(3).locator('small')).toContainText('مقارنة بالفترة السابقة (آخر 30 يومًا)')
   await expect(metrics.nth(3).locator('small')).toContainText(/[▲▼→]/)
+  await expect(metrics.nth(3)).not.toContainText('info')
 })
 
 test('calendar booked days match active bookings and exclude checkout dates and cancellations', () => {

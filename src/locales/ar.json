@@ -135,12 +135,11 @@
     "comparisonUnavailable": "لا تتوفر بيانات كافية للمقارنة",
     "comparisonLoading": "جارٍ تحميل بيانات التقييم",
     "comparisonLoadError": "تعذر تحميل بيانات التقييم",
-    "comparisonPrefix": "عن",
     "comparisonNew": "جديد عن",
-    "previousPeriods": {
-      "lastSevenDays": "الـ7 أيام السابقة",
-      "lastThirtyDays": "الـ30 يومًا السابقة",
-      "lastNinetyDays": "الـ90 يومًا السابقة"
+    "comparisonPeriods": {
+      "lastSevenDays": "مقارنة بآخر 7 أيام",
+      "lastThirtyDays": "مقارنة بالفترة السابقة (آخر 30 يومًا)",
+      "lastNinetyDays": "مقارنة بالفترة السابقة (آخر 90 يومًا)"
     },
     "periodOccupancyDescription": "نسبة الليالي المحجوزة يوميًا خلال {{period}}",
     "topCityInPeriod": "أعلى مدينة إيرادًا خلال {{period}}",
